@@ -38,16 +38,22 @@ Servicio de firma digital institucional: un backend con proveedores de firma int
 ## Comandos
 
 ```bash
-docker compose up -d db                       # PostgreSQL
-cd backend && pip install -r requirements.txt
-alembic upgrade head && python -m app.seed    # esquema + datos demo
-uvicorn app.main:app --reload                 # API en :8000
-pytest                                        # tests del backend
-cd widget && npm install && npm run dev       # widget en :5173
-cd frontend && npm install && npm start       # panel en :4200
+docker compose up -d db                       # PostgreSQL 16 (bases firmadoc y firmadoc_test)
+cd backend
+python -m venv .venv && .venv\Scripts\activate
+pip install -r requirements-dev.txt
+alembic upgrade head && python -m app.seed    # esquema + datos demo (idempotente)
+alembic check                                 # los modelos no difieren de las migraciones
+pytest                                        # tests (los de integración usan firmadoc_test)
 ```
 
-Actualizá esta sección cuando los comandos reales cambien.
+Pendientes de crear: `uvicorn app.main:app --reload` (API en :8000), `widget/` (`npm run dev`, :5173) y `frontend/` (`npm start`, :4200). Actualizá esta sección cuando existan.
+
+## Convenciones del backend
+
+- Migraciones escritas a mano y congeladas (no importan modelos); después de cada cambio de modelos, `alembic check` debe dar "No new upgrade operations detected".
+- Enums como `VARCHAR` + `CHECK` (no tipos nativos de PostgreSQL), con nombres de constraint según `NAMING_CONVENTION` de `app/models/base.py`.
+- Tests de integración: cada test corre en una transacción que se revierte; los errores esperados de la base se prueban dentro de `session.begin_nested()`.
 
 ## Forma de trabajo
 

@@ -103,6 +103,18 @@ El prompt de versionado de la sección 1 (Prompt 3) derivó en las entidades `Do
 **Prompt 2:**
 Pedido de la usuaria de dejar plasmada la firma **en lote** (varios documentos, una sola confirmación). Claude la modeló como `SignatureBatch`, que agrupa `SignatureRequest` existentes sin cambiar el mecanismo de firma ni de versionado por documento.
 
+**Prompt 3 (Entrega 2, implementación del Ticket 3):**
+> "ok" (aprobación del plan: empezar por el Ticket 3 — `docker-compose.yml` con PostgreSQL, `.env.example`, modelos SQLAlchemy, migración Alembic con triggers append-only y seed)
+
+Con `CLAUDE.md` y la sección 3 del readme como contexto, el agente de Cursor:
+- Escribió los modelos y una migración inicial a mano, sin autogenerar, para que quede congelada e incluya los triggers.
+- Escribió 17 tests de integración contra PostgreSQL real que cubren los criterios del ticket: rechazo de `UPDATE`, `DELETE` y `TRUNCATE` sobre `document_version` y `audit_event`; mover `current_version_id` sin tocar versiones; `downgrade base`; y seed idempotente.
+- Agregó invariantes que se desprenden del modelo: desafío de un solo uso, `origin = signed` solo con una solicitud de firma, formato del CUIL y `signed_at` solo en estado `signed`.
+
+Se verificó con `alembic check` que los modelos no difieren de la migración. Durante la implementación aparecieron dos huecos del modelo, que se resolvieron y documentaron en la sección 3.2:
+- **Documentos del panel sin integrador:** `integrating_system_id` es nulo en los documentos y solicitudes cargados desde el panel.
+- **Auditoría sin lotes:** `audit_event.signature_request_id` es `NOT NULL` hasta que exista `SignatureBatch`.
+
 ---
 
 ### 4. Especificación de la API
@@ -172,3 +184,7 @@ Pendiente: se completará con los Pull Requests de la Entrega 2 y la Entrega fin
   - La URL del webhook se guarda **por solicitud** (`SignatureRequest.callback_url`).
   - El formulario de carga del panel **pide nombre y CUIL del firmante**, para que toda solicitud tenga un `Signer`.
 - La IA propuso un nivel PAdES B-B en el MVP (sin TSA), como recomendó la revisión, y el autor lo aceptó.
+
+### Ajustes durante la implementación
+
+- **Ticket 3:** un test generado por la IA esperaba que un CUIL con guiones fuera rechazado por el `CHECK` (`IntegrityError`). Al ejecutarlo contra PostgreSQL real, el rechazo llegó antes por la longitud de la columna (`DataError`). Se corrigió el test para aceptar cualquier rechazo de la base: la protección existe en las dos capas. Es un ejemplo de por qué los tests corren contra la base real y no contra mocks.

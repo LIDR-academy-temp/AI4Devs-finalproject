@@ -105,10 +105,41 @@ Al no haber código todavía (esta entrega es 100% documentación), se describe 
 
 ### **1.4. Instrucciones de instalación:**
 
-_Objetivo para la Entrega 2 (cuando exista código ejecutable). Se documentará aquí, como mínimo:_
-- Requisitos: Python 3.11 o superior, Node 20+ (para compilar el widget) y Chrome/Edge (desde Chrome 142, una página pública que llama a `127.0.0.1` pide permiso de acceso a la red local; en equipos administrados se evita con la política `LocalNetworkAccessAllowedForUrls`). Docker para levantar PostgreSQL. El agente local solo hace falta para firmar con token.
+#### Puesta en marcha (estado actual: base de datos, migraciones y seed)
+
+Requisitos: Python 3.12 o superior (probado con 3.14), Docker con Docker Compose y Git. Los comandos son para PowerShell; en Linux o macOS, el entorno virtual se activa con `source .venv/bin/activate`.
+
+```powershell
+git clone https://github.com/bv3rgara/AI4Devs-finalproject.git
+cd AI4Devs-finalproject
+git checkout feature/entrega-2-bbmv
+
+# 1. Variables de entorno: copiar el ejemplo y completar como mínimo
+#    FIRMADOC_LOCAL_KEYSTORE_PASSPHRASE (cualquier valor de prueba) y FIRMADOC_ADMIN_TOKEN.
+Copy-Item .env.example .env
+
+# 2. PostgreSQL 16 (crea las bases firmadoc y firmadoc_test)
+docker compose up -d db
+
+# 3. Backend: dependencias, migraciones y datos de demostración
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+alembic upgrade head
+python -m app.seed      # muestra una única vez la API key del sistema integrador demo
+
+# 4. Tests de integración (usan firmadoc_test, que se migra desde cero en cada corrida)
+pytest
+```
+
+El seed es idempotente y crea: el sistema integrador «Sistema integrador demo» (orígenes permitidos `http://localhost:4200`), el firmante «Firmante Demo» (CUIL `20123456786`) y una PKI de demostración para el proveedor `local`. La PKI se guarda en `backend/var/keys/`, fuera de git: un PKCS#12 cifrado con la passphrase del `.env` y `demo-ca.crt`. Si se define `FIRMADOC_DEMO_API_KEY`, el integrador demo usa esa clave en lugar de generar una.
+
+#### Objetivo para la Entrega final
+
+A medida que se sumen la API, el widget, el panel y el agente, se completará aquí:
+- Requisitos adicionales: Node 20+ (para el widget y el panel) y Chrome/Edge (desde Chrome 142, una página pública que llama a `127.0.0.1` pide permiso de acceso a la red local; en equipos administrados se evita con la política `LocalNetworkAccessAllowedForUrls`). El agente local solo hace falta para firmar con token.
 - Modo demostración: un único comando que prepara base, carpetas, migraciones y datos semilla, y arranca el sistema listo para firmar sin token USB.
-- Instalación manual: variables de entorno (`.env`: base de datos, secreto de los enlaces del widget, token de administración, URL del servicio de sellado de tiempo), migraciones (`alembic upgrade head`) y script de seed con un sistema integrador y un certificado de demostración.
 - Base de datos: **PostgreSQL** en todos los entornos (desarrollo, tests y demo), levantado con `docker-compose`. Los PDF se guardan **dentro de la base** (columna `bytea` de `document_version`); no hay object storage en el MVP. Se descartó SQLite porque los triggers que protegen auditoría y versiones, y los campos `jsonb`, dependen de PostgreSQL.
 - Carpeta de confianza (`backend/trust/`): certificados raíz y de AC en formato `.crt`, descargados de la fuente oficial de la AC; el panel muestra la huella SHA-256 de cada uno para confirmarla por un canal independiente.
 - Agente local (solo para firmar con token): se instala en la PC del firmante (instalador para Windows empaquetado con PyInstaller, distribuible por política de dominio en equipos administrados) y requiere el middleware PKCS#11 del fabricante del token, de la misma arquitectura (32/64 bits) que el agente. En desarrollo se usa SoftHSM en lugar de un token físico. Un comando de diagnóstico lista los certificados del token y verifica que la biblioteca PKCS#11 cargue, sin pedir el PIN.
@@ -438,14 +469,14 @@ erDiagram
 ### **3.2. Descripción de entidades principales:**
 
 - **IntegratingSystem**: sistema tercero que consume Firmadoc (ej. un gestor documental institucional). `api_key_hash` (not null, único) — nunca se guarda la key en texto plano. `allowed_origins` — orígenes permitidos para embeber el widget y para que el agente acepte pedidos (usado en `frame-ancestors`).
-- **Document**: identidad lógica de un documento a lo largo de toda su vida (puede firmarse varias veces). `external_document_id` (nullable) permite correlacionarlo con el ID que ya usa el sistema integrador. `current_version_id` apunta siempre a la versión vigente — se actualiza (no se borra ni pisa nada) cada vez que se genera una nueva versión. `signing_status` refleja el ciclo de vida de cara a la firma: `draft` (aún no se puede firmar) → `pending_signature` (listo, opcionalmente con `signature_deadline`) → `signed` (tiene al menos una firma completada). Al vencer el plazo se registra un evento de auditoría y el documento deja de figurar como pendiente (el comportamiento exacto se define con cada sistema integrador). El listado de quiénes firmaron un documento no es un campo propio: se obtiene de sus `SignatureRequest` en estado `signed`.
+- **Document**: identidad lógica de un documento a lo largo de toda su vida (puede firmarse varias veces). `integrating_system_id` es nulo cuando el documento se cargó desde el panel. `external_document_id` (nullable, único por sistema integrador) permite correlacionarlo con el ID que ya usa el sistema integrador. `current_version_id` apunta siempre a la versión vigente — se actualiza (no se borra ni pisa nada) cada vez que se genera una nueva versión. `signing_status` refleja el ciclo de vida de cara a la firma: `draft` (aún no se puede firmar) → `pending_signature` (listo, opcionalmente con `signature_deadline`) → `signed` (tiene al menos una firma completada). Al vencer el plazo se registra un evento de auditoría y el documento deja de figurar como pendiente (el comportamiento exacto se define con cada sistema integrador). El listado de quiénes firmaron un documento no es un campo propio: se obtiene de sus `SignatureRequest` en estado `signed`.
 - **DocumentVersion**: cada versión de un documento, **inmutable y append-only**. `origin` distingue la versión original subida (`uploaded`) de una generada por una firma (`signed`, con `signature_request_id`). `signature_level` indica el nivel PAdES alcanzado (B-LT si hubo sello de tiempo y revocación embebida). `content` guarda el binario del PDF en la propia base (`bytea`) y `file_name` el nombre original, usado al descargar; un documento de varios MB por versión es aceptable para el volumen del MVP, y mover los binarios a object storage queda como evolución posible. Nunca se sobrescribe una versión: solo se agregan nuevas y se actualiza el puntero `Document.current_version_id`.
-- **SignatureRequest**: núcleo del flujo de firma. FK a `document_id` (not null) — toda solicitud opera sobre un `Document` (si el integrador no manda un `document_id`, Firmadoc crea el `Document` y su primera `DocumentVersion` `uploaded`). `status` transiciona `pending → signing → signed|failed`. `certificate_id` queda nulo hasta que se elige el certificado; `batch_id` se completa si la solicitud forma parte de un lote. `callback_url` (nullable) guarda la URL del webhook que envía el integrador en `POST /signature-requests`; es por solicitud porque un mismo sistema puede querer recibir avisos en endpoints distintos, y las cargas desde el panel no la usan. Al pasar a `signed`, dispara la creación de la `DocumentVersion` resultante, también dentro de un lote.
+- **SignatureRequest**: núcleo del flujo de firma. FK a `document_id` (not null) — toda solicitud opera sobre un `Document` (si el integrador no manda un `document_id`, Firmadoc crea el `Document` y su primera `DocumentVersion` `uploaded`). `integrating_system_id` es nulo en las solicitudes creadas desde el panel. `status` transiciona `pending → signing → signed|failed`, y `signed_at` está presente si y solo si el estado es `signed`. `certificate_id` queda nulo hasta que se elige el certificado; `batch_id` se completa si la solicitud forma parte de un lote. `callback_url` (nullable) guarda la URL del webhook que envía el integrador en `POST /signature-requests`; es por solicitud porque un mismo sistema puede querer recibir avisos en endpoints distintos, y las cargas desde el panel no la usan. Al pasar a `signed`, dispara la creación de la `DocumentVersion` resultante, también dentro de un lote.
 - **SigningChallenge**: el hash que debe firmar el token para una solicitud, preparado por el servidor. Es de **un solo uso** (`consumed_at`), vence (`expires_at`) y está atado a la sesión del firmante (`session_ref`) y al certificado validado; así `complete` solo acepta firmas que corresponden a lo que el servidor preparó.
 - **SignatureBatch**: agrupa N `SignatureRequest` que se firman con una sola confirmación (ej. un solo PIN cubre los N documentos). `status` resume el estado conjunto, pero cada solicitud mantiene el suyo — un lote puede terminar en `partial_failure`.
 - **Signer**: persona que firma. Se crea (o se reutiliza por `identifier`) a partir del bloque `signer` de `POST /signature-requests` o de los campos nombre y CUIL del formulario de carga del panel, de modo que toda solicitud tiene un firmante aunque la cargue un administrador. `identifier` (CUIL, not null) se contrasta con el CUIL del certificado solo si `FIRMADOC_REQUIRE_CUIL_MATCH=true`.
 - **Certificate**: certificado usado en una firma: propio (`local`), el del token del usuario (`token`; Firmadoc solo registra datos públicos) o del servicio remoto (`firmar`). `cuil` se extrae del certificado; `revocation_status` guarda el resultado de la última consulta de revocación; `serial_number` único.
-- **AuditEvent**: tabla append-only con cada evento del ciclo de vida de una `SignatureRequest` o de un `SignatureBatch` (exactamente uno de los dos FK está presente). `payload` en `jsonb` guarda el detalle de cada tipo de evento (incluido el resultado de la validación de confianza).
+- **AuditEvent**: tabla append-only con cada evento del ciclo de vida de una `SignatureRequest` o de un `SignatureBatch` (exactamente uno de los dos FK está presente). En el MVP, sin lotes, la migración inicial crea solo `signature_request_id NOT NULL`; `batch_id` y la restricción de exclusividad llegan con `SignatureBatch`. `payload` en `jsonb` guarda el detalle de cada tipo de evento (incluido el resultado de la validación de confianza).
 - **WebhookDelivery**: registro de cada intento de notificación al sistema integrador. `url` se copia de `SignatureRequest.callback_url` al momento del envío. En el MVP se hace un único intento (`attempts = 1`); los reintentos con backoff quedan para la versión 2.
 
 ---
