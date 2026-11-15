@@ -6,14 +6,16 @@ import { cn, themeTokens } from "../../src/components/ui/utils";
 
 // cn() and the theme's own text sizes, spacing, and shadows (T-35).
 
+// Without comments, so a token named in one isn't counted.
 const css = readFileSync(
   new URL("../../src/app/globals.css", import.meta.url),
   "utf8",
-);
+).replace(/\/\*[\s\S]*?\*\//g, "");
 
 /** The names of the theme's tokens with a prefix, without their sub-values such as `--line-height`. */
 function cssTokens(prefix: string): string[] {
-  const names = [...css.matchAll(new RegExp(`--${prefix}-([a-z0-9-]+):`, "g"))]
+  const declaration = new RegExp(`^\\s*--${prefix}-([a-z0-9-]+):`, "gm");
+  const names = [...css.matchAll(declaration)]
     .map((match) => match[1])
     .filter((name) => !name.includes("--"));
   return [...new Set(names)].sort();
@@ -39,6 +41,10 @@ describe("cn", () => {
     expect(cn("text-body-md", "leading-tight")).toBe(
       "text-body-md leading-tight",
     );
+  });
+
+  it("T-35 lets a custom text size replace a line height before it", () => {
+    expect(cn("leading-tight", "text-body-md")).toBe("text-body-md");
   });
 
   it("T-35 lets shadow-none replace a theme shadow", () => {

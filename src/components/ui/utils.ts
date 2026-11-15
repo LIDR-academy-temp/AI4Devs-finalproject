@@ -3,7 +3,9 @@ import { extendTailwindMerge } from "tailwind-merge";
 
 // The theme's own text sizes, spacing, and shadows (src/app/globals.css), so
 // tailwind-merge sorts their classes into the right groups instead of taking
-// text-body-md for a color or shadow-card for a shadow color.
+// text-body-md for a color or shadow-card for a shadow color. As with any
+// font size, one of these text sizes drops a leading-* class before it, so a
+// line height goes after the size.
 export const themeTokens = {
   text: [
     "headline-xl",
