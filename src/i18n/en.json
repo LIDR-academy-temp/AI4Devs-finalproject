@@ -12,7 +12,8 @@
     "saved": "Saved",
     "couldNotSave": "Couldn't save. Check your connection and try again",
     "tryAgain": "Try again",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "close": "Close"
   },
   "shell": {
     "navigation": "Main navigation",
