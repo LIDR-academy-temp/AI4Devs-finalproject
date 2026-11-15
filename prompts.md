@@ -73,6 +73,7 @@ Build sessions start with delivery 2. Each one lists the work tickets it covers,
 | Part 20 | — | Design tickets: the design-ticket exception to the OpenSpec steps, tickets T-19 to T-33 and their issues, the OpenSpec configuration during the restyle, and pull request #77 | Claude Code | Claude Opus 5.5 | [part-20-design-tickets.md](docs/ai-conversations/part-20-design-tickets.md) |
 | Part 21 | T-19 | Tests that survive a restyle: browser tests that find elements by role and text, accessibility checks in every main state, the local sign-in instructions in the readme, and pull request #78 | Claude Code | Claude Opus 5.5 | [part-21-restyle-safe-tests.md](docs/ai-conversations/part-21-restyle-safe-tests.md) |
 | Part 22 | — | Screen map: each screen and state mapped to its route, components, Stitch folder, tickets, and fit; the T-10 states assigned to T-24 and T-26; T-21, T-22, T-24, and T-32 moved to delivery D2; and pull request #82 | Claude Code | Claude Opus 5.5 | [part-22-screen-map.md](docs/ai-conversations/part-22-screen-map.md) |
+| Part 23 | T-24 | Lists design: the D2 delivery; the Lists screen, its loading and empty states, and the New list sheet restyled to DESIGN.md and the Stitch screen; the sheet's first browser test; T-34 and issue #83; and pull request #84 | Claude Code | Claude Opus 5.5 | [part-23-lists-design.md](docs/ai-conversations/part-23-lists-design.md) |
 
 ## Tools and phases
 
