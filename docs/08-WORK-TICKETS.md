@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.22 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.23 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -580,8 +580,12 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** all of milestone 1 · **Delivery:** D2 · **Size:** S · **Depends on:** T-20
 
-**Goal:** every component renders the text size and color [DESIGN.md](../DESIGN.md) gives it.
+**Goal:** every component renders the text size, color, spacing, and shadow [DESIGN.md](../DESIGN.md) gives it.
 
-**Problem:** tailwind-merge in `cn()` reads the custom text-size classes (`text-body-md`, `text-label-lg`, and the other sizes in DESIGN.md) as text colors, so when a size and a color meet in one `cn()` call, the later class drops the other. The size is dropped, and the text takes its parent's size instead, in `Button` (every variant), `Input`, `Textarea`, and the selects that share their classes, `Label`, `DialogDescription`, `DropdownMenuLabel`, `DropdownMenuItem` when given a color (the item menu's delete action), `StatusChip`, the language switch, and the Lists filter chips. One color is dropped: the onboarding terms label passes `text-body-lg` to `Label`, which drops `Label`'s `text-foreground`; the label inherits the same color, so its contrast is unchanged. Found in T-34, which works around it in the tab bar only.
+**Problem:** tailwind-merge in `cn()` doesn't know the theme's own text sizes, spacing, and shadows in `src/app/globals.css`, so it sorts their classes into the wrong groups:
 
-**Done when:** `cn()` keeps both the custom text sizes and the colors, the tab bar's workaround is removed, a unit test covers the merge, the restyled screens are checked at 360 px and 1280 px, and all tests pass.
+- **Text sizes:** it reads the custom text-size classes (`text-body-md`, `text-label-lg`, and the other sizes in DESIGN.md) as text colors, so when a size and a color meet in one `cn()` call, the later class drops the other. The size is dropped, and the text takes its parent's size instead, in `Button` (every variant), `Input`, `Textarea`, and the selects that share their classes, `Label`, `DialogDescription`, `DropdownMenuLabel`, `DropdownMenuItem` when given a color (the item menu's delete action), `StatusChip`, the language switch, and the Lists filter chips. One color is dropped: the onboarding terms label passes `text-body-lg` to `Label`, which drops `Label`'s `text-foreground`; the label inherits the same color, so its contrast is unchanged. Found in T-34, which works around it in the tab bar only.
+- **Shadows:** it reads `shadow-card`, `shadow-floating`, and `shadow-dialog` as shadow colors, so a later `shadow-none` doesn't replace them and the result depends on the order of the CSS. The dashed "choose an item" slot on Lists keeps both `shadow-card` and `shadow-none`. Found in T-24's review.
+- **Spacing:** it doesn't recognize the spacing classes (`px-margin`, `gap-gutter-desktop`, and the other spacing tokens), so a later spacing class next to one doesn't replace it.
+
+**Done when:** `cn()` keeps both the custom text sizes and the colors, and a later class replaces an earlier one of the same kind for the theme's text sizes, spacing, and shadows; every place where a merge gives a different result is listed in the pull request; the dashed "choose an item" slot has no shadow; the tab bar's workaround is removed; a unit test covers the merge and fails if a text size, spacing, or shadow in `src/app/globals.css` isn't registered in `cn()`; Lists, the tab bar, and the New list sheet are checked at 360 px and 1280 px, and the item page's left column at 1280 px; and all tests pass.
