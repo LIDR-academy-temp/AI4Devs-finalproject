@@ -104,7 +104,7 @@ spacing:
 
 # Design system: Warm Utilitarian Care
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.1 · **Date:** November 10, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.2 · **Date:** November 14, 2026
 
 Part of the project documentation ([readme](readme.md)). This document owns the visual design: tokens, components, and layout. Behavior, screens, and interface text are defined in [UX design](docs/02-UX-DESIGN.md) and the [PRD](docs/01-PRD.md); where they differ from this document or from the Stitch screens, they take precedence.
 
@@ -246,6 +246,7 @@ Every interactive element shows a visible focus ring on keyboard focus: `focus-v
 ### Collapsible Groups & Sheets
 - **Collapsible Section Header**: Full-width bar at least `52px` tall with a disclosure arrow, title, and count (for example `▸ Enviados (8)`).
 - **Bottom Sheets**: `16px` top corners, a `36px × 5px` `#94A3B8` handle, a close button, and the confirm button fixed at the bottom. On desktop they open as centered dialogs.
+- **Sheet Focus**: When a sheet opens, at every screen size, keyboard focus goes to its close button. Below 768px, a sheet never moves first focus to a text field, because the on-screen keyboard would cover the sheet. First focus is never on a destructive action.
 
 ## Using the Stitch Screens
 
