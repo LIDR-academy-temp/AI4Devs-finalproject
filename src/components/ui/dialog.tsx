@@ -19,7 +19,8 @@ import { cn } from "./utils";
 // - "sheet", for short tasks such as Mark as shipped: below 768px a bottom
 //   sheet with 16px top corners, a handle, a Close button, and its footer
 //   fixed at the bottom; from 768px a centered dialog with the same Close
-//   button.
+//   button. The Close button comes first, so it takes focus when the sheet
+//   opens (DESIGN.md, Sheet Focus).
 
 export function Dialog(props: ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
