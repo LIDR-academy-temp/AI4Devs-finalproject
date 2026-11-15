@@ -192,8 +192,8 @@ test.describe("layout", () => {
 });
 
 // The bottom bar's height (T-34; DESIGN.md, Navigation): tab labels stay at
-// 16px and are never cut off, take at most two lines with up to four tabs,
-// and + Agregar sits 16px above the bar's real height.
+// 16px, are never cut off, take at most two lines without breaking a word,
+// and stay 12px apart; and + Agregar sits 16px above the bar's real height.
 
 type TabCount = 3 | 4 | 5;
 
@@ -217,18 +217,56 @@ async function signUpWithTabs(page: Page, language: Language, count: TabCount) {
   }
 }
 
-/** Each tab label's text, size, lines, and whether it fits its tab uncut. */
+/**
+ * Each tab's width and its label's text, size, and lines; whether the label
+ * fits its tab uncut and breaks a word; and how far it is from the next tab's
+ * label on the lines they share.
+ */
 async function tabLabels(nav: Locator) {
-  return nav.getByRole("link").evaluateAll((links) =>
-    links.map((link) => {
-      const label = link.lastElementChild as HTMLElement;
+  return nav.getByRole("link").evaluateAll((links) => {
+    const labels = links.map((link) => link.lastElementChild as HTMLElement);
+    const lineBoxes = (label: HTMLElement) => {
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      return [...range.getClientRects()];
+    };
+    return links.map((link, index) => {
+      const label = labels[index]!;
       const style = getComputedStyle(label);
       const box = label.getBoundingClientRect();
       const tab = link.getBoundingClientRect();
+      // A word is broken when its letters sit on more than one line.
+      const text = label.firstChild!;
+      let offset = 0;
+      let breaksAWord = false;
+      for (const word of label.textContent!.split(" ")) {
+        const range = document.createRange();
+        range.setStart(text, offset);
+        range.setEnd(text, offset + word.length);
+        const tops = new Set(
+          [...range.getClientRects()].map(({ top }) => Math.round(top)),
+        );
+        if (tops.size > 1) breaksAWord = true;
+        offset += word.length + 1;
+      }
+      const next = labels[index + 1];
+      let gapToNext = Infinity;
+      if (next) {
+        for (const line of lineBoxes(label)) {
+          for (const nextLine of lineBoxes(next)) {
+            if (Math.abs(line.top - nextLine.top) < 2) {
+              gapToNext = Math.min(gapToNext, nextLine.left - line.right);
+            }
+          }
+        }
+      }
       return {
         text: label.textContent,
+        tabWidth: tab.width,
         fontSize: parseFloat(style.fontSize),
         lines: Math.round(box.height / parseFloat(style.lineHeight)),
+        breaksAWord,
+        gapToNext,
         insideTab:
           box.left >= tab.left - 0.5 &&
           box.right <= tab.right + 0.5 &&
@@ -239,24 +277,25 @@ async function tabLabels(nav: Locator) {
           link.scrollWidth > link.clientWidth ||
           style.textOverflow === "ellipsis",
       };
-    }),
-  );
+    });
+  });
 }
 
-async function expectLabelsUncut(
-  page: Page,
-  language: Language,
-  maxLines?: number,
-) {
+async function expectLabelsFit(page: Page, language: Language) {
   const screen = shell(page, language);
   for (const label of await tabLabels(screen.nav)) {
+    const name = label.text!;
     // The whole name is there: not shortened or replaced.
-    expect(Object.values(screen.t.tabs)).toContain(label.text);
-    expect(label.fontSize, label.text!).toBeGreaterThanOrEqual(16);
-    expect(label.insideTab, label.text!).toBe(true);
-    expect(label.cut, label.text!).toBe(false);
-    if (maxLines)
-      expect(label.lines, label.text!).toBeLessThanOrEqual(maxLines);
+    expect(Object.values(screen.t.tabs)).toContain(name);
+    expect(label.fontSize, name).toBeGreaterThanOrEqual(16);
+    expect(label.insideTab, name).toBe(true);
+    expect(label.cut, name).toBe(false);
+    expect(label.lines, name).toBeLessThanOrEqual(2);
+    expect(label.breaksAWord, name).toBe(false);
+    expect(label.tabWidth, name).toBeGreaterThanOrEqual(48);
+    expect(Math.round(label.gapToNext * 10) / 10, name).toBeGreaterThanOrEqual(
+      12,
+    );
   }
 }
 
@@ -277,8 +316,8 @@ async function expectAddAboveBar(page: Page, language: Language) {
 
 test.describe("bottom bar height", () => {
   for (const language of ["es", "en"] as const) {
-    for (const count of [3, 4] as const) {
-      test(`T-34 with ${count} tabs, labels take at most two lines and + Agregar is visible (${language})`, async ({
+    for (const count of [3, 4, 5] as const) {
+      test(`T-34 with ${count} tabs, labels fit on two lines without breaking a word and + Agregar is visible (${language})`, async ({
         page,
       }) => {
         await page.setViewportSize({ width: 360, height: 740 });
@@ -290,25 +329,12 @@ test.describe("bottom bar height", () => {
 
         for (const width of [360, 390]) {
           await page.setViewportSize({ width, height: 740 });
-          await expectLabelsUncut(page, language, 2);
+          await expectLabelsFit(page, language);
           await expectAddAboveBar(page, language);
           await expectNoSidewaysScroll(page);
         }
       });
     }
-
-    test(`T-34 with 5 tabs at 360 px, no label is cut off and + Agregar is visible (${language})`, async ({
-      page,
-    }) => {
-      await page.setViewportSize({ width: 360, height: 740 });
-      await signUpWithTabs(page, language, 5);
-      await open(page, "/lists");
-      await expect(shell(page, language).nav.getByRole("link")).toHaveCount(5);
-
-      await expectLabelsUncut(page, language);
-      await expectAddAboveBar(page, language);
-      await expectNoSidewaysScroll(page);
-    });
   }
 
   for (const count of [3, 4, 5] as const) {

@@ -183,7 +183,7 @@ The layout is **mobile first**, built for 360px to 390px viewports. Desktop uses
 
 ## Navigation
 
-Which tabs appear, and when, is defined in [UX §2.2](docs/02-UX-DESIGN.md#22-navigation). The header has the group selector on the left and **Actualizar** (↻) and the user's avatar on the right. Tabs pair an icon with text. Tab labels stay at `16px` and are never cut off, so the bottom bar grows to fit them: with up to four tabs, a label takes at most two lines; with five, it may take three, breaking a word only when the word doesn't fit the tab's width.
+Which tabs appear, and when, is defined in [UX §2.2](docs/02-UX-DESIGN.md#22-navigation). The header has the group selector on the left and **Actualizar** (↻) and the user's avatar on the right. Tabs pair an icon with text. Tab labels stay at `16px` and are never cut off, so the bottom bar grows to fit them. Each tab is as wide as its label's longest word plus `6px` on each side, so labels in neighboring tabs are at least `12px` apart, plus an equal share of the space left, and at least `48px`. From `360px`, with up to five tabs, a label takes at most two lines and no word breaks; on a narrower screen, a word breaks only when the longest words don't fit the bar together.
 
 ## Elevation & Depth
 

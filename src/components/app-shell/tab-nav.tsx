@@ -17,9 +17,11 @@ import { TAB_ICONS } from "./tab-icons";
 // aria-current, so color is never the only cue.
 //
 // Labels stay at 16px and are never cut off, so the bar grows with them
-// (DESIGN.md, Navigation). They wrap between words; a word breaks only when it
-// doesn't fit the tab's width on its own. Up to four tabs, labels take at most
-// two lines at 360px; with five, a label may take three.
+// (DESIGN.md, Navigation). Each tab starts as wide as its label's longest word
+// plus 6px on each side, so labels in neighboring tabs stay 12px apart, and
+// the space left is shared equally; no tab is narrower than 48px. Labels wrap
+// between words; a word breaks only when the longest words don't fit the bar
+// together, which doesn't happen from 360px.
 //
 // + Agregar and the screen's bottom padding sit above the bar's real height,
 // which the bar measures into --tab-bar-height. Until it does, they use
@@ -76,14 +78,17 @@ export function TabNav({ tabs }: { tabs: readonly Tab[] }) {
           const current = isCurrent(pathname, path);
           const Icon = TAB_ICONS[tab];
           return (
-            <li key={tab} className="min-w-0 flex-1 md:flex-none">
+            <li
+              key={tab}
+              className="min-w-12 flex-[1_1_min-content] md:flex-none"
+            >
               {/* clsx, not cn: tailwind-merge takes text-body-md for a color
                   and would drop it next to text-primary. */}
               <Link
                 href={path}
                 aria-current={current ? "page" : undefined}
                 className={clsx(
-                  "text-body-md focus-visible:ring-ring relative flex min-h-16 flex-col items-center justify-center gap-1 py-2 text-center leading-tight outline-none focus-visible:ring-2 focus-visible:ring-inset md:min-h-12 md:flex-row md:justify-start md:gap-3 md:rounded-lg md:px-4 md:text-left md:focus-visible:ring-offset-2",
+                  "text-body-md focus-visible:ring-ring relative flex min-h-16 flex-col items-center justify-center gap-1 px-1.5 py-2 text-center leading-tight outline-none focus-visible:ring-2 focus-visible:ring-inset md:min-h-12 md:flex-row md:justify-start md:gap-3 md:rounded-lg md:px-4 md:text-left md:focus-visible:ring-offset-2",
                   current
                     ? "text-primary md:bg-accent font-bold"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground font-medium",
@@ -96,7 +101,7 @@ export function TabNav({ tabs }: { tabs: readonly Tab[] }) {
                   />
                 )}
                 <Icon className="size-6 shrink-0" aria-hidden />
-                <span className="max-w-full wrap-anywhere">{tTabs(tab)}</span>
+                <span className="max-w-full break-words">{tTabs(tab)}</span>
               </Link>
             </li>
           );

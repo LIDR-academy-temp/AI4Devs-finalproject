@@ -26,8 +26,10 @@ export function initialsOf(name: string | null, email: string | null): string {
 }
 
 /**
- * The most lines a tab label can take at 360px with this many tabs, which sets
- * the bottom bar's height before it measures itself (tab-nav.tsx).
+ * The most lines a tab label can take with this many tabs, which sets the
+ * bottom bar's height before it measures itself (tab-nav.tsx). From 360px,
+ * labels take at most two lines; five tabs on a narrower screen can take
+ * three.
  */
 export function tabLabelLines(tabCount: number): 2 | 3 {
   return tabCount > 4 ? 3 : 2;
