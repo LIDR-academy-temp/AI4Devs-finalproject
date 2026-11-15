@@ -1,6 +1,6 @@
 # API specification
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.9 · **Date:** November 10, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.10 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -43,10 +43,10 @@ Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`
 | PATCH | `/me` | Change language, WhatsApp number, or email setting | FR-04 |
 | DELETE | `/me` | Delete the account | BR-05 |
 | GET, POST | `/groups` | List the user's groups; create a group | BR-07 |
-| GET, PATCH | `/groups/{groupId}` | Group with members and buyers; rename | FR-07 |
+| GET, PATCH | `/groups/{groupId}` | Group with members, each with their `email`, and buyers, each with their `whatsapp` number; rename | FR-07, BR-12 |
 | POST | `/groups/{groupId}/owner` | Transfer ownership | BR-07 |
 | DELETE | `/groups/{groupId}/memberships/{userId}` | Remove someone, or leave with `me` | BR-07, BR-10, BR-11 |
-| GET, POST | `/groups/{groupId}/invitations` | Pending invitations; create one and get its link | BR-08 |
+| GET, POST | `/groups/{groupId}/invitations` | Pending invitations, each with its `inviteeName`; create one, with an optional `inviteeName`, and get its link | BR-08, BR-32 |
 | DELETE | `/invitations/{invitationId}` | Cancel an invitation | BR-08 |
 | GET | `/invitations/by-code/{code}` | Invitation preview: inviter, group, and type. No sign-in required. | BR-08 |
 | POST | `/invitations/by-code/{code}/accept` | Accept an invitation | BR-08, BR-09 |

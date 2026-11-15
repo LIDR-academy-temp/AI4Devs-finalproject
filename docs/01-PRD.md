@@ -1,6 +1,6 @@
 # Product Requirements Document: Assisted Shopping Platform (MVP)
 
-**Version:** 1.10 · **Date:** November 12, 2026  
+**Version:** 1.11 · **Date:** November 15, 2026  
 **Project Manager and Product owner:** Odalys Jordan Enriquez  
 **Product Name:** ComproParaTi ("I buy for you", [section 16](#16-product-decisions))
 
@@ -124,20 +124,20 @@ Flows A, B, C, E, and F ([UX design §1](02-UX-DESIGN.md#1-user-flows)) work fro
 | Phase | Deadline | Course deliverable | Content |
 | --- | --- | --- | --- |
 | Documentation | Thursday, October 22, 2026 | Delivery 1: technical documentation | This documentation, the work tickets ([08-WORK-TICKETS.md](08-WORK-TICKETS.md)), and the AI usage record ([prompts.md](../prompts.md)) |
-| Build, part 1 | Thursday, November 19, 2026 | Delivery 2: working code | Increments 1 and 2 without deployment and buyer invitations, lists and items, and reserve, release, and purchase without the buyer screens, and the design foundation: restyle-safe tests and the design tokens and base components ([DESIGN.md](../DESIGN.md)) |
-| Build, part 2 | Wednesday, December 9, 2026 | Delivery 3: final delivery | Deployment, buyer invitations, the buyer screens (To buy and My purchases), the rest of increments 3 to 5, the screens restyled to the approved design, the full test suite with an end-to-end test of the core cycle, deployment evidence, and the complete AI usage record |
+| Build, part 1 | Thursday, November 19, 2026 | Delivery 2: working code | Increments 1 and 2 without deployment and invitations, lists and items, and reserve, release, and purchase without the buyer screens, and the design foundation: restyle-safe tests and the design tokens and base components ([DESIGN.md](../DESIGN.md)) |
+| Build, part 2 | Wednesday, December 9, 2026 | Delivery 3: final delivery | Deployment, member and buyer invitations, the buyer screens (To buy and My purchases), the rest of increments 3 to 5, the screens restyled to the approved design, the full test suite with an end-to-end test of the core cycle, deployment evidence, and the complete AI usage record |
 
 **Build increments:**
 
 | # | Increment | Covers |
 | --- | --- | --- |
 | 1 | Foundation | Project setup, one-command local setup with seed data, CI, data model and migrations, sign-in, onboarding, and basic profile, both languages, baseline security (authorization, validation, rate limits, security headers), and deployment |
-| 2 | Groups and buyer invitations | The automatic group and first list, buyer invitations, permissions |
+| 2 | Groups and invitations | The automatic group and first list, member and buyer invitations, permissions |
 | 3 | Requests | Lists, items (quick add and full form), people with their details |
 | 4 | Buying | To buy, reserve and release, purchase, couldn't buy it, status and timeline |
 | 5 | Shipping | Delivery addresses, marking items as shipped |
 
-**Features complete at the final course delivery:** groups and buyer invitations; lists and items; people with their details; reservation and purchase; shipping with delivery addresses.
+**Features complete at the final course delivery:** groups and invitations; lists and items; people with their details; reservation and purchase; shipping with delivery addresses.
 
 **If time runs short,** cut delivery addresses first (shipments can be recorded without one, BR-28), then people's details. Three complete features remain.
 
@@ -147,7 +147,7 @@ Flows A, B, C, E, and F ([UX design §1](02-UX-DESIGN.md#1-user-flows)) work fro
 
 | # | Increment | Covers |
 | --- | --- | --- |
-| 6 | Requests and groups, complete | Link lookup, renaming, archiving, and deleting lists, several groups, member invitations, ownership transfer, editing reserved items, deleting people |
+| 6 | Requests and groups, complete | Link lookup, renaming, archiving, and deleting lists, several groups, ownership transfer, editing reserved items, deleting people |
 | 7 | Buying and shipping, complete | Undo and shipment editing |
 | 8 | Communication | WhatsApp buttons, Notify buyer, daily email |
 | 9 | Account lifecycle | Leaving and removing, account deletion, Report a problem, accessibility review |
@@ -246,7 +246,7 @@ Business rules are enforced on the server. The interface reflects them, but neve
   | Leave the group | ✔ (BR-07 for the owner) | ✔ |
   | View lists, items, delivery addresses, and the recipient details on each item | ✔ | ✔ |
   | Browse and manage the group's recipients | ✔ | ✖ |
-  | View the group's members and buyers | ✔ | ✖ |
+  | View the group's members, with their emails, and buyers, with their WhatsApp numbers | ✔ | ✖ |
   | Reserve items | ✔ | ✔ |
   | Release; mark as purchased, unavailable, or shipped; undo; edit the shipment | Items they reserved | Items they reserved |
   | Message on WhatsApp | ✔ | ✔ |
@@ -325,6 +325,7 @@ Business rules are enforced on the server. The interface reflects them, but neve
   | Field | Limit |
   | --- | --- |
   | Names of items, lists, groups, and recipients; address label; receiver's name | 1 to 100 characters |
+  | Invitee name | Optional; up to 100 characters |
   | Item notes, recipient notes, buyer note, "Couldn't buy it" note | Up to 1,000 characters |
   | Quantity | 1 to 99 |
   | Recipient details | Up to 20 per recipient; name up to 40 characters, value up to 150 |
@@ -349,8 +350,8 @@ Each requirement describes what users can do. The rules that apply are reference
 ### 13.2 Groups and invitations
 
 - **FR-05 Getting started and creating groups.** New users start with a group and a list, or join the group that invited them (BR-06). Any user can create a group from their profile (BR-07).
-- **FR-06 Invitations.** A member creates a member or buyer invitation and shares its link on WhatsApp or copies it. Members can see pending invitations and cancel them (BR-08, BR-09).
-- **FR-07 Members.** Members view and edit the group's lists, items, recipients, and delivery addresses, and can also buy for their own group without a separate invitation. Members can rename the group. The owner can remove members and transfer ownership (BR-07, BR-10, BR-12).
+- **FR-06 Invitations.** A member creates a member or buyer invitation, optionally giving the invitee's name, and shares its link on WhatsApp or copies it. Members can see pending invitations and cancel them (BR-08, BR-09, BR-32).
+- **FR-07 Members.** Members view and edit the group's lists, items, recipients, and delivery addresses, and can also buy for their own group without a separate invitation. In Group, they see each member's email and each buyer's WhatsApp number (BR-04). Members can rename the group. The owner can remove members and transfer ownership (BR-07, BR-10, BR-12).
 - **FR-08 Single interface.** The app has no mode switch. It shows each user the screens and actions their memberships allow (BR-12): someone who only buys sees the items to buy and their purchases; a member sees lists, recipients, and the group, plus their purchases while they have reserved or purchased items. A user with no remaining access to any group sees "You're not in any group yet." with a **Create a group** button and a note to ask for an invitation.
 
 ### 13.3 Recipients
@@ -422,7 +423,7 @@ Epics group the user stories into the product's main capabilities. Each epic sho
 | ID | Epic | Goal | User stories | Milestone 1 | Milestone 2 |
 | --- | --- | --- | --- | --- | --- |
 | E-01 | Accounts and sign-in | Anyone can join with Google and choose how the app reaches them | US-01 to US-03 | Sign-in, onboarding, and profile | Account deletion |
-| E-02 | Groups, invitations, and access | A family shares one space, invites buyers, and each person sees only what their role allows | US-04 to US-08 | The automatic group, buyer invitations, and permissions | Member invitations, ownership transfer, leaving and removing, and several groups |
+| E-02 | Groups, invitations, and access | A family shares one space, invites members and buyers, and each person sees only what their role allows | US-04 to US-08 | The automatic group, member and buyer invitations, and permissions | Ownership transfer, leaving and removing, and several groups |
 | E-03 | People | Members keep each recipient's sizes and preferences | US-09 | Recipients and their details | Deleting people |
 | E-04 | Requests | Members request items in seconds and keep their lists in order | US-10 to US-13 | Lists, quick add, the item form, and editing and deleting items | Link lookup, list management, and editing reserved items |
 | E-05 | Buying | Buyers find what to buy, and nobody buys the same item twice | US-14 to US-17 | To buy, reserve and release, purchase, couldn't buy it, and the timeline | Undo |
@@ -441,7 +442,7 @@ Each story links to the requirements that implement it and the acceptance criter
 | US-01 | new user | sign in with Google and find a group and a list ready | I can add my first request right away | FR-01 to FR-03, FR-05 | AC-01 to AC-03, AC-05 to AC-07, AC-98 |
 | US-02 | user | change my language, WhatsApp number, and email settings | the app reaches me the way I prefer | FR-04, FR-33, FR-37 | AC-04, AC-90 |
 | US-03 | user | delete my account | my personal data is erased without breaking my group's history | FR-04 | AC-08, AC-09 |
-| US-04 | member | invite relatives as members or buyers with a link I send on WhatsApp | they can join without searching for anything | FR-06, FR-17 | AC-10 to AC-16, AC-26 |
+| US-04 | member | invite relatives as members or buyers with a link I send on WhatsApp | they can join without searching for anything | FR-06, FR-17 | AC-10 to AC-16, AC-26, AC-100, AC-101 |
 | US-05 | owner | transfer ownership, remove members, and leave the group | the group keeps working when I step away | FR-07, FR-19 | AC-17, AC-19 to AC-21, AC-31 |
 | US-06 | user | create another group | I can keep separate groups for different parts of my family | FR-05 | AC-22 |
 | US-07 | user | see only the screens and actions my role allows | I never have to understand modes or permissions | FR-08, FR-18 | AC-18, AC-23 to AC-25, AC-27, AC-32 |
@@ -472,7 +473,7 @@ Each story links to the requirements that implement it and the acceptance criter
 - **Platform:** web application designed mobile-first, from 360 px wide, with a desktop layout ([UX design §2.2](02-UX-DESIGN.md#22-navigation)).
 - **Usability:** short flows, readable text, and large buttons for users with little digital experience; WCAG 2.1 AA ([UX design §2.8](02-UX-DESIGN.md#28-accessibility-language-and-responsive-behavior)).
 - **Security:** the practices in [Security and testing §1](07-SECURITY-AND-TESTING.md#1-security).
-- **Privacy:** collect the minimum. Recipient data (including data about minors) and delivery addresses are visible only to the group's members and buyers (BR-12). Account deletion erases personal data (BR-05). Data export is handled on request by email.
+- **Privacy:** collect the minimum. Recipient data (including data about minors) and delivery addresses are visible only to the group's members and buyers, and a member's email only to the members of their groups (BR-12). Account deletion erases personal data (BR-05). Data export is handled on request by email.
 - **Data from the link:** obtaining data from every store is not guaranteed. The lookup runs on the server under the limits in [Security and testing §1](07-SECURITY-AND-TESTING.md#1-security).
 - **Performance:** lists of up to 200 items load in under 2 seconds.
 - **Updates:** screens load fresh data when opened and when the user taps Refresh. There are no live updates; conflicting actions are refused on the server and the screen refreshes (BR-20, BR-23).
@@ -537,12 +538,14 @@ Each criterion has at least one automated test ([Security and testing §2](07-SE
 | # | Milestone | Given | When | Then |
 | --- | --- | --- | --- | --- |
 | AC-10 | M1 | A new user with a buyer invitation | Completes first sign-in and accepts | They join that group as a buyer and no group of their own is created (FR-05) |
+| AC-100 | M1 | A new user with a member invitation | Completes first sign-in and accepts | They join that group as a member, no group of their own is created, and they land on Lists (FR-05, FR-06) |
 | AC-11 | M1 | An invitation link older than 7 days | Someone opens it | They see a message asking for a new invitation (FR-06) |
 | AC-12 | M1 | An invitation already accepted | Someone else opens the same link | They see a message asking for a new invitation (FR-06) |
 | AC-13 | M1 | A cancelled invitation | Someone opens it | They see a message asking for a new invitation (FR-06) |
-| AC-14 | M2 | A buyer of the group | Accepts a member invitation to the same group | They become a member (FR-06) |
-| AC-15 | M1 | A member of the group | Opens a buyer invitation to the same group | They are told they already belong to the group, and the invitation stays valid (FR-06) |
+| AC-14 | M1 | A buyer of the group | Accepts a member invitation to the same group | They become a member (FR-06) |
+| AC-15 | M1 | A member of the group | Opens a member or buyer invitation to the same group | They are told they already belong to the group, and the invitation stays valid (FR-06) |
 | AC-16 | M1 | A buyer of the group | Sends a request to create an invitation | It is rejected (FR-06, BR-12) |
+| AC-101 | M1 | A member who creates a buyer invitation named Carlos | Opens Group | The pending invitations show Carlos, Buyer, and when it expires (FR-06) |
 | AC-17 | M2 | A member who is not the owner | Sends a request to remove a member or to transfer ownership | It is rejected (FR-07, BR-12) |
 | AC-18 | M2 | A buyer of the group | Sends a request to rename the group | It is rejected (FR-07, BR-12) |
 | AC-19 | M2 | An owner whose group has other members | Tries to leave the group | They are asked to transfer ownership first (FR-07) |
@@ -699,7 +702,7 @@ Each functional requirement, with the user stories, business rules, API endpoint
 | FR-03 Age declaration | US-01 | BR-01 | `/me/onboarding` | users | 1 |
 | FR-04 Profile | US-02, US-03 | BR-04, BR-05 | `/me` | users, accounts, sessions | 1 (account deletion: 9) |
 | FR-05 Getting started and creating groups | US-01, US-06 | BR-06, BR-07 | `/me/onboarding`, `/groups` | groups, memberships, lists | 2 (more groups: 6) |
-| FR-06 Invitations | US-04 | BR-08, BR-09 | `/groups/{groupId}/invitations`, `/invitations/{invitationId}`, `/invitations/by-code/{code}`, `…/accept` | invitations, memberships | 2 (member invitations: 6) |
+| FR-06 Invitations | US-04 | BR-08, BR-09, BR-32 | `/groups/{groupId}/invitations`, `/invitations/{invitationId}`, `/invitations/by-code/{code}`, `…/accept` | invitations, memberships | 2 |
 | FR-07 Members | US-05 | BR-07, BR-10, BR-12 | `/groups/{groupId}`, `…/owner`, `…/memberships/{userId}` | groups, memberships | 2 (rename and transfer: 6; removing: 9) |
 | FR-08 Single interface | US-07 | BR-12 | `/me` | memberships | 2 |
 | FR-09 Recipients | US-09 | BR-15 | `/groups/{groupId}/recipients`, `/recipients/{recipientId}` | recipients, items | 3 (deleting: 6) |

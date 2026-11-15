@@ -1,6 +1,6 @@
 # UX design
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.11 · **Date:** November 14, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.12 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -20,8 +20,8 @@ Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`
 3. If the link fails: "We couldn't read that link. No problem, we saved it anyway."
 
 **C. Invite**
-1. In Group, a member taps "Invite a member" or "Invite a buyer".
-2. WhatsApp opens with a message and the link. They can also copy the link.
+1. In Group, a member taps "Invite a member" or "Invite a buyer", can type the person's name, and taps **Create link**.
+2. They tap **Share on WhatsApp**, and WhatsApp opens with a message and the link ([section 2.6](#26-whatsapp-and-email-content)). They can also copy the link.
 3. The invitee opens the link, taps **Continue with Google**, completes step 2 of flow A, and accepts. They join that group, and no group of their own is created. A member lands on Lists; a buyer lands on To buy.
 4. If the link was used, expired, or cancelled (BR-08): "This invitation is no longer valid. Ask for a new one."
 5. If the user already belongs to the group with that access: "You're already in this group." (BR-09)
@@ -105,7 +105,7 @@ Header:  [García Group ▾]      ↻     (avatar)
 | 5 | Add or edit item | Members | Short form (see [section 2.4](#24-key-screens)) | 13, 14, 16 |
 | 6 | Item page | All | Item notes, person's details, status and timeline, buyer note, shipping details, WhatsApp, "Updated" marker for the buyer, and the actions the user can take (see [section 2.4](#24-key-screens) and [section 2.5](#25-item-statuses-and-actions)) | 15, 16, 22 to 26, 29 to 32, 34 |
 | 7 | People | Members | List of people, and a page for each with details, notes, and delete | 09, 10 |
-| 8 | Group | Members | Group name (rename), members, buyers, delivery addresses, invite, remove, transfer ownership | 06, 07, 17, 19, 27 |
+| 8 | Group | Members | Group name (rename), members, buyers, pending invitations, delivery addresses, invite, remove, transfer ownership | 06, 07, 17, 19, 27 |
 | 9 | To buy | Buyers | Pending items from their groups, grouped by person, filters by group and list | 18, 21, 24 |
 | 10 | My purchases | Buyers, and members with reserved or purchased items | Reserved and purchased items; select purchased items to ship them together | 25, 29, 31 |
 | 11 | Mark as shipped | The item's buyer | Sheet with delivery address, ship date, shipping agency, and service (see [section 2.4](#24-key-screens)); also used to edit a shipment | 28, 29 |
@@ -168,7 +168,16 @@ An item has six fields and a person has three.
 
 **Person page (member):** name, a list of "detail and value" rows with an "Add detail" button (e.g. Shoe: 4), and a notes field. When a person is created, "Clothing", "Shoe", and "Allergies" are suggested as examples and can be deleted. Members can delete a person (BR-15).
 
-**Delivery addresses (member, in Group):** a list showing each address's place name, receiver, and a "Default" tag. **Add address** opens a form with Place name (e.g. "Grandma's house"), Receiver's name, Phone, Address (several lines of free text), and Country. Tapping an address lets members edit it, delete it, or make it the default. Buyers see the addresses but cannot change them (BR-27).
+**Group (member):**
+
+- The group name, with the subtitle "Shared family shopping space · Managed by {name}" under it, naming the owner.
+- **Invite a member** and **Invite a buyer**. Either one opens a sheet with the field "Who are you inviting? (optional)" (BR-32) and **Create link**; the sheet then shows the link, **Share on WhatsApp**, **Copy link**, and when the link expires (BR-08).
+- The pending invitations. Each row shows the invitee's name, or the invitation type when it has no name, then "Invited as {type}", when it expires, and **Cancel invitation**.
+- The members, each with their email, and an **Owner** tag on the owner.
+- The buyers, each with their WhatsApp number (BR-04).
+- The delivery addresses, below.
+
+**Delivery addresses (member, in Group):** a card for each address, showing its place name, receiver, phone, address, and country, and a "Default" tag on the default. **Add address** opens a form with Place name (e.g. "Grandma's house"), Receiver's name, Phone, Address (several lines of free text), and Country. Country offers every country, with names from the translation files, and is stored as its ISO 3166-1 alpha-2 code ([Data model §2](04-DATA-MODEL.md#2-entities)). Each card has **Edit**, which opens the same form with the saved values, **Make default** on the cards that aren't the default, and **Delete**; the default address can't be deleted while the group has other addresses (BR-27). The form has no default option: the default changes only through **Make default**. Buyers see the addresses but cannot change them (BR-12).
 
 **Item page (all users, mobile)**
 
@@ -285,6 +294,9 @@ The same page serves everyone. The example shows the buyer who reserved the item
   - EN: "Hi, I'm writing about "Sports shoes" for Anthony: {link}"
   - ES: «Hola, te escribo por "Zapatos deportivos" para Anthony: {enlace}»
 - **Who receives it:** BR-30. When the user has to choose, a short picker lists the names.
+- **Invitation message** (**Share on WhatsApp**, flow C), in the inviting member's language:
+  - EN: "Hi {name}, {inviter} invited you to {group} on ComproParaTi as a {type}: {link}". Without an invitee name, it starts "Hi,".
+  - ES: «Hola {nombre}, {invitador} te invitó a {grupo} en ComproParaTi como {tipo}: {enlace}». Without an invitee name, it starts «Hola,».
 - **Reminder** under the button: "If you agree on a change, write it in the item's notes."
 - **Daily email (FR-36, BR-31):** subject "Updates in {group}", one line per item grouped by Purchased, Shipped, and Unavailable, and a **View list** button. Turned on or off with one switch in Profile.
 
@@ -295,6 +307,7 @@ The same page serves everyone. The example shows the buyer who reserved the item
 - **No delivery address:** Group shows "Add where things should be sent". In the shipping sheet the buyer sees "This group has no delivery address yet" with a "Message on WhatsApp" button, and can still mark the items as shipped.
 - **Loading:** skeletons in lists and in the link preview.
 - **Errors with a way out:** "Couldn't save. Check your connection and try again", keeping what the user typed.
+- **Success toast:** a short message confirms each of these actions in Group: an invitation created or cancelled, and an address saved, deleted, or made the default ([section 2.10](#210-spanish-interface-strings)). On phones it appears above the bottom bar. It has a **Close** button, is announced politely to screen readers, and closes after about 5 seconds, waiting while the pointer is over it or it has focus. Errors never use a toast; they stay inline, as described in this section.
 - **No access (BR-13):** "This page isn't available." with a button back to the main screen.
 - **No groups:** a user with no remaining group access sees "You're not in any group yet.", a **Create a group** button, and "Ask someone to invite you." above every screen. If they still have purchased items to ship (BR-11), they also get My purchases, which is their main screen; otherwise their main screen is Profile.
 - **Session expired (BR-03):** after signing in again, the user is back on the same screen with their text filled in.
@@ -350,6 +363,19 @@ The same page serves everyone. The example shows the buyer who reserved the item
 | Member / Buyer | Miembro / Comprador |
 | Invite a member | Invitar a un miembro |
 | Invite a buyer | Invitar a un comprador |
+| Shared family shopping space · Managed by {name} | Espacio compartido de compras familiares · A cargo de {nombre} |
+| Owner | Propietario |
+| Who are you inviting? (optional) | ¿A quién invitas? (opcional) |
+| Create link | Crear enlace |
+| Share on WhatsApp | Compartir por WhatsApp |
+| Copy link | Copiar enlace |
+| Pending invitations ({count}) | Invitaciones pendientes ({count}) |
+| Invited as {type} | Invitado como {tipo} |
+| Expires in {count} days | Expira en {count} días |
+| Expires today | Expira hoy |
+| Cancel invitation | Cancelar invitación |
+| Invitation created | Invitación creada |
+| Invitation cancelled | Invitación cancelada |
 | Create a group | Crear un grupo |
 | {First name}'s group | Grupo de {nombre} |
 | My list | Mi lista |
@@ -380,6 +406,10 @@ The same page serves everyone. The example shows the buyer who reserved the item
 | Address | Dirección |
 | Country | País |
 | Default | Predeterminada |
+| Make default | Hacer predeterminada |
+| Address saved | Dirección guardada |
+| Address deleted | Dirección eliminada |
+| {place} is now the default address | {lugar} es ahora la dirección predeterminada |
 | Copy | Copiar |
 | Add where things should be sent | Agrega a dónde enviar las cosas |
 | This group has no delivery address yet | Este grupo todavía no tiene dirección de entrega |

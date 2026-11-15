@@ -104,7 +104,7 @@ spacing:
 
 # Design system: Warm Utilitarian Care
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.4 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.5 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](readme.md)). This document owns the visual design: tokens, components, and layout. Behavior, screens, and interface text are defined in [UX design](docs/02-UX-DESIGN.md) and the [PRD](docs/01-PRD.md); where they differ from this document or from the Stitch screens, they take precedence.
 
@@ -248,6 +248,12 @@ Every interactive element shows a visible focus ring on keyboard focus: `focus-v
 - **Bottom Sheets**: `16px` top corners, a `36px × 5px` `#94A3B8` handle, a close button, and the confirm button fixed at the bottom. On desktop they open as centered dialogs.
 - **Sheet Focus**: When a sheet opens, at every screen size, keyboard focus goes to its close button. Below 768px, a sheet never moves first focus to a text field, because the on-screen keyboard would cover the sheet. First focus is never on a destructive action.
 
+### Toast
+Confirms an action that succeeded, with the message that action defines; when it appears and how long it stays are in [UX §2.7](docs/02-UX-DESIGN.md#27-empty-states-loading-and-errors). Errors never use a toast. Built in `src/components/ui/toast.tsx` on the Toast primitive in `radix-ui`.
+- **Style**: Accent surface `#ECFDF5`, `#065F46` text and check icon, `lg` (`12px`) radius, `12px 16px` padding, `body-md` text, and the Level 2 shadow.
+- **Placement**: Below 768px, full width inside the `16px` page margins, `16px` above the bottom bar. From 768px, at the bottom right of the content area, up to `400px` wide and `24px` from its edges. One toast at a time; a new one replaces the last.
+- **Close**: A **Cerrar** button with an X icon and its text, at least `48px × 48px`.
+
 ## Using the Stitch Screens
 
 The folders in [design/stitch/](design/stitch/) are screens exported from Google Stitch. They show the look and layout of each screen and the components in use. They are a **visual reference only**:
@@ -267,12 +273,13 @@ The folders in [design/stitch/](design/stitch/) are screens exported from Google
 | 6 | Item page | `06-item-page` | None. The "Estado simulado" switcher shows the variants for each status and role. |
 | 7 | People (list) | `07-person-list` | None. |
 | 7 | People (person page) | `07-person-detail` | The notes limit is 1,000 characters, not 300 (BR-32). Suggested details are Ropa, Calzado, and Alergias. The rule ID shown in the delete section. |
-| 8 | Group | `08-group` | The "Propietaria" tag overflows its row. |
+| 8 | Group | `08-group` | The "Propietaria" tag overflows its row. The milestone 2 controls: **Editar** on the group name and its dialog, **Hacer propietario**, **Quitar** on members and buyers, and "Ajustes avanzados del grupo" with **Transferir propiedad del grupo** and its dialog. The invite sheet has no invitee name field; add it as UX §2.4 describes. The subtitle's text follows UX §2.10. The toast sits at the top, on a dark surface, with a small close button and the generic text "Operación realizada con éxito"; follow [Toast](#toast), with each action's own message. |
+| 8 | Group: address form | `08-group` (sheet `addAddressModal`) | **+ Agregar dirección** opens it to add an address, and **Editar** to edit one. Ignore the "Establecer como dirección predeterminada" checkbox (the default changes only from the card, UX §2.4), the plain phone input (the app uses `PhoneField`), the five-country list (UX §2.4 offers every country), and the draft labels and placeholders. |
 | 9 | To buy | `09-to-buy` | The relationship tag ("Hijo"). |
 | 10 | My purchases | `10-my-purchases` | The relationship in "(Nieto)"; quantities with units ("1 par", "1 frasco"). |
 | 11 | Mark as shipped | `11-mark-as-shipped` | The screenshot renders in a fallback serif font. |
 | 12 | Profile | `12-profile` | The "img" placeholder and the "Conectada" badge in the header; the group row is truncated. |
 
-Screens and states with no Stitch design, such as the address form, the "No lo pude comprar" sheet, and the empty, loading, and error states, are built from UX §2.4 and §2.7 with these components.
+Screens and states with no Stitch design, such as the "No lo pude comprar" sheet, and the empty, loading, and error states, are built from UX §2.4 and §2.7 with these components.
 
 [design/screens.md](design/screens.md) maps each screen and state to its route, components, Stitch folder, and design ticket, and says how far the built screen is from its Stitch screen.
