@@ -14,7 +14,8 @@ import { cn } from "./ui/utils";
 //
 // The compact look is the pill on Welcome (design/stitch/01-welcome): the
 // "Language" legend is read by screen readers only, and the current choice is a
-// white pill with a check mark. Each choice is still at least 48px tall.
+// white pill with a check mark. Each choice is still at least 48px tall, and
+// the two are 8px apart (DESIGN.md, Touch and Interaction Targets).
 
 const styles = {
   default: {
@@ -28,8 +29,8 @@ const styles = {
   compact: {
     legend: "sr-only",
     track:
-      "border-border bg-muted inline-flex gap-1 rounded-full border-[1.5px] p-1",
-    option: "rounded-full pr-5 pl-4",
+      "border-border bg-muted inline-flex gap-2 rounded-full border-[1.5px] p-1",
+    option: "rounded-full pr-5 pl-4 transition-colors",
     current: "bg-card text-foreground shadow-card",
     other: "text-muted-foreground hover:bg-card/70 hover:text-foreground",
     check: "text-primary",
@@ -64,7 +65,7 @@ export function LanguageSwitch({
             key={language}
             lang={language}
             className={cn(
-              "text-label-lg has-[:focus-visible]:ring-ring flex min-h-12 cursor-pointer items-center justify-center gap-2 font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-offset-2",
+              "text-label-lg has-[:focus-visible]:ring-ring flex min-h-12 cursor-pointer items-center justify-center gap-2 font-semibold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-offset-2",
               look.option,
               current === language ? look.current : look.other,
               disabled && "cursor-not-allowed opacity-60",
