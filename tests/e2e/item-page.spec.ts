@@ -5,6 +5,7 @@ import {
   addMember,
   createItem,
   expectNoAccessibilityViolations,
+  expectNoAccessibilityViolationsAfterRefresh,
   type Language,
   messages,
   myGroup,
@@ -321,7 +322,13 @@ test.describe("languages and accessibility", () => {
       await expect(page.getByRole("main").getByRole("alert")).toContainText(
         t.errors.ITEM_CHANGED,
       );
-      await expectNoAccessibilityViolations(page);
+      // The refusal refreshes the screen to show the latest (BR-20), and the
+      // message stays.
+      await expect(screen.item).toContainText(t.status.reserved);
+      await expect(page.getByRole("main").getByRole("alert")).toContainText(
+        t.errors.ITEM_CHANGED,
+      );
+      await expectNoAccessibilityViolationsAfterRefresh(page);
 
       const deleted = await createItem(page, listId, { name: "Gone" });
       const response = await page.request.delete(

@@ -5,6 +5,7 @@ import {
   createItem,
   createList,
   expectNoAccessibilityViolations,
+  expectNoAccessibilityViolationsAfterRefresh,
   type Language,
   messages,
   myGroup,
@@ -354,7 +355,7 @@ test.describe("languages and accessibility", () => {
       await fields.notes.fill("Lactose free");
       await fields.save.click();
       await expect(fields.alert).toContainText(fields.t.errors.ITEM_CHANGED);
-      await expectNoAccessibilityViolations(page);
+      await expectNoAccessibilityViolationsAfterRefresh(page);
 
       await page.route("**/api/v1/items/*", (route) => route.abort());
       await fields.save.click();

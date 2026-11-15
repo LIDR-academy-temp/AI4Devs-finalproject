@@ -87,6 +87,18 @@ export async function expectNoAccessibilityViolations(page: Page) {
 }
 
 /**
+ * Like `expectNoAccessibilityViolations`, for a screen that a refused change
+ * is refreshing to show the latest (BR-20). While the refresh renders, the
+ * page has no title for a moment, so the checks run again until the refresh
+ * settles; a violation that stays still fails.
+ */
+export async function expectNoAccessibilityViolationsAfterRefresh(page: Page) {
+  await expect(() => expectNoAccessibilityViolations(page)).toPass({
+    timeout: 5_000,
+  });
+}
+
+/**
  * Holds back the server's answer for screens whose address matches `url`, so
  * their loading state stays on screen until `release` is called. Prefetches
  * go through at once: they bring the loading state itself.
