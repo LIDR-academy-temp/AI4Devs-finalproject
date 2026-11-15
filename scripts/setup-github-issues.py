@@ -5,7 +5,7 @@ Reads docs/01-PRD.md (epics, user stories) and docs/08-WORK-TICKETS.md (tickets)
 and creates, in the repository:
   - labels: story, task, m1, m2
   - milestones: D1, D2, D3 (course deliveries) and M2 (complete MVP)
-  - one issue per user story (26) and per milestone 1 ticket (33)
+  - one issue per user story (26) and per milestone 1 ticket (34)
   - each ticket as a sub-issue of its main story
   - a GitHub Project linked to the repository, holding the tickets
 
