@@ -93,8 +93,11 @@ def principal(argumentos: list[str] | None = None) -> int:
 
     # SAT2_MODO del entorno pisa al de .env: la copia nunca arranca en modo real.
     # Mailpit en otro puerto, para no chocar con el de la instalación real.
+    # ARCHIVO_ENV: el worker de la copia no carga el .env real, porque en modo prueba no consulta SAT2
+    # (weather-track-aislamiento-env).
     entorno = {
         **os.environ,
+        "ARCHIVO_ENV": ".env.example",
         "SAT2_MODO": "prueba",
         "PUERTO_WEB": args.puerto,
         "PUERTO_CORREO": "8029",

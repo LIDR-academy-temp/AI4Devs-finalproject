@@ -11,7 +11,7 @@ Weather Track responde una sola pregunta: ¿se puede aplicar fitosanitarios ahor
 
 ## Qué señalar primero
 
-1. **Seguridad.** Un `.env` o un `.env.*` que no sea `.env.example`; la URL, credenciales o tokens de SAT2; contenido de `privado/`; claves o contraseñas en el código, las pruebas o los registros. El repositorio es público.
+1. **Seguridad.** Un `.env` o un `.env.*` que no sea `.env.example`; la URL, credenciales o tokens de SAT2; contenido de `privado/`; claves o contraseñas en el código, las pruebas o los registros. Una herramienta o una guía que levanta una pila aislada con `docker compose -p` sin fijar `ARCHIVO_ENV`: su worker cargaría el `.env` real. El repositorio es público.
 2. **Reglas del dominio.** Umbrales repetidos fuera de su único lugar, unidades que no son métricas (km/h, °C, W/m²), pesos o cortes del índice TIS que cambian sin una versión nueva del método, la regla de vigencia R2 aplicada al guardar en lugar de al leer, y estaciones ficticias usadas como casos de prueba o como permisos.
 3. **Contrato de la API.** Una ruta, un esquema o un código de error que cambia sin regenerar `frontend/openapi.json` y `frontend/src/servicios/api-tipos.ts`.
 4. **Migraciones.** Un cambio en `backend/app/datos/modelos.py` sin una migración nueva de Alembic con `upgrade` y `downgrade`.

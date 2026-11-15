@@ -180,3 +180,26 @@ def test_grafana_no_recibe_credenciales_de_sat2(tmp_path):
 def test_las_imagenes_del_monitoreo_tienen_version_fija(tmp_path, servicio):
     imagen = servicios(tmp_path, *LOCAL, perfiles=MONITOREO)[servicio]["image"]
     assert re.fullmatch(r"[a-z/]+:v?\d+\.\d+\.\d+", imagen), imagen
+
+
+def entorno_del_worker(tmp_path, variables):
+    """El entorno del worker con un `.env` y otro archivo de marca, ambos ficticios (weather-track-aislamiento-env)."""
+    (tmp_path / ".env").write_text("MARCA_ENV_REAL=1\n", encoding="utf-8")
+    (tmp_path / "aislado.env").write_text("MARCA_ENV_AISLADO=1\n", encoding="utf-8")
+    resultado = configuracion(tmp_path, {**COMPLETAS, **variables}, *LOCAL)
+    assert resultado.returncode == 0, resultado.stderr
+    return json.loads(resultado.stdout)["services"]["worker"].get("environment") or {}
+
+
+def test_la_instalacion_real_sigue_leyendo_su_env(tmp_path):
+    entorno = entorno_del_worker(tmp_path, {})
+
+    assert "MARCA_ENV_REAL" in entorno
+    assert "MARCA_ENV_AISLADO" not in entorno
+
+
+def test_una_pila_aislada_lee_solo_su_archivo(tmp_path):
+    entorno = entorno_del_worker(tmp_path, {"ARCHIVO_ENV": "aislado.env"})
+
+    assert "MARCA_ENV_AISLADO" in entorno
+    assert "MARCA_ENV_REAL" not in entorno

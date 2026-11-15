@@ -12,7 +12,8 @@ export const EMAIL_E2E = 'e2e@weathertrack.example'
 /**
  * Siempre sobre el proyecto `wt-e2e`, con su propia base: `cierre-global` la borra, y así
  * nunca toca el proyecto por defecto, que guarda los datos reales. Las variables del proceso
- * ganan sobre las del archivo, y `--env-file` evita que Compose lea el `.env` real.
+ * ganan sobre las del archivo. `--env-file` cambia la interpolación de Compose, y `ARCHIVO_ENV`
+ * evita que el worker cargue el `.env` real (weather-track-aislamiento-env).
  */
 export function compose(...argumentos: string[]): string {
   return execFileSync(
@@ -24,6 +25,7 @@ export function compose(...argumentos: string[]): string {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
+        ARCHIVO_ENV: '.env.example',
         SAT2_MODO: 'prueba',
         PUERTO_WEB: PUERTO,
         PUERTO_CORREO: PUERTO_CORREO,

@@ -10,6 +10,7 @@ a SAT2. Nunca muestra claves ni identificadores de sesión. Termina con código 
 
 import concurrent.futures
 import json
+import os
 import pathlib
 import re
 import secrets
@@ -78,6 +79,8 @@ def compose(archivo, *args):
     return subprocess.run(
         ["docker", "compose", "-p", "wt-seg", "--env-file", archivo, "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", *args],
         cwd=RAIZ, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
+        # El worker carga el archivo de ARCHIVO_ENV: el descartable de esta pila, nunca el .env real.
+        env={**os.environ, "ARCHIVO_ENV": archivo},
     )
 
 

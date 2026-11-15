@@ -92,7 +92,8 @@ GitHub Copilot revisa cada pull request a `main` con `.github/copilot-instructio
 - **Las rutas de administración responden 404 a quien no tiene el rol**, igual que una ruta inexistente, y nunca devuelven ni registran la URL, el usuario o la contraseña de SAT2.
 - **Las respuestas reales de SAT2 las captura el responsable** con `herramientas.capturar_sat2`, que las sanea. Antes de leer `backend/tests/datos_sat2/respuestas.json`, el asistente corre la búsqueda de URL, correos y tokens; nunca la saltea ni muestra un valor que la búsqueda haya marcado. Si se vuelve a capturar, se regenera `herramientas/forma_sat2.json`.
 - **Las métricas del worker nunca se publican fuera de la red de Compose, y Grafana solo escucha en `127.0.0.1`.** Ninguna alerta, correo de alerta ni métrica lleva correos de cuentas, direcciones IP ni credenciales.
-- **Toda verificación con Docker usa un proyecto aislado:** `docker compose -p <nombre>` en modo simulado. El archivo de Compose fija `name: weather-track`, así que sin `-p` los comandos actúan sobre la instalación real.
+- **Toda verificación con Docker usa un proyecto aislado:** `ARCHIVO_ENV=.env.example docker compose -p <nombre> --env-file .env.example`, en modo simulado o de prueba. El archivo de Compose fija `name: weather-track`, así que sin `-p` los comandos actúan sobre la instalación real. Sin `ARCHIVO_ENV`, el worker de la pila aislada carga el `.env` real, porque `--env-file` solo cambia la interpolación. `test_pilas_aisladas.py` lo exige en las herramientas.
+- **Nunca ejecutar `docker compose config` en la carpeta del repositorio:** incluye en su salida el contenido del `.env`.
 - **Nunca ejecutar `docker compose down -v` sobre el proyecto por defecto:** borra el volumen con los datos reales.
 - No repetir en el chat claves de demostración ni de pruebas.
 - Antes de cada commit, revisar que no entren `.env`, `privado/`, entornos virtuales, `node_modules`, salidas de pruebas ni textos con forma de token.

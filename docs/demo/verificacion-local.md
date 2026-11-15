@@ -4,10 +4,10 @@ Lista corta para que el responsable revise la aplicación local antes de aprobar
 
 ## Levantarla
 
-Se usa un proyecto aparte, `wt-revision`, con otros puertos, para no mezclarlo con la instalación real:
+Se usa un proyecto aparte, `wt-revision`, con otros puertos, para no mezclarlo con la instalación real. `ARCHIVO_ENV` evita que su worker cargue el `.env` real, con las credenciales de SAT2:
 
 ```bash
-PUERTO_WEB=8090 PUERTO_CORREO=8027 docker compose -p wt-revision --env-file .env.example up --build -d --wait
+ARCHIVO_ENV=.env.example PUERTO_WEB=8090 PUERTO_CORREO=8027 docker compose -p wt-revision --env-file .env.example up --build -d --wait
 ```
 
 - Aplicación: <http://localhost:8090>

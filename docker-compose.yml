@@ -81,8 +81,10 @@ services:
     # El volumen de la base, solo para medir su espacio libre (weather-track-monitoreo).
     volumes:
       - datos_db:/datos_db:ro
+    # Una pila aislada fija ARCHIVO_ENV con un archivo sin credenciales reales: --env-file solo cambia
+    # la interpolación, no lo que recibe el servicio (weather-track-aislamiento-env).
     env_file:
-      - path: .env
+      - path: ${ARCHIVO_ENV:-.env}
         required: false
         format: raw
     environment:
