@@ -1,12 +1,12 @@
 "use client";
 
-import { clsx } from "clsx";
 import { ShoppingBagIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useLayoutEffect, useRef } from "react";
 
+import { cn } from "@/components/ui/utils";
 import { type Tab, TAB_PATHS } from "@/shared/navigation";
 
 import { TAB_ICONS } from "./tab-icons";
@@ -82,12 +82,10 @@ export function TabNav({ tabs }: { tabs: readonly Tab[] }) {
               key={tab}
               className="min-w-12 flex-[1_1_min-content] md:flex-none"
             >
-              {/* clsx, not cn: tailwind-merge takes text-body-md for a color
-                  and would drop it next to text-primary. */}
               <Link
                 href={path}
                 aria-current={current ? "page" : undefined}
-                className={clsx(
+                className={cn(
                   "text-body-md focus-visible:ring-ring relative flex min-h-16 flex-col items-center justify-center gap-1 px-1.25 py-2 text-center leading-tight outline-none focus-visible:ring-2 focus-visible:ring-inset md:min-h-12 md:flex-row md:justify-start md:gap-3 md:rounded-lg md:px-4 md:text-left md:focus-visible:ring-offset-2",
                   current
                     ? "text-primary md:bg-accent font-bold"
