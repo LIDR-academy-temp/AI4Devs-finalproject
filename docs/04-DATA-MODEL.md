@@ -1,6 +1,6 @@
 # Data model
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.7 · **Date:** November 10, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.8 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -105,6 +105,7 @@ erDiagram
         uuid id PK
         uuid group_id FK
         enum type "member or buyer"
+        varchar invitee_name "optional"
         varchar code UK
         enum status "pending, accepted, cancelled"
         uuid created_by FK
@@ -329,6 +330,7 @@ Deleting a group deletes its memberships, invitations, recipients, lists, items,
 | id | uuid | PK | |
 | group_id | uuid | FK groups, not null, on delete cascade | |
 | type | membership_type | Not null | |
+| invitee_name | varchar(100) | Nullable | The name the member gave for the person invited (BR-32); shown on Group and in the WhatsApp message |
 | code | varchar(43) | Unique, not null | 256 random bits, URL-safe; the secret part of the link |
 | status | invitation_status | Not null, default pending | An invitation past `expires_at` is treated as expired |
 | created_by | uuid | FK users, not null | Shown on the invitation screen |
@@ -447,4 +449,4 @@ The seed script loads the same data for local development and automated tests. I
 - **Items in every status:** pending, reserved by Juan, purchased by Juan with a buyer note, purchased by Pedro, shipped in a two-item shipment, and unavailable with a note. One item has no recipient.
 - **Delivery addresses:** "Grandma's house" (default) and "Mom's house".
 - **Pérez Group**, owned by Luis, with one item, for cross-group access tests.
-- **Invitations:** one pending, one expired, one already accepted, and one cancelled.
+- **Invitations:** one pending, as a buyer, for Carlos; one expired; one already accepted; and one cancelled. Only the pending one has an invitee name.
