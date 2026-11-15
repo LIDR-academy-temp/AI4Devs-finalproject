@@ -177,7 +177,7 @@ An item has six fields and a person has three.
 - The buyers, each with their WhatsApp number (BR-04).
 - The delivery addresses, below.
 
-**Delivery addresses (member, in Group):** a card for each address, showing its place name, receiver, phone, address, and country, and a "Default" tag on the default. **Add address** opens a form with Place name (e.g. "Grandma's house"), Receiver's name, Phone, Address (several lines of free text), and Country. Country offers every country, with names from the translation files, and is stored as its ISO 3166-1 alpha-2 code ([Data model §2](04-DATA-MODEL.md#2-entities)). Each card has **Edit**, which opens the same form with the saved values, **Make default** on the cards that aren't the default, and **Delete**; the default address can't be deleted while the group has other addresses (BR-27). The form has no default option: the default changes only through **Make default**. Buyers see the addresses but cannot change them (BR-12).
+**Delivery addresses (member, in Group):** a card for each address, showing its place name, receiver, phone, address, and country, and a "Default" tag on the default. **+ Add address** opens a form with Place name (e.g. "Grandma's house"), Receiver's name, Phone, Address (several lines of free text), and Country. Country offers every country, with names from the translation files, and is stored as its ISO 3166-1 alpha-2 code ([Data model §2](04-DATA-MODEL.md#2-entities)). Each card has **Edit**, which opens the same form with the saved values, **Make default** on the cards that aren't the default, and **Delete**, which follows BR-27 for the default address. The form has no default option: the default changes only through **Make default**. Buyers see the addresses but cannot change them (BR-12).
 
 **Item page (all users, mobile)**
 
@@ -295,8 +295,8 @@ The same page serves everyone. The example shows the buyer who reserved the item
   - ES: «Hola, te escribo por "Zapatos deportivos" para Anthony: {enlace}»
 - **Who receives it:** BR-30. When the user has to choose, a short picker lists the names.
 - **Invitation message** (**Share on WhatsApp**, flow C), in the inviting member's language:
-  - EN: "Hi {name}, {inviter} invited you to {group} on ComproParaTi as a {type}: {link}". Without an invitee name, it starts "Hi,".
-  - ES: «Hola {nombre}, {invitador} te invitó a {grupo} en ComproParaTi como {tipo}: {enlace}». Without an invitee name, it starts «Hola,».
+  - EN: "Hi {name}, {inviter} invited you to {group} on ComproParaTi as a {type}: {link}", with the type in lowercase (member or buyer). Without an invitee name, it starts "Hi,".
+  - ES: «Hola {nombre}, {invitador} te invitó a {grupo} en ComproParaTi como {tipo}: {enlace}», with the type in lowercase (miembro o comprador). Without an invitee name, it starts «Hola,».
 - **Reminder** under the button: "If you agree on a change, write it in the item's notes."
 - **Daily email (FR-36, BR-31):** subject "Updates in {group}", one line per item grouped by Purchased, Shipped, and Unavailable, and a **View list** button. Turned on or off with one switch in Profile.
 
@@ -307,7 +307,7 @@ The same page serves everyone. The example shows the buyer who reserved the item
 - **No delivery address:** Group shows "Add where things should be sent". In the shipping sheet the buyer sees "This group has no delivery address yet" with a "Message on WhatsApp" button, and can still mark the items as shipped.
 - **Loading:** skeletons in lists and in the link preview.
 - **Errors with a way out:** "Couldn't save. Check your connection and try again", keeping what the user typed.
-- **Success toast:** a short message confirms each of these actions in Group: an invitation created or cancelled, and an address saved, deleted, or made the default ([section 2.10](#210-spanish-interface-strings)). On phones it appears above the bottom bar. It has a **Close** button, is announced politely to screen readers, and closes after about 5 seconds, waiting while the pointer is over it or it has focus. Errors never use a toast; they stay inline, as described in this section.
+- **Success toast:** a short message confirms each of these actions in Group: an invitation cancelled, and an address saved, deleted, or made the default. Creating an invitation has no toast, because the sheet already shows the new link ([section 2.10](#210-spanish-interface-strings)). On phones it appears above the bottom bar. It has a **Close** button, is announced politely to screen readers, and closes after about 5 seconds, waiting while the pointer is over it or it has focus. Errors never use a toast; they stay inline, as described in this section.
 - **No access (BR-13):** "This page isn't available." with a button back to the main screen.
 - **No groups:** a user with no remaining group access sees "You're not in any group yet.", a **Create a group** button, and "Ask someone to invite you." above every screen. If they still have purchased items to ship (BR-11), they also get My purchases, which is their main screen; otherwise their main screen is Profile.
 - **Session expired (BR-03):** after signing in again, the user is back on the same screen with their text filled in.
@@ -371,10 +371,10 @@ The same page serves everyone. The example shows the buyer who reserved the item
 | Copy link | Copiar enlace |
 | Pending invitations ({count}) | Invitaciones pendientes ({count}) |
 | Invited as {type} | Invitado como {tipo} |
+| Expires in 1 day | Expira en 1 día |
 | Expires in {count} days | Expira en {count} días |
 | Expires today | Expira hoy |
 | Cancel invitation | Cancelar invitación |
-| Invitation created | Invitación creada |
 | Invitation cancelled | Invitación cancelada |
 | Create a group | Crear un grupo |
 | {First name}'s group | Grupo de {nombre} |
@@ -398,7 +398,7 @@ The same page serves everyone. The example shows the buyer who reserved the item
 | Ship N selected | Enviar N seleccionados |
 | Same shipment | Mismo envío |
 | Delivery addresses | Direcciones de entrega |
-| Add address | Agregar dirección |
+| + Add address | + Agregar dirección |
 | Ship to | Enviar a |
 | Place name | Nombre del lugar |
 | Receiver's name | Nombre de quien recibe |

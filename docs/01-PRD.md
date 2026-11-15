@@ -351,7 +351,7 @@ Each requirement describes what users can do. The rules that apply are reference
 
 - **FR-05 Getting started and creating groups.** New users start with a group and a list, or join the group that invited them (BR-06). Any user can create a group from their profile (BR-07).
 - **FR-06 Invitations.** A member creates a member or buyer invitation, optionally giving the invitee's name, and shares its link on WhatsApp or copies it. Members can see pending invitations and cancel them (BR-08, BR-09, BR-32).
-- **FR-07 Members.** Members view and edit the group's lists, items, recipients, and delivery addresses, and can also buy for their own group without a separate invitation. In Group, they see each member's email and each buyer's WhatsApp number (BR-04). Members can rename the group. The owner can remove members and transfer ownership (BR-07, BR-10, BR-12).
+- **FR-07 Members.** Members view and edit the group's lists, items, recipients, and delivery addresses, and can also buy for their own group without a separate invitation. In Group, they see each member's email and each buyer's WhatsApp number (BR-04, BR-12). Members can rename the group. The owner can remove members and transfer ownership (BR-07, BR-10, BR-12).
 - **FR-08 Single interface.** The app has no mode switch. It shows each user the screens and actions their memberships allow (BR-12): someone who only buys sees the items to buy and their purchases; a member sees lists, recipients, and the group, plus their purchases while they have reserved or purchased items. A user with no remaining access to any group sees "You're not in any group yet." with a **Create a group** button and a note to ask for an invitation.
 
 ### 13.3 Recipients
@@ -442,7 +442,7 @@ Each story links to the requirements that implement it and the acceptance criter
 | US-01 | new user | sign in with Google and find a group and a list ready | I can add my first request right away | FR-01 to FR-03, FR-05 | AC-01 to AC-03, AC-05 to AC-07, AC-98 |
 | US-02 | user | change my language, WhatsApp number, and email settings | the app reaches me the way I prefer | FR-04, FR-33, FR-37 | AC-04, AC-90 |
 | US-03 | user | delete my account | my personal data is erased without breaking my group's history | FR-04 | AC-08, AC-09 |
-| US-04 | member | invite relatives as members or buyers with a link I send on WhatsApp | they can join without searching for anything | FR-06, FR-17 | AC-10 to AC-16, AC-26, AC-100, AC-101 |
+| US-04 | member | invite relatives as members or buyers with a link I send on WhatsApp | they can join without searching for anything | FR-06, FR-17 | AC-10 to AC-16, AC-26, AC-100 to AC-102 |
 | US-05 | owner | transfer ownership, remove members, and leave the group | the group keeps working when I step away | FR-07, FR-19 | AC-17, AC-19 to AC-21, AC-31 |
 | US-06 | user | create another group | I can keep separate groups for different parts of my family | FR-05 | AC-22 |
 | US-07 | user | see only the screens and actions my role allows | I never have to understand modes or permissions | FR-08, FR-18 | AC-18, AC-23 to AC-25, AC-27, AC-32 |
@@ -546,6 +546,7 @@ Each criterion has at least one automated test ([Security and testing §2](07-SE
 | AC-15 | M1 | A member of the group | Opens a member or buyer invitation to the same group | They are told they already belong to the group, and the invitation stays valid (FR-06) |
 | AC-16 | M1 | A buyer of the group | Sends a request to create an invitation | It is rejected (FR-06, BR-12) |
 | AC-101 | M1 | A member who creates a buyer invitation named Carlos | Opens Group | The pending invitations show Carlos, Buyer, and when it expires (FR-06) |
+| AC-102 | M1 | A buyer of the group | Sends a request for the group | The response has no members' emails and no buyers' WhatsApp numbers (FR-07, BR-12) |
 | AC-17 | M2 | A member who is not the owner | Sends a request to remove a member or to transfer ownership | It is rejected (FR-07, BR-12) |
 | AC-18 | M2 | A buyer of the group | Sends a request to rename the group | It is rejected (FR-07, BR-12) |
 | AC-19 | M2 | An owner whose group has other members | Tries to leave the group | They are asked to transfer ownership first (FR-07) |

@@ -16,7 +16,7 @@ Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`
 - **Spec first:** each ticket except design tickets (below) is built as one OpenSpec change, named like its branch without the type prefix (branch `feat/t-07-groups-api`, change `t-07-groups-api`). The change is generated from the ticket and the documents it references; its proposal links the ticket's issue, its requirements cite the PRD IDs instead of copying rule text, and each scenario is named after the acceptance criterion it verifies, for example `AC-59`. A ticket without acceptance criterion IDs names its scenarios as described in [Security and testing §2.6](07-SECURITY-AND-TESTING.md#26-coverage-targets). The change is reviewed before implementation, and archived in the ticket's pull request as its last commit before the merge. If the documents leave a question open, they are updated first.
 - **Branching:** one branch and one pull request per ticket, merged into `main`. The branch is named `<type>/t-<NN>-<slug>`, after the ticket ID, where `<type>` is `feat`, `fix`, `chore`, `docs`, or `refactor`; for example `feat/t-07-groups-api`. Each ticket's branch name is in the [ticket overview](#3-ticket-overview).
 - **Work outside a ticket** happens only when agreed with the project owner, on a branch named `<type>/<slug>`, through a pull request, and without an OpenSpec change.
-- **Design tickets** (type Design) restyle screens that are already built to [DESIGN.md](../DESIGN.md) and the Stitch screens in `design/stitch/`, and change no behavior. A ticket that builds a screen that has a Stitch screen builds it to DESIGN.md and that Stitch screen; its design ticket then checks the finished screen against both, and changes no behavior either. Design tickets have no OpenSpec change. Before work starts, the screens in scope are summarized and approved. A design ticket depends on the tickets that build its screens. If the work needs a behavior change, that change is a separate ticket with an OpenSpec change. The pull request says how each "Done when" condition was checked.
+- **Design tickets** (type Design) restyle screens that are already built to [DESIGN.md](../DESIGN.md) and the Stitch screens in `design/stitch/`, and change no behavior. The Group and Invitation screens are the exception: the tickets that build them (T-08 and T-15) build them to DESIGN.md and their Stitch screens, and their design tickets (T-28 and T-23) check the finished screens against both, changing no behavior either. Design tickets have no OpenSpec change. Before work starts, the screens in scope are summarized and approved. A design ticket depends on the tickets that build its screens. If the work needs a behavior change, that change is a separate ticket with an OpenSpec change. The pull request says how each "Done when" condition was checked.
 - **Course deliveries:** at each deadline, the state of `main` is pushed to the delivery branch: `feature/entrega-1-OJE` for D1, `feature/entrega-2-OJE` for D2, and `final-project-OJE` for D3.
 
 **Definition of done** for every ticket:
@@ -73,7 +73,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-05 | [#31](https://github.com/ojordan0/AI4Devs-finalproject/issues/31) | App shell, navigation, and translations | E-08 | US-25, US-07 | Frontend | 1 | D2 | M | T-04 | `feat/t-05-app-shell` |
 | T-06 | [#32](https://github.com/ojordan0/AI4Devs-finalproject/issues/32) | Production deployment | E-08 | None | DevOps | 1 | D3 | M | T-04 | `chore/t-06-production-deployment` |
 | T-07 | [#33](https://github.com/ojordan0/AI4Devs-finalproject/issues/33) | Groups, memberships, and access | E-02 | US-07, US-01, US-04 | Backend | 2 | D2 | M | T-03 | `feat/t-07-groups-api` |
-| T-08 | [#34](https://github.com/ojordan0/AI4Devs-finalproject/issues/34) | Invitations | E-02 | US-04 | Full stack | 2 | D3 | L | T-07, T-05 | `feat/t-08-invitations` |
+| T-08 | [#34](https://github.com/ojordan0/AI4Devs-finalproject/issues/34) | Invitations | E-02 | US-04 | Full stack | 2 | D3 | L | T-07, T-05, T-20 | `feat/t-08-invitations` |
 | T-09 | [#35](https://github.com/ojordan0/AI4Devs-finalproject/issues/35) | Lists and items API | E-04 | US-10, US-07, US-11, US-12, US-13 | Backend | 3 | D2 | M | T-07 | `feat/t-09-lists-items-api` |
 | T-10 | [#36](https://github.com/ojordan0/AI4Devs-finalproject/issues/36) | Lists screen, item form, and item page | E-04 | US-10, US-07 | Frontend | 3 | D2 | L | T-09, T-05 | `feat/t-10-lists-screens` |
 | T-11 | [#37](https://github.com/ojordan0/AI4Devs-finalproject/issues/37) | Status changes: reserve, release, purchase | E-05 | US-15, US-14, US-16 | Backend | 4 | D2 | M | T-09 | `feat/t-11-status-changes-api` |
@@ -228,7 +228,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-08 Invitations
 
-**Epic:** E-02 · **Stories:** US-04 · **Type:** Full stack · **Increment:** 2 · **Delivery:** D3 · **Size:** L · **Depends on:** T-07, T-05
+**Epic:** E-02 · **Stories:** US-04 · **Type:** Full stack · **Increment:** 2 · **Delivery:** D3 · **Size:** L · **Depends on:** T-07, T-05, T-20
 
 **Goal:** a member invites a member or a buyer with a link sent on WhatsApp, and the invitee joins.
 
@@ -241,7 +241,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 - Invitation screen with sign-in ([UX design §1](02-UX-DESIGN.md#1-user-flows), flow C), built to DESIGN.md and `design/stitch/03-invitation`.
 - Share on WhatsApp and copy link, with the invitation message in [UX design §2.6](02-UX-DESIGN.md#26-whatsapp-and-email-content).
 
-**Acceptance criteria:** AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-100, AC-101.
+**Acceptance criteria:** AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-100, AC-101, AC-102.
 
 ### T-09 Lists and items API
 

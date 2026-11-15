@@ -46,7 +46,7 @@ Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`
 | GET, PATCH | `/groups/{groupId}` | Group with members, each with their `email`, and buyers, each with their `whatsapp` number; rename | FR-07, BR-12 |
 | POST | `/groups/{groupId}/owner` | Transfer ownership | BR-07 |
 | DELETE | `/groups/{groupId}/memberships/{userId}` | Remove someone, or leave with `me` | BR-07, BR-10, BR-11 |
-| GET, POST | `/groups/{groupId}/invitations` | Pending invitations, each with its `inviteeName`; create one, with an optional `inviteeName`, and get its link | BR-08, BR-32 |
+| GET, POST | `/groups/{groupId}/invitations` | Pending invitations, each with its type, `inviteeName`, and expiry; create one, with an optional `inviteeName`, and get its link | BR-08, BR-32 |
 | DELETE | `/invitations/{invitationId}` | Cancel an invitation | BR-08 |
 | GET | `/invitations/by-code/{code}` | Invitation preview: inviter, group, and type. No sign-in required. | BR-08 |
 | POST | `/invitations/by-code/{code}/accept` | Accept an invitation | BR-08, BR-09 |
