@@ -104,7 +104,7 @@ spacing:
 
 # Design system: Warm Utilitarian Care
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.2 · **Date:** November 14, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.3 · **Date:** November 14, 2026
 
 Part of the project documentation ([readme](readme.md)). This document owns the visual design: tokens, components, and layout. Behavior, screens, and interface text are defined in [UX design](docs/02-UX-DESIGN.md) and the [PRD](docs/01-PRD.md); where they differ from this document or from the Stitch screens, they take precedence.
 
@@ -274,3 +274,5 @@ The folders in [design/stitch/](design/stitch/) are screens exported from Google
 | 12 | Profile | `12-profile` | The "img" placeholder and the "Conectada" badge in the header; the group row is truncated. |
 
 Screens and states with no Stitch design, such as the address form, the "No lo pude comprar" sheet, and the empty, loading, and error states, are built from UX §2.4 and §2.7 with these components.
+
+[design/screens.md](design/screens.md) maps each screen and state to its route, components, Stitch folder, and design ticket, and says how far the built screen is from its Stitch screen.

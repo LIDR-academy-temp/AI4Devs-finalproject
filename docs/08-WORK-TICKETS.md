@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.19 · **Date:** November 14, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.20 · **Date:** November 14, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -86,10 +86,10 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-18 | [#44](https://github.com/ojordan0/AI4Devs-finalproject/issues/44) | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-32, T-33 | `docs/t-18-final-documentation` |
 | T-19 | [#62](https://github.com/ojordan0/AI4Devs-finalproject/issues/62) | Tests that survive a restyle | E-08 | None | Design | All | D2 | S | None | `chore/t-19-restyle-safe-tests` |
 | T-20 | [#63](https://github.com/ojordan0/AI4Devs-finalproject/issues/63) | Design tokens and base components | E-08 | None | Design | All | D2 | M | T-19, T-05 | `feat/t-20-design-foundation` |
-| T-21 | [#64](https://github.com/ojordan0/AI4Devs-finalproject/issues/64) | Welcome design | E-08 | None | Design | 1 | D3 | S | T-20, T-04 | `feat/t-21-design-welcome` |
-| T-22 | [#65](https://github.com/ojordan0/AI4Devs-finalproject/issues/65) | One last step design | E-08 | None | Design | 1 | D3 | S | T-20, T-04 | `feat/t-22-design-one-last-step` |
+| T-21 | [#64](https://github.com/ojordan0/AI4Devs-finalproject/issues/64) | Welcome design | E-08 | None | Design | 1 | D2 | S | T-20, T-04 | `feat/t-21-design-welcome` |
+| T-22 | [#65](https://github.com/ojordan0/AI4Devs-finalproject/issues/65) | One last step design | E-08 | None | Design | 1 | D2 | S | T-20, T-04 | `feat/t-22-design-one-last-step` |
 | T-23 | [#66](https://github.com/ojordan0/AI4Devs-finalproject/issues/66) | Invitation design | E-08 | None | Design | 2 | D3 | S | T-20, T-08 | `feat/t-23-design-invitation` |
-| T-24 | [#67](https://github.com/ojordan0/AI4Devs-finalproject/issues/67) | Lists design | E-08 | None | Design | 3 | D3 | M | T-20, T-10 | `feat/t-24-design-lists` |
+| T-24 | [#67](https://github.com/ojordan0/AI4Devs-finalproject/issues/67) | Lists design | E-08 | None | Design | 3 | D2 | M | T-20, T-10 | `feat/t-24-design-lists` |
 | T-25 | [#68](https://github.com/ojordan0/AI4Devs-finalproject/issues/68) | Item form design | E-08 | None | Design | 3 | D3 | M | T-20, T-10, T-13 | `feat/t-25-design-item-form` |
 | T-26 | [#69](https://github.com/ojordan0/AI4Devs-finalproject/issues/69) | Item page design | E-08 | None | Design | 5 | D3 | M | T-20, T-12, T-13, T-14, T-16 | `feat/t-26-design-item-page` |
 | T-27 | [#70](https://github.com/ojordan0/AI4Devs-finalproject/issues/70) | People design | E-08 | None | Design | 3 | D3 | M | T-20, T-13 | `feat/t-27-design-people` |
@@ -97,7 +97,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-29 | [#72](https://github.com/ojordan0/AI4Devs-finalproject/issues/72) | To buy design | E-08 | None | Design | 4 | D3 | S | T-20, T-12, T-13 | `feat/t-29-design-to-buy` |
 | T-30 | [#73](https://github.com/ojordan0/AI4Devs-finalproject/issues/73) | My purchases design | E-08 | None | Design | 5 | D3 | S | T-20, T-12, T-13, T-16 | `feat/t-30-design-my-purchases` |
 | T-31 | [#74](https://github.com/ojordan0/AI4Devs-finalproject/issues/74) | Mark as shipped design | E-08 | None | Design | 5 | D3 | S | T-20, T-16 | `feat/t-31-design-mark-as-shipped` |
-| T-32 | [#75](https://github.com/ojordan0/AI4Devs-finalproject/issues/75) | Profile design | E-08 | None | Design | 1 | D3 | S | T-20, T-04 | `feat/t-32-design-profile` |
+| T-32 | [#75](https://github.com/ojordan0/AI4Devs-finalproject/issues/75) | Profile design | E-08 | None | Design | 1 | D2 | S | T-20, T-04 | `feat/t-32-design-profile` |
 | T-33 | [#76](https://github.com/ojordan0/AI4Devs-finalproject/issues/76) | Design for screens and states without a Stitch screen | E-08 | None | Design | 5 | D3 | M | T-20, T-14, T-15 | `feat/t-33-design-unstitched-states` |
 
 ## 4. Tickets
@@ -406,7 +406,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-21 Welcome design
 
-**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 1 · **Delivery:** D3 · **Size:** S · **Depends on:** T-20, T-04
+**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 1 · **Delivery:** D2 · **Size:** S · **Depends on:** T-20, T-04
 
 **Goal:** Welcome looks like its approved Stitch screen.
 
@@ -418,7 +418,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-22 One last step design
 
-**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 1 · **Delivery:** D3 · **Size:** S · **Depends on:** T-20, T-04
+**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 1 · **Delivery:** D2 · **Size:** S · **Depends on:** T-20, T-04
 
 **Goal:** One last step looks like its approved Stitch screen.
 
@@ -442,11 +442,11 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-24 Lists design
 
-**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 3 · **Delivery:** D3 · **Size:** M · **Depends on:** T-20, T-10
+**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 3 · **Delivery:** D2 · **Size:** M · **Depends on:** T-20, T-10
 
 **Goal:** Lists looks like its approved Stitch screen.
 
-**Screens:** Lists (screen 4) ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
+**Screens:** Lists (screen 4), with its loading and empty states and the New list dialog ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
 
 **Stitch folders:** `design/stitch/04-lists`, with the differences to ignore listed in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
@@ -470,7 +470,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Goal:** The item page looks like its approved Stitch screen.
 
-**Screens:** Item page (screen 6), for each status and role ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
+**Screens:** Item page (screen 6), for each status and role, with its loading state and the delete item confirmation ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
 
 **Stitch folders:** `design/stitch/06-item-page`, with the differences to ignore listed in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
@@ -540,7 +540,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-32 Profile design
 
-**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 1 · **Delivery:** D3 · **Size:** S · **Depends on:** T-20, T-04
+**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 1 · **Delivery:** D2 · **Size:** S · **Depends on:** T-20, T-04
 
 **Goal:** Profile looks like its approved Stitch screen.
 
