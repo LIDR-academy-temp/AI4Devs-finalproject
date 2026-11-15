@@ -113,4 +113,14 @@
   body {
     @apply bg-background text-body-lg text-foreground font-sans antialiased;
   }
+
+  /* The bottom bar's height before it measures itself (tab-nav.tsx): the
+     tallest bar its labels can produce, so + Agregar and the screen's end are
+     never covered. A 1.5px border, 8px padding above and below, a 24px icon,
+     a 4px gap, --tab-label-lines lines of 20px, and the safe area. */
+  [data-app-shell] {
+    --tab-bar-fallback: calc(
+      45.5px + var(--tab-label-lines, 2) * 20px + env(safe-area-inset-bottom)
+    );
+  }
 }

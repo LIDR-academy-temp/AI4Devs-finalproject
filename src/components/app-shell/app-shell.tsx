@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { NoGroupNotice } from "@/components/screen-states";
 import type { Tab } from "@/shared/navigation";
@@ -25,6 +25,14 @@ export function initialsOf(name: string | null, email: string | null): string {
   return first ? first.toLocaleUpperCase() : "?";
 }
 
+/**
+ * The most lines a tab label can take at 360px with this many tabs, which sets
+ * the bottom bar's height before it measures itself (tab-nav.tsx).
+ */
+export function tabLabelLines(tabCount: number): 2 | 3 {
+  return tabCount > 4 ? 3 : 2;
+}
+
 export function AppShell({
   tabs,
   memberGroups,
@@ -42,7 +50,13 @@ export function AppShell({
 }) {
   const t = useTranslations("shell");
   return (
-    <div className="group/shell min-h-dvh md:pl-[272px]">
+    <div
+      data-app-shell
+      className="group/shell min-h-dvh md:pl-[272px]"
+      style={
+        { "--tab-label-lines": tabLabelLines(tabs.length) } as CSSProperties
+      }
+    >
       <a
         href="#content"
         className="bg-primary text-label-lg text-primary-foreground focus-visible:ring-ring sr-only z-50 rounded-lg px-4 py-3 font-semibold focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus-visible:ring-2 focus-visible:ring-offset-2"
@@ -65,7 +79,7 @@ export function AppShell({
       <main
         id="content"
         tabIndex={-1}
-        className="px-margin md:px-margin-desktop mx-auto flex w-full max-w-[640px] flex-col gap-6 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none md:pb-10 lg:has-[[data-layout=wide]]:max-w-[1120px]"
+        className="px-margin md:px-margin-desktop mx-auto flex w-full max-w-[640px] flex-col gap-6 pt-6 pb-[calc(var(--tab-bar-height,var(--tab-bar-fallback))+2rem)] outline-none md:pb-10 lg:has-[[data-layout=wide]]:max-w-[1120px]"
       >
         {!inAnyGroup && <NoGroupNotice />}
         {children}

@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.21 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.22 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -573,4 +573,4 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Problem:** at 360 px with four tabs, "My purchases" wraps onto three lines, the bar grows past the 64 px that **+ Agregar**'s position assumes, and it covers the button. Found in T-24; it was already there before.
 
-**Done when:** tab labels take at most two lines without going below 16 px or being cut short, **+ Agregar** is placed from the bar's real height, it is fully visible in Spanish and English at 360 px and 390 px with three and four tabs, and all tests pass.
+**Done when:** with up to four tabs, tab labels take at most two lines without going below 16 px or being cut short; **+ Agregar** is placed from the bar's real height; it is fully visible in Spanish and English at 360 px and 390 px with three and four tabs; with five tabs at 360 px, in Spanish and English, no label overflows its tab or is cut off and **+ Agregar** is fully visible; and all tests pass.

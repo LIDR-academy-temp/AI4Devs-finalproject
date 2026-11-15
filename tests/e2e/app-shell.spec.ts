@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import {
+  addMember,
   addMemberGroup,
   createItem,
   expectNoAccessibilityViolations,
@@ -9,6 +10,7 @@ import {
   messages,
   myGroup,
   sameOrigin,
+  setItemStatus,
   signInAsSeedUser,
   signUpOnboarded,
 } from "./support";
@@ -187,6 +189,148 @@ test.describe("layout", () => {
       await expectNoSidewaysScroll(page);
     }
   });
+});
+
+// The bottom bar's height (T-34; DESIGN.md, Navigation): tab labels stay at
+// 16px and are never cut off, take at most two lines with up to four tabs,
+// and + Agregar sits 16px above the bar's real height.
+
+type TabCount = 3 | 4 | 5;
+
+/**
+ * Signs up a member whose bar shows this many tabs: Lists, People, and Group;
+ * My purchases too once they reserve an item; and To buy too as a buyer in
+ * another group (docs/02-UX-DESIGN.md, section 2.2).
+ */
+async function signUpWithTabs(page: Page, language: Language, count: TabCount) {
+  let buyerGroupId: string | undefined;
+  if (count === 5) {
+    await signUpOnboarded(page, { language });
+    buyerGroupId = (await myGroup(page)).groupId;
+  }
+  const email = await signUpOnboarded(page, { language });
+  if (buyerGroupId) await addMember(email, buyerGroupId, "buyer");
+  if (count === 4) {
+    const { lists } = await myGroup(page);
+    const item = await createItem(page, lists[0]!.id, { name: "Shoes" });
+    await setItemStatus(item.id, "reserved", email);
+  }
+}
+
+/** Each tab label's text, size, lines, and whether it fits its tab uncut. */
+async function tabLabels(nav: Locator) {
+  return nav.getByRole("link").evaluateAll((links) =>
+    links.map((link) => {
+      const label = link.lastElementChild as HTMLElement;
+      const style = getComputedStyle(label);
+      const box = label.getBoundingClientRect();
+      const tab = link.getBoundingClientRect();
+      return {
+        text: label.textContent,
+        fontSize: parseFloat(style.fontSize),
+        lines: Math.round(box.height / parseFloat(style.lineHeight)),
+        insideTab:
+          box.left >= tab.left - 0.5 &&
+          box.right <= tab.right + 0.5 &&
+          box.bottom <= tab.bottom + 0.5,
+        cut:
+          label.scrollWidth > label.clientWidth ||
+          label.scrollHeight > label.clientHeight ||
+          link.scrollWidth > link.clientWidth ||
+          style.textOverflow === "ellipsis",
+      };
+    }),
+  );
+}
+
+async function expectLabelsUncut(
+  page: Page,
+  language: Language,
+  maxLines?: number,
+) {
+  const screen = shell(page, language);
+  for (const label of await tabLabels(screen.nav)) {
+    // The whole name is there: not shortened or replaced.
+    expect(Object.values(screen.t.tabs)).toContain(label.text);
+    expect(label.fontSize, label.text!).toBeGreaterThanOrEqual(16);
+    expect(label.insideTab, label.text!).toBe(true);
+    expect(label.cut, label.text!).toBe(false);
+    if (maxLines)
+      expect(label.lines, label.text!).toBeLessThanOrEqual(maxLines);
+  }
+}
+
+/** + Agregar is fully on screen and at least 16px above the bottom bar. */
+async function expectAddAboveBar(page: Page, language: Language) {
+  const screen = shell(page, language);
+  const add = page.getByRole("link", { name: screen.t.lists.addItem });
+  await expect(add).toBeInViewport({ ratio: 1 });
+  // The bar measures itself after a resize, so the button can take a frame
+  // to settle.
+  await expect(async () => {
+    const bar = (await screen.nav.boundingBox())!;
+    const button = (await add.boundingBox())!;
+    const gap = bar.y - (button.y + button.height);
+    expect(Math.round(gap * 10) / 10).toBeGreaterThanOrEqual(16);
+  }).toPass({ timeout: 5_000 });
+}
+
+test.describe("bottom bar height", () => {
+  for (const language of ["es", "en"] as const) {
+    for (const count of [3, 4] as const) {
+      test(`T-34 with ${count} tabs, labels take at most two lines and + Agregar is visible (${language})`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width: 360, height: 740 });
+        await signUpWithTabs(page, language, count);
+        await open(page, "/lists");
+        await expect(shell(page, language).nav.getByRole("link")).toHaveCount(
+          count,
+        );
+
+        for (const width of [360, 390]) {
+          await page.setViewportSize({ width, height: 740 });
+          await expectLabelsUncut(page, language, 2);
+          await expectAddAboveBar(page, language);
+          await expectNoSidewaysScroll(page);
+        }
+      });
+    }
+
+    test(`T-34 with 5 tabs at 360 px, no label is cut off and + Agregar is visible (${language})`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 360, height: 740 });
+      await signUpWithTabs(page, language, 5);
+      await open(page, "/lists");
+      await expect(shell(page, language).nav.getByRole("link")).toHaveCount(5);
+
+      await expectLabelsUncut(page, language);
+      await expectAddAboveBar(page, language);
+      await expectNoSidewaysScroll(page);
+    });
+  }
+
+  for (const count of [3, 4, 5] as const) {
+    test(`T-34 + Agregar isn't covered before the page's JavaScript runs (${count} tabs)`, async ({
+      page,
+    }) => {
+      // With JavaScript turned off the screen never streams in, so this
+      // blocks the app's scripts instead: the page arrives whole, as on a slow
+      // connection before the scripts load, and the bar never measures itself.
+      await page.setViewportSize({ width: 360, height: 740 });
+      await signUpWithTabs(page, "en", count);
+      await page.route("**/_next/static/**/*.js", (route) => route.abort());
+      await page.goto("/lists", { waitUntil: "load" });
+
+      await expect(shell(page, "en").nav.getByRole("link")).toHaveCount(count);
+      const measured = await page.evaluate(() =>
+        document.documentElement.style.getPropertyValue("--tab-bar-height"),
+      );
+      expect(measured).toBe("");
+      await expectAddAboveBar(page, "en");
+    });
+  }
 });
 
 test.describe("header", () => {
