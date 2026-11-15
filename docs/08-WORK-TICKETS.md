@@ -534,7 +534,9 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Stitch folders:** `design/stitch/11-mark-as-shipped`, with the differences to ignore listed in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
-**Done when:** the screen follows DESIGN.md and its Stitch screen, and all tests pass.
+**Sheet test:** the screen opens as the dialog's `sheet` variant, and this ticket adds its first browser test, following [DESIGN.md, Collapsible Groups & Sheets](../DESIGN.md#collapsible-groups--sheets): the close button has first focus at every screen size, it and Escape close the sheet, its label comes from the translation files in Spanish and English, the actions stay at the bottom edge below 768 px, and the sheet opens as a centered dialog from 768 px.
+
+**Done when:** the screen follows DESIGN.md and its Stitch screen, the sheet test passes, and all tests pass.
 
 ### T-32 Profile design
 

@@ -38,22 +38,45 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
 
+  /* Spacing from the front matter: utilities such as px-margin,
+     md:px-margin-desktop, gap-gutter, and p-space-md. */
+  --spacing-gutter: 1rem;
+  --spacing-gutter-desktop: 1.5rem;
+  --spacing-margin: 1rem;
+  --spacing-margin-desktop: 2rem;
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2rem;
+  --spacing-space-2xl: 3rem;
+
+  /* Each text style carries its size, line height, and weight; a font-*
+     class next to it still wins. */
   --text-headline-xl: 32px;
   --text-headline-xl--line-height: 40px;
+  --text-headline-xl--font-weight: 700;
   --text-headline-xl-mobile: 26px;
   --text-headline-xl-mobile--line-height: 34px;
+  --text-headline-xl-mobile--font-weight: 700;
   --text-headline-lg: 24px;
   --text-headline-lg--line-height: 32px;
+  --text-headline-lg--font-weight: 700;
   --text-headline-md: 20px;
   --text-headline-md--line-height: 28px;
+  --text-headline-md--font-weight: 600;
   --text-body-xl: 18px;
   --text-body-xl--line-height: 28px;
+  --text-body-xl--font-weight: 500;
   --text-body-lg: 17px;
   --text-body-lg--line-height: 26px;
+  --text-body-lg--font-weight: 400;
   --text-body-md: 16px;
   --text-body-md--line-height: 24px;
+  --text-body-md--font-weight: 400;
   --text-label-lg: 16px;
   --text-label-lg--line-height: 22px;
+  --text-label-lg--font-weight: 600;
 
   --shadow-card: 0 2px 4px rgba(15, 23, 42, 0.04);
   --shadow-floating:
@@ -77,6 +100,9 @@
   --color-status-unavailable-bg: #fef2f2;
   --color-status-unavailable-text: #991b1b;
   --color-status-unavailable-border: #fca5a5;
+
+  /* The bottom sheet's handle (DESIGN.md, Collapsible Groups & Sheets). */
+  --color-sheet-handle: #94a3b8;
 }
 
 @layer base {

@@ -246,6 +246,7 @@ Every interactive element shows a visible focus ring on keyboard focus: `focus-v
 ### Collapsible Groups & Sheets
 - **Collapsible Section Header**: Full-width bar at least `52px` tall with a disclosure arrow, title, and count (for example `▸ Enviados (8)`).
 - **Bottom Sheets**: `16px` top corners, a `36px × 5px` `#94A3B8` handle, a close button, and the confirm button fixed at the bottom. On desktop they open as centered dialogs.
+- **Sheet Focus**: When a sheet opens, at every screen size, keyboard focus goes to its close button. Below 768px, a sheet never moves first focus to a text field, because the on-screen keyboard would cover the sheet. First focus is never on a destructive action.
 
 ## Using the Stitch Screens
 
