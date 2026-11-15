@@ -1,3 +1,4 @@
+import { ShoppingBagIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -41,13 +42,22 @@ export default async function OnboardingPage({
   const { invitation } = await searchParams;
   const invitationCode = isInvitationCode(invitation) ? invitation : undefined;
 
+  // One centered column on every screen size: 16px margins on phones, 32px
+  // and up to 640px wide from 768px (DESIGN.md, Responsive Layout Model).
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[640px] flex-col gap-6 px-4 py-8 md:px-8">
-      <header className="flex flex-col gap-2 text-center">
-        <h1 className="text-headline-xl-mobile md:text-headline-xl font-bold">
-          {t("title")}
-        </h1>
-        <p className="text-body-xl text-muted-foreground">{t("intro")}</p>
+    <main className="px-margin py-space-xl md:px-margin-desktop gap-space-lg mx-auto flex min-h-dvh w-full max-w-[640px] flex-col justify-center">
+      <header className="gap-space-md flex flex-col items-center text-center">
+        <div className="bg-primary text-primary-foreground shadow-card flex size-20 items-center justify-center rounded-xl">
+          <ShoppingBagIcon className="size-10" strokeWidth={1.75} aria-hidden />
+        </div>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-headline-xl-mobile md:text-headline-xl tracking-tight text-balance">
+            {t("title")}
+          </h1>
+          <p className="text-body-lg text-muted-foreground mx-auto max-w-[36ch] text-balance">
+            {t("intro")}
+          </p>
+        </div>
       </header>
       <OnboardingForm
         language={language}
