@@ -72,6 +72,7 @@ Build sessions start with delivery 2. Each one lists the work tickets it covers,
 | Part 19 | T-11 | Status changes API: reserving, releasing, and purchasing items, To buy and My purchases, and pull request #60, continuing part 18's session | Claude Code | Claude Opus 5.5 | [part-19-status-changes-api.md](docs/ai-conversations/part-19-status-changes-api.md) |
 | Part 20 | — | Design tickets: the design-ticket exception to the OpenSpec steps, tickets T-19 to T-33 and their issues, the OpenSpec configuration during the restyle, and pull request #77 | Claude Code | Claude Opus 5.5 | [part-20-design-tickets.md](docs/ai-conversations/part-20-design-tickets.md) |
 | Part 21 | T-19 | Tests that survive a restyle: browser tests that find elements by role and text, accessibility checks in every main state, the local sign-in instructions in the readme, and pull request #78 | Claude Code | Claude Opus 5.5 | [part-21-restyle-safe-tests.md](docs/ai-conversations/part-21-restyle-safe-tests.md) |
+| Part 22 | — | Screen map: each screen and state mapped to its route, components, Stitch folder, tickets, and fit; the T-10 states assigned to T-24 and T-26; T-21, T-22, T-24, and T-32 moved to delivery D2; and pull request #82 | Claude Code | Claude Opus 5.5 | [part-22-screen-map.md](docs/ai-conversations/part-22-screen-map.md) |
 
 ## Tools and phases
 
