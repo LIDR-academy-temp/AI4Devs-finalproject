@@ -2,6 +2,8 @@
 
 Lleva la aplicación desde el repositorio de GitHub hasta tu computadora. Con datos de demostración no hacen falta credenciales ni conocimientos de programación: alcanza con copiar los comandos.
 
+Para operarla después (cuentas, avisos, respaldos y actualizaciones), seguí el [manual de operación](../clientes/README.md).
+
 ## Qué necesitás
 
 | Requisito | Detalle |

@@ -176,6 +176,7 @@ docker compose exec api python -m app.semillas
 
 El último comando muestra el usuario de demostración y su clave, que aparece una sola vez. La aplicación queda en `http://localhost:8080`. También se puede crear una cuenta desde «Crear una cuenta»: el correo de confirmación llega a Mailpit, en `http://localhost:8025`, y no sale a internet.
 
+- **[Manual de operación](docs/clientes/README.md):** para quien instala y opera Weather Track: la puesta en marcha, las cuentas y los administradores, SAT2 y sus claves, qué hacer ante cada aviso, el respaldo y la restauración, y la actualización.
 - **[Guía de instalación local](docs/despliegue/instalacion-local.md):** paso a paso desde cero, uso con datos reales de SAT2, actualización, desinstalación y problemas frecuentes.
 - **[Guion de la demostración](docs/demo/guion-demo.md):** recorre los cinco estados y las reglas en unos 7 minutos, en modo `prueba`, cargando cada situación en "Caso de prueba - 1" con `python -m herramientas.situaciones`.
 - **[Despliegue en Google Cloud](docs/despliegue/despliegue-gcp.md) (pospuesto):** guía preparada para publicar en internet con HTTPS y dominio propio. Todavía no se ejecutó.
@@ -332,6 +333,7 @@ AI4Devs-finalproject-temp/
 ├── openspec/                # Especificaciones y cambios
 ├── docs/
 │   ├── capturas/            # Capturas del MVP
+│   ├── clientes/            # Manual de operación para quien instala y opera
 │   ├── decisions/           # ADR-0001 a ADR-0005
 │   ├── demo/                # Guion de la demostración
 │   ├── despliegue/          # Instalación local y despliegue en Google Cloud
@@ -365,6 +367,8 @@ El backend sigue una arquitectura en capas: `api` y `ingesta` dependen de `domin
 **Implementado: revisión con IA y documentación viva.** GitHub Copilot revisa cada pull request a `main` y cada push nuevo, con las instrucciones del proyecto. No es un control exigido: fusionar depende del pipeline y del responsable. La [guía de las especificaciones](docs/especificaciones/README.md) se genera con `uv run python -m herramientas.documentar_especificaciones`, y el trabajo de backend falla si no coincide con `openspec/specs`.
 
 **Implementado: monitoreo** ([ADR-0005](docs/decisions/0005-monitoreo.md)). El worker evalúa cada 10 minutos cuatro controles de salud y avisa por correo a los administradores cuando una alerta empieza y cuando se normaliza; la pantalla de administración muestra el «Estado del sistema». Todas las cuentas ven, en la pantalla de la estación y en el detalle de un sensor, la franja «Salud de la estación» con su semáforo. Con `docker compose --profile monitoreo up -d` se suman Prometheus y Grafana, con un tablero ya armado y un aviso si el worker se detiene. Grafana solo escucha en esta computadora.
+
+**Implementado: manual de operación** ([`docs/clientes/`](docs/clientes/README.md)). Para quien instala y opera, en ocho capítulos. Incluye el respaldo y la restauración de la base, probados en un proyecto aislado, y qué hacer ante cada alerta y cada color del semáforo. Una prueba falla si aparece una alerta, un estado o un comando de administración sin documentar, o un enlace roto. Todas las pilas aisladas fijan `ARCHIVO_ENV`, así su worker nunca carga el `.env` real.
 
 **Pendiente: despliegue continuo.** La publicación de imágenes y el despliegue en el servidor del esquema siguiente siguen en la línea B de la [hoja de ruta](docs/plan/hoja-de-ruta-entrega-final.md).
 
@@ -408,11 +412,11 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 
 ### **2.6. Tests**
 
-Resultado de la última ejecución, el 11 de noviembre de 2026: todas pasan, en local y en el [pipeline](https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp/actions/workflows/integracion.yml), que las corre en cada push. El backend además pasa Ruff, y el pipeline falla si el motor baja del 100 % de cobertura o si falta la base de pruebas.
+Resultado de la última ejecución, el 15 de noviembre de 2026: todas pasan, en local y en el [pipeline](https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp/actions/workflows/integracion.yml), que las corre en cada push. El backend además pasa Ruff, y el pipeline falla si el motor baja del 100 % de cobertura o si falta la base de pruebas.
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración, el origen de la configuración en el worker y la recuperación de huecos, y el contrato con las respuestas reales de SAT2 (su saneado, su forma y su paso por el catálogo, el ciclo y la carga) y el monitoreo: controles con sus límites, alertas sin repetición, métricas, la configuración de Prometheus y Grafana, y el semáforo de salud de la estación con sus límites | 834 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración, el origen de la configuración en el worker y la recuperación de huecos, y el contrato con las respuestas reales de SAT2 (su saneado, su forma y su paso por el catálogo, el ciclo y la carga) y el monitoreo: controles con sus límites, alertas sin repetición, métricas, la configuración de Prometheus y Grafana, y el semáforo de salud de la estación con sus límites; el manual de operación (cada alerta, estado del semáforo, comando de administración, enlace e imagen) y las pilas aisladas sin el `.env` real | 871 |
 | Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, las pantallas de cuentas con sus errores por campo y la pantalla de administración, visible solo para el rol, con el estado del sistema, y la franja de salud de la estación con su reloj | 127 |
 | Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja, y la administración de SAT2 con valores ficticios, más la franja de salud de la estación | 25 |
 | Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET`, límites por IP, administración de SAT2 y monitoreo | 143 |
