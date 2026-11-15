@@ -11,7 +11,7 @@ Part of the project documentation ([readme](../readme.md)). Maps each screen in 
 - **Route:** the address in `src/app`. "—" when the code has no route for the screen and [Architecture §2](../docs/03-ARCHITECTURE.md#2-project-structure) names none.
 - **Component:** the page file and the components that lay out the screen. "—" when the code has no screen.
 - **Stitch folder:** the folder in `design/stitch/`, or "None".
-- **Tickets:** the D2 tickets that built the screen, then "→" and its design ticket. "—" before the arrow when no D2 ticket built it; "unmatched" after it when no design ticket names the screen or state. A file no archived proposal names is credited to the ticket whose commit added it.
+- **Tickets:** the D2 tickets that built the screen, then "→" and its design ticket. "—" before the arrow when no D2 ticket built it. A file no archived proposal names is credited to the ticket whose commit added it.
 - **Fit:** compares only the parts the code builds. Sections that a later ticket adds, such as the person's details on the item page, don't count.
   - **Reskin:** the structure roughly matches the Stitch screen; only styling differs.
   - **Restructure:** the layout differs a lot from the Stitch screen.
@@ -45,20 +45,19 @@ Part of the project documentation ([readme](../readme.md)). Maps each screen in 
 | Screen | Route | Component | Stitch folder | Tickets | Fit | Status |
 |---|---|---|---|---|---|---|
 | Loading, in the shell | Any route in `src/app/(app)` | `src/app/(app)/loading.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
-| Loading, Lists | `/lists` | `src/app/(app)/lists/loading.tsx` | None | T-10 → unmatched | No Stitch design | Placeholder |
-| Loading, item page | `/items/[itemId]` | `src/app/(app)/items/[itemId]/loading.tsx` | None | T-10 → unmatched | No Stitch design | Placeholder |
+| Loading, Lists | `/lists` | `src/app/(app)/lists/loading.tsx` | None | T-10 → T-24 | No Stitch design | Placeholder |
+| Loading, item page | `/items/[itemId]` | `src/app/(app)/items/[itemId]/loading.tsx` | None | T-10 → T-26 | No Stitch design | Placeholder |
 | Error, in the shell | Any route in `src/app/(app)` | `src/app/(app)/error.tsx`, `src/components/screen-error.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
 | Error, outside the shell | Any route | `src/app/error.tsx` | None | T-04 → T-33 | No Stitch design | Placeholder |
 | Not available, in the shell (BR-13) | Any route in `src/app/(app)` | `src/app/(app)/not-found.tsx`, `NotAvailable` in `src/components/screen-states.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
 | Not available, unknown address | Any unknown route | `src/app/not-found.tsx`, `NotAvailable` in `src/components/screen-states.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
 | Not in any group yet | Every route in `src/app/(app)` | `NoGroupNotice` in `src/components/screen-states.tsx`, rendered by `src/components/app-shell/app-shell.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
-| Empty: no lists, no items, choose an item | `/lists` | `src/app/(app)/lists/page.tsx`, `src/components/lists/list-column.tsx`, `EmptyState` in `src/components/screen-states.tsx` | None | T-10 → unmatched | No Stitch design | Placeholder |
-| New list dialog | `/lists` | `src/components/lists/new-list-dialog.tsx` | None | T-10 → unmatched | No Stitch design | Placeholder |
-| Delete item confirmation | `/items/[itemId]` | `src/components/lists/item-actions.tsx` | None | T-10 → unmatched | No Stitch design | Placeholder |
+| Empty: no lists, no items, choose an item | `/lists` | `src/app/(app)/lists/page.tsx`, `src/components/lists/list-column.tsx`, `EmptyState` in `src/components/screen-states.tsx` | None | T-10 → T-24 | No Stitch design | Placeholder |
+| New list dialog | `/lists` | `src/components/lists/new-list-dialog.tsx` | None | T-10 → T-24 | No Stitch design | Placeholder |
+| Delete item confirmation | `/items/[itemId]` | `src/components/lists/item-actions.tsx` | None | T-10 → T-26 | No Stitch design | Placeholder |
 
 ## Not matched
 
-- **States built in T-10:** the Lists and item page loading states, the Lists empty states, the New list dialog, and the delete item confirmation, all with no Stitch design. T-33 names only the address form, the "No lo pude comprar" sheet, and the shared empty, loading, and error states from T-05, so none of T-24, T-26, or T-33 clearly covers them.
 - **"I bought it" sheet and Undo confirmation** ([UX §2.4](../docs/02-UX-DESIGN.md#24-key-screens)): not built, and no Stitch folder. No design ticket names them, though T-26 designs the item page "for each status and role", which may include them.
 - **Invitation, person page, and Mark as shipped routes:** the code has none and Architecture §2 names none. Mark as shipped is a sheet opened from My purchases and the item page.
 - **Profile sections beyond FR-04:** the Stitch screen also shows groups, create a group, report a problem, and delete account. The code builds only contact, preferences, and sign out (milestone 1), and no ticket in the overview builds the rest.
