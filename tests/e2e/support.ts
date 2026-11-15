@@ -4,6 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 import {
   type APIRequestContext,
   expect,
+  type Locator,
   type Page,
   test,
 } from "@playwright/test";
@@ -320,4 +321,19 @@ export async function inviteFromNewMember(
   });
   expect(onboarding.ok()).toBe(true);
   return createInvitation(request, body);
+}
+
+/**
+ * Waits until React has hydrated the element, so what a test types reaches the
+ * component's state. Typing earlier changes only the page's HTML: on a slow
+ * browser the form then still sees an empty field when it's submitted.
+ */
+export async function waitUntilHydrated(locator: Locator) {
+  await expect
+    .poll(() =>
+      locator.evaluate((element) =>
+        Object.keys(element).some((key) => key.startsWith("__reactProps$")),
+      ),
+    )
+    .toBe(true);
 }

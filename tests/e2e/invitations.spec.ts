@@ -13,6 +13,7 @@ import {
   signInAs,
   signInAsSeedUser,
   signUpOnboarded,
+  waitUntilHydrated,
 } from "./support";
 
 // The Invitation screen and flow C (docs/02-UX-DESIGN.md, section 1; FR-06,
@@ -40,7 +41,9 @@ function screen(page: Page, language: Language = "en") {
 /** Signs in a new user through the screen's development sign-in form. */
 async function signInOnScreen(page: Page, language: Language) {
   const t = messages[language];
-  await page.getByLabel(t.devSignIn.email).fill(newEmail());
+  const email = page.getByLabel(t.devSignIn.email);
+  await waitUntilHydrated(email);
+  await email.fill(newEmail());
   await page.getByRole("button", { name: t.devSignIn.submit }).click();
 }
 
