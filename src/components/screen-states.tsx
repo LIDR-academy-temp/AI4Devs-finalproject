@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/components/ui/utils";
 
 // The shared states from docs/02-UX-DESIGN.md, section 2.7: each says what is
 // going on in plain words and offers a way forward (section 2.1, principle 7).
@@ -20,13 +21,20 @@ export function EmptyState({
   icon: Icon,
   children,
   action,
+  className,
 }: {
   icon: LucideIcon;
   children: ReactNode;
   action?: ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="border-border bg-card shadow-card flex flex-col items-center gap-4 rounded-xl border-[1.5px] px-5 py-8 text-center">
+    <section
+      className={cn(
+        "border-border bg-card shadow-card flex flex-col items-center gap-4 rounded-xl border-[1.5px] px-5 py-8 text-center",
+        className,
+      )}
+    >
       <span className="bg-accent text-accent-foreground flex size-14 items-center justify-center rounded-full">
         <Icon className="size-7" aria-hidden />
       </span>

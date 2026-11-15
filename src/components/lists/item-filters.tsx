@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, UsersIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useId, useState } from "react";
 
@@ -15,19 +15,26 @@ import {
 } from "@/shared/items";
 
 import { ItemCard } from "./item-card";
+import { StatusIcon, statusColors } from "./status-chip";
 
 // The list's items with the person and status filters (docs/02-UX-DESIGN.md,
 // section 2.4; design decision 3). Filters are kept here, over the loaded
 // list, and start over when the list changes, since the page keys this by
 // list. Shipped items are in a collapsed section at the end.
 
+// A filter chip (DESIGN.md, Status Chips): 48px tall, filled with the primary
+// color when chosen. A status chip at rest wears its status's colors, so it
+// reads like the chips on the items below it. Choosing one changes it at once,
+// with no fade through colors that would read poorly.
 function Chip({
   pressed,
   onClick,
+  colors,
   children,
 }: {
   pressed: boolean;
   onClick: () => void;
+  colors?: string;
   children: ReactNode;
 }) {
   return (
@@ -36,10 +43,11 @@ function Chip({
       aria-pressed={pressed}
       onClick={onClick}
       className={cn(
-        "text-label-lg focus-visible:ring-ring inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-full px-4 font-semibold whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+        "text-label-lg focus-visible:ring-ring inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full border-[1.5px] px-4 font-semibold whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [&_svg]:size-5",
         pressed
-          ? "border-primary bg-accent text-accent-foreground border-2"
-          : "border-border bg-card text-foreground hover:bg-muted border-[1.5px]",
+          ? "border-primary bg-primary text-primary-foreground hover:border-primary-hover hover:bg-primary-hover"
+          : (colors ?? "border-border bg-card text-foreground hover:bg-muted"),
+        !pressed && colors && "hover:border-current",
       )}
     >
       {children}
@@ -50,14 +58,16 @@ function Chip({
 function ChipRow({ label, children }: { label: string; children: ReactNode }) {
   const id = useId();
   return (
-    <div className="flex flex-col gap-1">
-      <span id={id} className="text-body-md text-muted-foreground font-medium">
+    <div className="flex flex-col gap-1.5">
+      <span id={id} className="text-label-lg text-muted-foreground">
         {label}
       </span>
+      {/* Scrolls sideways; on phones it runs to the screen's edges, so a
+          chip cut off at the edge shows there are more. */}
       <div
         role="group"
         aria-labelledby={id}
-        className="-mx-1 flex gap-2 overflow-x-auto px-1 py-1"
+        className="-mx-margin px-margin flex [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent] gap-2 overflow-x-auto py-1 md:-mx-1 md:px-1"
       >
         {children}
       </div>
@@ -97,6 +107,7 @@ export function FilteredItems({
             pressed={filters.person === "all"}
             onClick={() => setFilter({ person: "all" })}
           >
+            <UsersIcon aria-hidden />
             {t("all")}
           </Chip>
           {choices.people.map(({ id, name }) => (
@@ -129,11 +140,11 @@ export function FilteredItems({
               key={status}
               pressed={filters.status === status}
               onClick={() => setFilter({ status })}
+              colors={statusColors(status)}
             >
+              <StatusIcon status={status} />
               {tStatus(status)}
-              <span className="text-muted-foreground font-medium">
-                ({count})
-              </span>
+              <span className="-ml-1 font-medium">({count})</span>
             </Chip>
           ))}
         </ChipRow>
@@ -160,13 +171,14 @@ export function FilteredItems({
 
       {shipped.length > 0 && (
         <section className="flex flex-col gap-3">
+          {/* DESIGN.md, Collapsible Section Header: a full-width bar. */}
           <h2>
             <button
               type="button"
               aria-expanded={showShipped}
               aria-controls={shippedId}
               onClick={() => setShippedOpen(!showShipped)}
-              className="text-headline-md hover:bg-muted focus-visible:ring-ring -ml-2 flex min-h-12 items-center gap-2 rounded-lg px-2 font-semibold outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="text-headline-md border-secondary-foreground/30 bg-secondary text-foreground hover:border-secondary-foreground/60 focus-visible:ring-ring flex min-h-13 w-full items-center gap-3 rounded-xl border-[1.5px] px-4 text-left font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transition-none"
             >
               <ChevronRightIcon
                 className={cn(

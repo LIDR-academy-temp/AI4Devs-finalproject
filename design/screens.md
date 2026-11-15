@@ -1,6 +1,6 @@
 # Screens and Stitch folders
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.0 · **Date:** November 14, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.1 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). Maps each screen in [UX §2.3](../docs/02-UX-DESIGN.md#23-screens), and each state the code builds, to its route, its components, its Stitch folder in [design/stitch/](stitch/), and its tickets in [Work tickets](../docs/08-WORK-TICKETS.md#3-ticket-overview). How to use the Stitch folders, and the differences to ignore in each, are in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
@@ -17,7 +17,10 @@ Part of the project documentation ([readme](../readme.md)). Maps each screen in 
   - **Restructure:** the layout differs a lot from the Stitch screen.
   - **No Stitch design:** the screen or state exists, but Stitch has no design for it.
   - **Not built:** UX defines the screen, but the code has no screen for it. A screen with neither code nor a Stitch design is Not built.
-- **Status:** Placeholder on every row.
+- **Status:** where the row stands against its design ticket.
+  - **Placeholder:** the design ticket hasn't started.
+  - **In progress:** the design ticket's branch is open.
+  - **Restyled:** the design ticket is done, and the row follows DESIGN.md and its Stitch folder, if it has one.
 
 ## Screens
 
@@ -26,7 +29,7 @@ Part of the project documentation ([readme](../readme.md)). Maps each screen in 
 | 1 Welcome | `/` | `src/app/(public)/page.tsx`, `src/app/(public)/welcome-actions.tsx`, `src/app/(public)/welcome-language.tsx` | `01-welcome` | T-04 → T-21 | Reskin | Placeholder |
 | 2 One last step | `/onboarding` | `src/app/(public)/onboarding/page.tsx`, `src/app/(public)/onboarding/onboarding-form.tsx` | `02-one-last-step` | T-04 → T-22 | Reskin | Placeholder |
 | 3 Invitation | — | — | `03-invitation` | — → T-23 | Not built | Placeholder |
-| 4 Lists | `/lists` | `src/app/(app)/lists/page.tsx`, `src/components/lists/list-column.tsx`, `list-menu.tsx`, `quick-add.tsx`, `item-filters.tsx`, `item-card.tsx`, `status-chip.tsx` | `04-lists` | T-10 → T-24 | Reskin | Placeholder |
+| 4 Lists | `/lists` | `src/app/(app)/lists/page.tsx`, `src/components/lists/list-column.tsx`, `list-menu.tsx`, `quick-add.tsx`, `item-filters.tsx`, `item-card.tsx`, `status-chip.tsx` | `04-lists` | T-10 → T-24 | Reskin | Restyled |
 | 5 Add item | `/items/new` | `src/app/(app)/items/new/page.tsx`, `src/components/lists/item-form-screen.tsx`, `item-form.tsx`, `character-count.tsx` | `05-item-form` | T-10 → T-25 | Reskin | Placeholder |
 | 5 Edit item | `/items/[itemId]/edit` | `src/app/(app)/items/[itemId]/edit/page.tsx`, `src/components/lists/item-form-screen.tsx`, `item-form.tsx`, `character-count.tsx` | `05-item-form` | T-10 → T-25 | Reskin | Placeholder |
 | 6 Item page | `/items/[itemId]` | `src/app/(app)/items/[itemId]/page.tsx`, `src/components/lists/item-page.tsx`, `item-actions.tsx` | `06-item-page` | T-10 → T-26 | Restructure | Placeholder |
@@ -45,15 +48,15 @@ Part of the project documentation ([readme](../readme.md)). Maps each screen in 
 | Screen | Route | Component | Stitch folder | Tickets | Fit | Status |
 |---|---|---|---|---|---|---|
 | Loading, in the shell | Any route in `src/app/(app)` | `src/app/(app)/loading.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
-| Loading, Lists | `/lists` | `src/app/(app)/lists/loading.tsx` | None | T-10 → T-24 | No Stitch design | Placeholder |
+| Loading, Lists | `/lists` | `src/app/(app)/lists/loading.tsx` | None | T-10 → T-24 | No Stitch design | Restyled |
 | Loading, item page | `/items/[itemId]` | `src/app/(app)/items/[itemId]/loading.tsx` | None | T-10 → T-26 | No Stitch design | Placeholder |
 | Error, in the shell | Any route in `src/app/(app)` | `src/app/(app)/error.tsx`, `src/components/screen-error.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
 | Error, outside the shell | Any route | `src/app/error.tsx` | None | T-04 → T-33 | No Stitch design | Placeholder |
 | Not available, in the shell (BR-13) | Any route in `src/app/(app)` | `src/app/(app)/not-found.tsx`, `NotAvailable` in `src/components/screen-states.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
 | Not available, unknown address | Any unknown route | `src/app/not-found.tsx`, `NotAvailable` in `src/components/screen-states.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
 | Not in any group yet | Every route in `src/app/(app)` | `NoGroupNotice` in `src/components/screen-states.tsx`, rendered by `src/components/app-shell/app-shell.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
-| Empty: no lists, no items, choose an item | `/lists` | `src/app/(app)/lists/page.tsx`, `src/components/lists/list-column.tsx`, `EmptyState` in `src/components/screen-states.tsx` | None | T-10 → T-24 | No Stitch design | Placeholder |
-| New list dialog | `/lists` | `src/components/lists/new-list-dialog.tsx` | None | T-10 → T-24 | No Stitch design | Placeholder |
+| Empty: no lists, no items, choose an item | `/lists` | `src/app/(app)/lists/page.tsx`, `src/components/lists/list-column.tsx`, `EmptyState` in `src/components/screen-states.tsx` | None | T-10 → T-24 | No Stitch design | Restyled |
+| New list dialog | `/lists` | `src/components/lists/new-list-dialog.tsx` | None | T-10 → T-24 | No Stitch design | Restyled |
 | Delete item confirmation | `/items/[itemId]` | `src/components/lists/item-actions.tsx` | None | T-10 → T-26 | No Stitch design | Placeholder |
 
 ## Not matched

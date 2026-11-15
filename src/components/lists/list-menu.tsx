@@ -43,16 +43,21 @@ export function ListMenu({
         {/* Not modal, like the group selector: a modal menu hides the page
             from screen readers while its controls stay focusable. */}
         <DropdownMenu modal={false}>
-          <DropdownMenuTrigger className="hover:bg-muted focus-visible:ring-ring -ml-2 flex min-h-12 max-w-full items-center gap-2 rounded-lg px-2 py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
-            <span className="flex min-w-0 flex-col">
-              <span className="text-body-md text-muted-foreground font-medium">
-                {t("listMenu")}
-              </span>
-              <span className="text-headline-xl-mobile md:text-headline-xl font-bold [overflow-wrap:anywhere]">
+          {/* The current list in a tinted box, like the Shipped bar: the
+              surface marks what opens more. */}
+          <DropdownMenuTrigger className="group/list-menu border-secondary-foreground/30 bg-secondary text-foreground hover:border-secondary-foreground/60 focus-visible:ring-ring data-[state=open]:border-secondary-foreground/60 flex min-h-16 w-full flex-col items-start rounded-xl border-[1.5px] px-4 py-3 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transition-none">
+            <span className="text-body-md text-muted-foreground font-medium">
+              {t("listMenu")}
+            </span>
+            <span className="flex max-w-full items-center gap-2">
+              <span className="text-headline-xl-mobile md:text-headline-xl min-w-0 font-bold [overflow-wrap:anywhere]">
                 {current?.name}
               </span>
+              <ChevronDownIcon
+                className="size-6 shrink-0 transition-transform group-data-[state=open]/list-menu:rotate-180 motion-reduce:transition-none"
+                aria-hidden
+              />
             </span>
-            <ChevronDownIcon className="size-6 shrink-0" aria-hidden />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" collisionPadding={16}>
             <DropdownMenuRadioGroup
