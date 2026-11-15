@@ -42,7 +42,6 @@ export default async function GroupPage() {
     groupId,
     groupName: group.name,
     inviterName: me?.name ?? "",
-    now: now.toISOString(),
   };
 
   return (
@@ -51,7 +50,7 @@ export default async function GroupPage() {
       <section className="border-border bg-card shadow-card flex flex-col gap-3 rounded-xl border-[1.5px] p-5">
         <InviteButton type="member" {...invite} />
         <InviteButton type="buyer" {...invite} />
-        <PendingInvitations invitations={invitations} now={invite.now} />
+        <PendingInvitations invitations={invitations} now={now.toISOString()} />
       </section>
       <PeopleSection
         members={group.members}

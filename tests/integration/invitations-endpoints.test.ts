@@ -30,6 +30,8 @@ import {
 } from "../../src/server/http/schemas";
 import type { SessionUser } from "../../src/server/http/session";
 import { startingGroupName } from "../../src/server/services/groups";
+import { RuleViolationError } from "../../src/server/services/errors";
+import { acceptInvitation } from "../../src/server/services/invitations";
 import {
   createGroup,
   createInvitation,
@@ -611,6 +613,53 @@ describe("POST /invitations/by-code/{code}/accept", () => {
 });
 
 describe("A user who already has the access is told so", () => {
+  it("BR-09 a second accept by the same user at the same time is refused", async () => {
+    const { group, session } = await newMember();
+    const { code } = await invite({ session }, group.id, { type: "buyer" });
+    const someone = await newOnboardedUser();
+
+    // Another accept by the same user, through another invitation, holds the
+    // new membership uncommitted while this one reads none and inserts too.
+    const other = await pool.connect();
+    try {
+      await other.query("BEGIN");
+      await other.query(
+        "INSERT INTO memberships (group_id, user_id, type, joined_at) VALUES ($1, $2, 'buyer', now())",
+        [group.id, someone.user.id],
+      );
+      const accepting = acceptInvitation(
+        db,
+        time.clock,
+        someone.user.id,
+        code,
+      ).catch((error: unknown) => error);
+      // Wait until this accept is blocked on the other one's membership row.
+      await expect
+        .poll(
+          async () =>
+            (
+              await pool.query(
+                "SELECT count(*)::int AS waiting FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND query LIKE 'insert into \"memberships\"%'",
+              )
+            ).rows[0].waiting,
+        )
+        .toBe(1);
+      await other.query("COMMIT");
+
+      const refusal = await accepting;
+      expect(refusal).toBeInstanceOf(RuleViolationError);
+      expect((refusal as RuleViolationError).reason).toBe("ALREADY_IN_GROUP");
+    } finally {
+      other.release();
+    }
+    expect(await membershipsOf(someone.user.id)).toHaveLength(1);
+    const [row] = await db
+      .select({ status: invitations.status })
+      .from(invitations)
+      .where(eq(invitations.code, code));
+    expect(row?.status).toBe("pending");
+  });
+
   it("AC-15 a member opens an invitation to their own group", async () => {
     const member = await invite({ as: "ana" }, garcia, { type: "member" });
     const buyer = await invite({ as: "ana" }, garcia, { type: "buyer" });

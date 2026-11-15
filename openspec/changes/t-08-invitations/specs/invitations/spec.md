@@ -198,6 +198,12 @@ When the user already has the access an invitation gives (a member opening eithe
 - **THEN** each preview says they already have the access, each accept is refused with 409 `RULE_VIOLATION` and reason `ALREADY_IN_GROUP`, and both invitations stay pending and still work for someone else
 - Verified by an integration test, and by a browser test of the Invitation screen.
 
+#### Scenario: BR-09 a second accept by the same user at the same time is refused
+
+- **GIVEN** a user outside a group, whose accept of one invitation to it is adding their membership
+- **WHEN** they accept another pending invitation to the same group at the same time
+- **THEN** the second accept is refused with 409 `RULE_VIOLATION` and reason `ALREADY_IN_GROUP`, its invitation stays pending, and the user has one membership in the group
+
 #### Scenario: BR-09 a buyer opens a buyer invitation to their own group
 
 - **GIVEN** a seed buyer of a group, and a pending buyer invitation to it

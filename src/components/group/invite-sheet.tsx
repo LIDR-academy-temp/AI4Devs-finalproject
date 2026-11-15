@@ -46,15 +46,12 @@ export function InviteButton({
   groupId,
   groupName,
   inviterName,
-  now,
   className,
 }: {
   type: MembershipType;
   groupId: string;
   groupName: string;
   inviterName: string;
-  /** The server's time when Group loaded, so the expiry reads the same everywhere. */
-  now: string;
   className?: string;
 }) {
   const t = useTranslations("group");
@@ -79,7 +76,6 @@ export function InviteButton({
         groupId={groupId}
         groupName={groupName}
         inviterName={inviterName}
-        now={now}
       />
     </>
   );
@@ -93,7 +89,6 @@ function InviteSheet({
   groupId,
   groupName,
   inviterName,
-  now,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -102,7 +97,6 @@ function InviteSheet({
   groupId: string;
   groupName: string;
   inviterName: string;
-  now: string;
 }) {
   const t = useTranslations("group");
   const tCommon = useTranslations("common");
@@ -181,7 +175,8 @@ function InviteSheet({
             </div>
             <p className="text-body-md bg-status-reserved-bg text-status-reserved-text rounded-lg px-3 py-2">
               {t("expires", {
-                count: daysUntil(new Date(created.expiresAt), new Date(now)),
+                // The link was just created, so the browser's time is current.
+                count: daysUntil(new Date(created.expiresAt), new Date()),
               })}
             </p>
             <Button asChild variant="whatsapp" className="w-full">

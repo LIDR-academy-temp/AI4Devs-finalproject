@@ -290,12 +290,23 @@ export async function acceptInvitation(
     const { invitation, membership } = await lockForUse(tx, now, userId, code);
 
     if (!membership) {
-      await tx.insert(memberships).values({
-        groupId: invitation.groupId,
-        userId,
-        type: invitation.type,
-        joinedAt: now,
-      });
+      // Another accept by the same user, of another invitation to this group,
+      // may have added the membership meanwhile: then this one is refused.
+      const inserted = await tx
+        .insert(memberships)
+        .values({
+          groupId: invitation.groupId,
+          userId,
+          type: invitation.type,
+          joinedAt: now,
+        })
+        .onConflictDoNothing({
+          target: [memberships.groupId, memberships.userId],
+        })
+        .returning({ id: memberships.id });
+      if (inserted.length === 0) {
+        throw new RuleViolationError("ALREADY_IN_GROUP");
+      }
     } else if (membership.status === "ended") {
       await tx
         .update(memberships)
