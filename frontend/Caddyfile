@@ -1,0 +1,28 @@
+# Con DIRECCION_WEB, Caddy obtiene y renueva el certificado HTTPS de ese dominio.
+# Sin ella, sirve por HTTP en el puerto 8080: es el modo de desarrollo local.
+{$DIRECCION_WEB::8080} {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	handle /api/* {
+		# La API solo recibe credenciales: nada justifica un cuerpo mayor.
+		request_body {
+			max_size 64KB
+		}
+		reverse_proxy api:8000
+	}
+
+	handle {
+		# Solo en la aplicación: la documentación de la API carga recursos externos.
+		# Plotly necesita estilos en línea.
+		header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

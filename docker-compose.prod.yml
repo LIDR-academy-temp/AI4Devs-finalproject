@@ -1,0 +1,67 @@
+# Ajustes para el servidor, sobre docker-compose.yml. Ver docs/despliegue/despliegue-gcp.md.
+# Exige las variables críticas: sin ellas no arranca, en lugar de usar valores de desarrollo.
+
+x-url-base-de-datos: &url-base-de-datos postgresql+psycopg://weather_track:${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD}@db:5432/weather_track
+
+x-servicio-permanente: &servicio-permanente
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  db:
+    <<: *servicio-permanente
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD}
+
+  migraciones:
+    environment:
+      DATABASE_URL: *url-base-de-datos
+
+  api:
+    <<: *servicio-permanente
+    environment:
+      DATABASE_URL: *url-base-de-datos
+      SAT2_MODO: ${SAT2_MODO:?Falta SAT2_MODO}
+      COOKIE_SEGURA: "true"
+      URL_PUBLICA: https://${DIRECCION_WEB:?Falta DIRECCION_WEB}
+
+  worker:
+    <<: *servicio-permanente
+    environment:
+      DATABASE_URL: *url-base-de-datos
+      SAT2_MODO: ${SAT2_MODO:?Falta SAT2_MODO}
+      # Un proveedor de correo real, siempre con STARTTLS.
+      SMTP_HOST: ${SMTP_HOST:?Falta SMTP_HOST}
+      SMTP_PUERTO: ${SMTP_PUERTO:?Falta SMTP_PUERTO}
+      SMTP_USUARIO: ${SMTP_USUARIO:?Falta SMTP_USUARIO}
+      SMTP_CLAVE: ${SMTP_CLAVE:?Falta SMTP_CLAVE}
+      SMTP_STARTTLS: "true"
+      CORREO_REMITENTE: ${CORREO_REMITENTE:?Falta CORREO_REMITENTE}
+
+  # Mailpit es solo para la instalación local.
+  correo:
+    profiles: ["solo-local"]
+
+  proxy:
+    <<: *servicio-permanente
+    environment:
+      DIRECCION_WEB: ${DIRECCION_WEB:?Falta DIRECCION_WEB}
+    ports: !override
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # El certificado debe sobrevivir a los reinicios: Let's Encrypt limita las emisiones.
+      - datos_caddy:/data
+      - configuracion_caddy:/config
+    healthcheck:
+      # Sin el puerto 8080: la consulta va a la administración local de Caddy.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+
+volumes:
+  datos_caddy:
+  configuracion_caddy:

@@ -1,0 +1,44 @@
+{
+  "AutenticarUsuario": {
+    "autenticado": "booleano",
+    "idCliente": "numero",
+    "novedades": "texto",
+    "token": "texto"
+  },
+  "RecuperarEquipos": [
+    {
+      "NroSerie": "texto",
+      "descripcion": "texto",
+      "fechaAlta": "texto",
+      "idEquipo": "numero",
+      "lat": "numero",
+      "lng": "numero",
+      "sensores": [
+        {
+          "Icono": "numero",
+          "idSensor": "numero",
+          "nombre": "texto",
+          "unidad": "texto"
+        }
+      ]
+    }
+  ],
+  "RecuperarHistoricosDeEquipoPorSensor": [
+    {
+      "fecha": "texto",
+      "valor": "numero"
+    }
+  ],
+  "RecuperarInstantaneosDeEquipo": {
+    "datosSensores": [
+      {
+        "Icono": "numero",
+        "alarma": "booleano",
+        "nombreSensor": "texto",
+        "unidad": "texto",
+        "valor": "texto"
+      }
+    ],
+    "fechaUltimaActualizacionDatos": "texto"
+  }
+}

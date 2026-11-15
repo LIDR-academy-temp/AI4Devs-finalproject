@@ -1,0 +1,19 @@
+# Secretos: nunca versionar
+.env
+.env.*
+!.env.example
+
+# Notas privadas del responsable sobre sistemas externos: nunca versionar
+privado/
+
+# Respaldos de la base y exportaciones de clientes: tienen datos personales (manual de operación)
+respaldos/
+/clientes*.csv
+
+# Entorno de Python y salidas locales
+.venv/
+__pycache__/
+.pytest_cache/
+.coverage
+*.egg-info/
+.salida/
