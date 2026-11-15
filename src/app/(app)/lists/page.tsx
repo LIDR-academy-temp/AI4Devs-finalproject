@@ -73,8 +73,15 @@ export default async function ListsPage({
         items={items}
         userId={user.id}
       />
+      {/* Where the item page will open: a dashed slot as tall as the screen
+          allows, not another card. */}
       <div className="hidden lg:sticky lg:top-24 lg:block">
-        <EmptyState icon={MousePointerClickIcon}>{t("chooseItem")}</EmptyState>
+        <EmptyState
+          icon={MousePointerClickIcon}
+          className="bg-background min-h-[min(28rem,calc(100dvh-8rem))] justify-center border-2 border-dashed shadow-none"
+        >
+          {t("chooseItem")}
+        </EmptyState>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, ShoppingCartIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { type FormEvent, useId, useRef, useState } from "react";
@@ -74,35 +74,44 @@ export function QuickAdd({ listId }: { listId: string }) {
   const countId = `${id}-count`;
   const max = fieldLimits.name.max;
 
+  // A card holding the field and its button (DESIGN.md, Cards & List Rows),
+  // with a decorative cart inside the field. The field's padding makes room
+  // for the cart at rest, on focus, and on error, where the border thickens.
   return (
-    <form onSubmit={add} noValidate className="flex flex-col gap-2">
+    <form
+      onSubmit={add}
+      noValidate
+      className="border-border bg-card shadow-card flex flex-col gap-2 rounded-xl border-[1.5px] p-4"
+    >
       {alert && <FormAlert>{alert}</FormAlert>}
       <Label htmlFor={fieldId}>{t("quickAdd")}</Label>
       <div className="flex gap-2">
-        <Input
-          ref={input}
-          id={fieldId}
-          value={name}
-          maxLength={max}
-          autoComplete="off"
-          enterKeyHint="send"
-          aria-invalid={error ? true : undefined}
-          aria-describedby={
-            [error && errorId, showsCount(name.length, max) && countId]
-              .filter(Boolean)
-              .join(" ") || undefined
-          }
-          onChange={(event) => {
-            setName(event.target.value);
-            if (checked) setError(checkField("name", event.target.value));
-          }}
-        />
-        <Button
-          type="submit"
-          variant="secondary"
-          className="min-h-[50px] px-4"
-          aria-busy={pending}
-        >
+        <div className="relative min-w-0 flex-1">
+          <ShoppingCartIcon
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2"
+            aria-hidden
+          />
+          <Input
+            ref={input}
+            id={fieldId}
+            value={name}
+            maxLength={max}
+            autoComplete="off"
+            enterKeyHint="send"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={
+              [error && errorId, showsCount(name.length, max) && countId]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
+            className="h-full pl-12! focus:pl-[calc(3rem-0.5px)]! aria-invalid:pl-[calc(3rem-0.5px)]!"
+            onChange={(event) => {
+              setName(event.target.value);
+              if (checked) setError(checkField("name", event.target.value));
+            }}
+          />
+        </div>
+        <Button type="submit" className="px-4" aria-busy={pending}>
           <PlusIcon aria-hidden />
           {t("add")}
         </Button>

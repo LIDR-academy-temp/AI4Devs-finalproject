@@ -30,7 +30,7 @@ const styles: Record<ItemStatus, { icon: LucideIcon; className: string }> = {
   purchased: {
     icon: CircleIcon,
     className:
-      "border-status-purchased-border bg-status-purchased-bg text-status-purchased-text [&_svg]:fill-current",
+      "border-status-purchased-border bg-status-purchased-bg text-status-purchased-text",
   },
   shipped: {
     icon: TruckIcon,
@@ -44,6 +44,32 @@ const styles: Record<ItemStatus, { icon: LucideIcon; className: string }> = {
   },
 };
 
+/** A status's border, surface, and text colors, for anything that carries the status style. */
+export function statusColors(status: ItemStatus): string {
+  return styles[status].className;
+}
+
+/** A status's icon alone, always decorative: the status text sits beside it. */
+export function StatusIcon({
+  status,
+  className,
+}: {
+  status: ItemStatus;
+  className?: string;
+}) {
+  const { icon: Icon } = styles[status];
+  return (
+    <Icon
+      className={cn(
+        "shrink-0",
+        status === "purchased" && "fill-current",
+        className,
+      )}
+      aria-hidden
+    />
+  );
+}
+
 /** The chip, labeled with the status, or with `children` such as "Reserved by Juan". */
 export function StatusChip({
   status,
@@ -55,17 +81,16 @@ export function StatusChip({
   className?: string;
 }) {
   const t = useTranslations("status");
-  const { icon: Icon, className: colors } = styles[status];
   return (
     <span
       data-status={status}
       className={cn(
         "text-label-lg inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-full border-[1.5px] px-3.5 py-1.5 font-semibold",
-        colors,
+        styles[status].className,
         className,
       )}
     >
-      <Icon className="size-4 shrink-0" aria-hidden />
+      <StatusIcon status={status} className="size-4" />
       <span className="min-w-0 [overflow-wrap:anywhere]">
         {children ?? t(status)}
       </span>

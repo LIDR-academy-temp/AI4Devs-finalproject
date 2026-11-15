@@ -11,7 +11,6 @@ import { FormAlert } from "@/components/form-alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -27,7 +26,10 @@ import { checkField, useFieldMessage } from "./field-checks";
 import { useRefusalMessage } from "./item-refusals";
 
 // New list (FR-12; design decision 8): a name, checked as the user types once
-// checked (BR-32), then Lists shows the new list.
+// checked (BR-32), then Lists shows the new list. A sheet (DESIGN.md,
+// Collapsible Groups & Sheets): its Close button takes first focus, so the
+// on-screen keyboard stays down until the user taps the field, and Create is
+// the only button at the bottom.
 
 export function NewListDialog({
   groupId,
@@ -39,7 +41,6 @@ export function NewListDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations("lists");
-  const tCommon = useTranslations("common");
   const message = useFieldMessage();
   const refusalMessage = useRefusalMessage();
   const router = useRouter();
@@ -98,7 +99,7 @@ export function NewListDialog({
 
   return (
     <Dialog open={open} onOpenChange={reset}>
-      <DialogContent aria-describedby={undefined}>
+      <DialogContent variant="sheet" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{t("newList")}</DialogTitle>
         </DialogHeader>
@@ -129,11 +130,6 @@ export function NewListDialog({
             <CharacterCount id={countId} length={name.length} max={max} />
           </div>
           <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="secondary">
-                {tCommon("cancel")}
-              </Button>
-            </DialogClose>
             <Button type="submit" disabled={pending} aria-busy={pending}>
               <PlusIcon aria-hidden />
               {t("create")}

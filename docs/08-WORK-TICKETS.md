@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.20 · **Date:** November 14, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.21 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -83,7 +83,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-15 | [#41](https://github.com/ojordan0/AI4Devs-finalproject/issues/41) | Delivery addresses | E-06 | US-18 | Full stack | 5 | D3 | M | T-07, T-05 | `feat/t-15-delivery-addresses` |
 | T-16 | [#42](https://github.com/ojordan0/AI4Devs-finalproject/issues/42) | Marking items as shipped | E-06 | US-19, US-21 | Full stack | 5 | D3 | L | T-12, T-15 | `feat/t-16-shipments` |
 | T-17 | [#43](https://github.com/ojordan0/AI4Devs-finalproject/issues/43) | End-to-end test of the core cycle and test suite completion | E-08 | None | QA | All | D3 | M | T-16 | `chore/t-17-e2e-core-cycle` |
-| T-18 | [#44](https://github.com/ojordan0/AI4Devs-finalproject/issues/44) | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-32, T-33 | `docs/t-18-final-documentation` |
+| T-18 | [#44](https://github.com/ojordan0/AI4Devs-finalproject/issues/44) | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-32, T-33, T-34 | `docs/t-18-final-documentation` |
 | T-19 | [#62](https://github.com/ojordan0/AI4Devs-finalproject/issues/62) | Tests that survive a restyle | E-08 | None | Design | All | D2 | S | None | `chore/t-19-restyle-safe-tests` |
 | T-20 | [#63](https://github.com/ojordan0/AI4Devs-finalproject/issues/63) | Design tokens and base components | E-08 | None | Design | All | D2 | M | T-19, T-05 | `feat/t-20-design-foundation` |
 | T-21 | [#64](https://github.com/ojordan0/AI4Devs-finalproject/issues/64) | Welcome design | E-08 | None | Design | 1 | D2 | S | T-20, T-04 | `feat/t-21-design-welcome` |
@@ -99,6 +99,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-31 | [#74](https://github.com/ojordan0/AI4Devs-finalproject/issues/74) | Mark as shipped design | E-08 | None | Design | 5 | D3 | S | T-20, T-16 | `feat/t-31-design-mark-as-shipped` |
 | T-32 | [#75](https://github.com/ojordan0/AI4Devs-finalproject/issues/75) | Profile design | E-08 | None | Design | 1 | D2 | S | T-20, T-04 | `feat/t-32-design-profile` |
 | T-33 | [#76](https://github.com/ojordan0/AI4Devs-finalproject/issues/76) | Design for screens and states without a Stitch screen | E-08 | None | Design | 5 | D3 | M | T-20, T-14, T-15 | `feat/t-33-design-unstitched-states` |
+| T-34 | [#83](https://github.com/ojordan0/AI4Devs-finalproject/issues/83) | Bottom bar height | E-08 | None | Design | All | D2 | S | T-20 | `fix/t-34-bottom-bar-height` |
 
 ## 4. Tickets
 
@@ -365,7 +366,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-18 Deployment evidence and final documentation
 
-**Epic:** E-08 · **Stories:** None · **Type:** Documentation · **Increment:** all of milestone 1 · **Delivery:** D3 · **Size:** S · **Depends on:** T-17 and the design tickets, T-21 to T-33
+**Epic:** E-08 · **Stories:** None · **Type:** Documentation · **Increment:** all of milestone 1 · **Delivery:** D3 · **Size:** S · **Depends on:** T-17 and the design tickets, T-21 to T-34
 
 **Goal:** everything the final course delivery requires, besides the code.
 
@@ -446,11 +447,13 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Goal:** Lists looks like its approved Stitch screen.
 
-**Screens:** Lists (screen 4), with its loading and empty states and the New list dialog ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
+**Screens:** Lists (screen 4), with its loading and empty states and the New list sheet ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
 
 **Stitch folders:** `design/stitch/04-lists`, with the differences to ignore listed in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
-**Done when:** the screen follows DESIGN.md and its Stitch screen, and all tests pass.
+**Sheet test:** New list opens as the dialog's `sheet` variant, the first screen to use it, and this ticket adds the sheet's first browser test, following [DESIGN.md, Collapsible Groups & Sheets](../DESIGN.md#collapsible-groups--sheets): the close button has first focus at every screen size, it and Escape close the sheet, its label comes from the translation files in Spanish and English, the actions stay at the bottom edge below 768 px, and the sheet opens as a centered dialog from 768 px.
+
+**Done when:** the screen follows DESIGN.md and its Stitch screen, the sheet test passes, and all tests pass.
 
 ### T-25 Item form design
 
@@ -534,7 +537,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Stitch folders:** `design/stitch/11-mark-as-shipped`, with the differences to ignore listed in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
-**Sheet test:** the screen opens as the dialog's `sheet` variant, and this ticket adds its first browser test, following [DESIGN.md, Collapsible Groups & Sheets](../DESIGN.md#collapsible-groups--sheets): the close button has first focus at every screen size, it and Escape close the sheet, its label comes from the translation files in Spanish and English, the actions stay at the bottom edge below 768 px, and the sheet opens as a centered dialog from 768 px.
+**Sheet test:** the screen opens as the dialog's `sheet` variant, and this ticket adds a browser test that runs the checks of [T-24's sheet test](#t-24-lists-design) on the Mark as shipped sheet.
 
 **Done when:** the screen follows DESIGN.md and its Stitch screen, the sheet test passes, and all tests pass.
 
@@ -561,3 +564,13 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 **Stitch folders:** none. The ticket uses the components in [DESIGN.md](../DESIGN.md).
 
 **Done when:** these screens and states follow DESIGN.md, and all tests pass.
+
+### T-34 Bottom bar height
+
+**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** all of milestone 1 · **Delivery:** D2 · **Size:** S · **Depends on:** T-20
+
+**Goal:** the bottom bar never covers **+ Agregar**.
+
+**Problem:** at 360 px with four tabs, "My purchases" wraps onto three lines, the bar grows past the 64 px that **+ Agregar**'s position assumes, and it covers the button. Found in T-24; it was already there before.
+
+**Done when:** tab labels take at most two lines without going below 16 px or being cut short, **+ Agregar** is placed from the bar's real height, it is fully visible in Spanish and English at 360 px and 390 px with three and four tabs, and all tests pass.

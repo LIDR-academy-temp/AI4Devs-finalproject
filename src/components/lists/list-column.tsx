@@ -20,7 +20,7 @@ import { QuickAdd } from "./quick-add";
  * Layout Model).
  */
 export const sideBySideClassName =
-  "lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start lg:gap-8 xl:grid-cols-[420px_minmax(0,1fr)]";
+  "lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start lg:gap-gutter-desktop xl:grid-cols-[420px_minmax(0,1fr)]";
 
 export function ListColumn({
   groupId,
@@ -39,7 +39,7 @@ export function ListColumn({
 }) {
   const t = useTranslations("lists");
   return (
-    <div className="flex min-w-0 flex-col gap-6 pb-20 md:pb-0">
+    <div className="flex min-w-0 flex-col gap-5 pb-20 md:pb-0">
       <ListMenu groupId={groupId} lists={lists} currentListId={list.id} />
       {/* Keyed by list, so the quick field and the filters start over when
           the list changes; sibling keys must differ. */}
@@ -54,10 +54,12 @@ export function ListColumn({
           openItemId={openItemId}
         />
       )}
+      {/* 16px above the bottom bar (64px and its 1.5px top border) on
+          phones; from 768px, at the column's bottom right. */}
       <Link
         href={`/items/new?list=${list.id}`}
         aria-label={t("addItem")}
-        className="bg-primary text-label-lg text-primary-foreground shadow-floating hover:bg-primary-hover focus-visible:ring-ring fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 inline-flex min-h-14 items-center gap-2 rounded-full px-6 font-semibold outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:sticky md:right-auto md:bottom-6 md:self-end"
+        className="bg-primary text-label-lg text-primary-foreground shadow-floating hover:bg-primary-hover focus-visible:ring-ring fixed right-4 bottom-[calc(5rem+1.5px+env(safe-area-inset-bottom))] z-30 inline-flex min-h-14 items-center gap-2 rounded-full px-6 font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transition-none md:sticky md:right-auto md:bottom-6 md:self-end"
       >
         <PlusIcon className="size-6" aria-hidden />
         {t("add")}
