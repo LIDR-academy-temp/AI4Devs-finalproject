@@ -26,7 +26,7 @@ Part of the project documentation ([readme](../readme.md)). Maps each screen in 
 
 | Screen | Route | Component | Stitch folder | Tickets | Fit | Status |
 |---|---|---|---|---|---|---|
-| 1 Welcome | `/` | `src/app/(public)/page.tsx`, `src/app/(public)/welcome-actions.tsx`, `src/app/(public)/welcome-language.tsx` | `01-welcome` | T-04 → T-21 | Reskin | Placeholder |
+| 1 Welcome | `/` | `src/app/(public)/page.tsx`, `src/app/(public)/welcome-actions.tsx`, `src/app/(public)/welcome-language.tsx` | `01-welcome` | T-04 → T-21 | Reskin | Restyled |
 | 2 One last step | `/onboarding` | `src/app/(public)/onboarding/page.tsx`, `src/app/(public)/onboarding/onboarding-form.tsx` | `02-one-last-step` | T-04 → T-22 | Reskin | Placeholder |
 | 3 Invitation | `/invitations/[code]` | `src/app/(public)/invitations/[code]/page.tsx`, `src/app/(public)/invitations/[code]/invitation-actions.tsx`, `src/app/(public)/welcome-actions.tsx` | `03-invitation` | T-08 → T-23 | Reskin | Placeholder |
 | 4 Lists | `/lists` | `src/app/(app)/lists/page.tsx`, `src/components/lists/list-column.tsx`, `list-menu.tsx`, `quick-add.tsx`, `item-filters.tsx`, `item-card.tsx`, `status-chip.tsx` | `04-lists` | T-10 → T-24 | Reskin | Restyled |

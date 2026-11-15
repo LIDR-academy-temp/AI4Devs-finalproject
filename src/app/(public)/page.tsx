@@ -30,17 +30,25 @@ export default async function WelcomePage({
   const { error } = await searchParams;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[640px] flex-col justify-center gap-6 px-4 py-8 md:px-8">
+    <main className="px-margin py-space-xl md:px-margin-desktop gap-space-lg mx-auto flex min-h-dvh w-full max-w-[640px] flex-col justify-center">
       <WelcomeLanguage />
-      <section className="border-border bg-card shadow-card flex flex-col items-center gap-6 rounded-xl border-[1.5px] p-6 text-center">
-        <div className="bg-primary text-primary-foreground flex size-24 items-center justify-center rounded-xl">
-          <ShoppingBagIcon className="size-12" aria-hidden />
-        </div>
-        <div className="flex flex-col gap-2">
-          <h1 className="text-headline-xl-mobile md:text-headline-xl font-bold">
-            {t("title")}
-          </h1>
-          <p className="text-body-xl text-muted-foreground">{t("tagline")}</p>
+      <section className="border-border bg-card shadow-card gap-space-xl pt-space-xl pb-space-lg md:p-space-xl flex flex-col rounded-xl border-[1.5px] px-5">
+        <div className="gap-space-md flex flex-col items-center text-center">
+          <div className="bg-primary text-primary-foreground shadow-card flex size-24 items-center justify-center rounded-xl">
+            <ShoppingBagIcon
+              className="size-11"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <h1 className="text-headline-xl-mobile md:text-headline-xl tracking-tight text-balance">
+              {t("title")}
+            </h1>
+            <p className="text-body-lg text-muted-foreground mx-auto max-w-[30ch] text-balance">
+              {t("tagline")}
+            </p>
+          </div>
         </div>
         <WelcomeActions
           google={googleSignInAvailable()}

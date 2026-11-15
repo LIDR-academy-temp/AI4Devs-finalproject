@@ -77,6 +77,32 @@ test.describe("Welcome in a browser that prefers Spanish", () => {
     await expectNoAccessibilityViolations(page);
   });
 
+  test("T-21 the language options are at least 48px tall and 8px apart", async ({
+    page,
+  }) => {
+    // DESIGN.md, Touch and Interaction Targets, on a 360px phone.
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/");
+
+    const boxes = await Promise.all(
+      (["es", "en"] as const).map(async (language) => {
+        const box = await page
+          .getByText(messages.es.common.languageNames[language], {
+            exact: true,
+          })
+          .boundingBox();
+        expect(box).not.toBeNull();
+        return box!;
+      }),
+    );
+    for (const box of boxes) {
+      expect(box.height).toBeGreaterThanOrEqual(48);
+      expect(box.width).toBeGreaterThanOrEqual(48);
+    }
+    const [spanish, english] = boxes;
+    expect(english.x - (spanish.x + spanish.width)).toBeGreaterThanOrEqual(8);
+  });
+
   test("T-04 a signed-out person is sent to Welcome", async ({ page }) => {
     for (const path of ["/profile", "/lists", "/onboarding"]) {
       await page.goto(path);
