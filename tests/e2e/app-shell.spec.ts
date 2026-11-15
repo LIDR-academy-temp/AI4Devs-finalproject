@@ -513,6 +513,15 @@ test.describe("screen states", () => {
     await expect(page).toHaveURL("/to-buy");
   });
 
+  test("BR-13 a user who is only a buyer opens Group", async ({ page }) => {
+    await signInAsSeedUser(page, "juan");
+    await page.goto("/group");
+
+    await expect(shell(page, "es").notAvailable).toBeVisible();
+    // Nothing about the group's people: no member's email.
+    await expect(page.getByText("@example.com")).toHaveCount(0);
+  });
+
   test('BR-13 a missing address shows "not available"', async ({ page }) => {
     await signUpOnboarded(page, { language: "en" });
     await page.goto("/no-such-screen");

@@ -23,8 +23,15 @@ export type GroupSummary = {
 export type GroupDetails = {
   id: string;
   name: string;
-  members: { id: string; name: string; isOwner: boolean }[];
-  buyers: { id: string; name: string }[];
+  /** Each member with their email, null for a deleted account (FR-07, BR-05). */
+  members: {
+    id: string;
+    name: string;
+    isOwner: boolean;
+    email: string | null;
+  }[];
+  /** Each buyer with their WhatsApp number, null for a deleted account (BR-04, BR-05). */
+  buyers: { id: string; name: string; whatsappNumber: string | null }[];
 };
 
 /** The groups where the user has an active membership, by name. */
@@ -53,8 +60,9 @@ export async function listGroups(
 }
 
 /**
- * The group with its active members and buyers. Only members can view them
- * (BR-12): a buyer gets ForbiddenError, and anyone else NotAvailableError,
+ * The group with its active members, with their emails, and buyers, with their
+ * WhatsApp numbers (FR-07). Only members can view them (BR-12): a buyer gets
+ * ForbiddenError, which carries no data, and anyone else NotAvailableError,
  * exactly as for a group that doesn't exist (BR-13).
  */
 export async function getGroup(
@@ -76,6 +84,7 @@ export async function getGroup(
       id: users.id,
       name: users.name,
       email: users.email,
+      whatsappNumber: users.whatsappNumber,
       deletedAt: users.deletedAt,
       type: memberships.type,
     })
@@ -86,10 +95,13 @@ export async function getGroup(
     )
     .orderBy(asc(memberships.joinedAt), asc(users.id));
 
+  // A deleted account keeps no contact details (BR-05).
   const named = people.map((person) => ({
     id: person.id,
     type: person.type,
     name: personName(person, language),
+    email: person.deletedAt ? null : person.email,
+    whatsappNumber: person.deletedAt ? null : person.whatsappNumber,
   }));
 
   return {
@@ -97,10 +109,15 @@ export async function getGroup(
     name: group.name,
     members: named
       .filter((person) => person.type === "member")
-      .map(({ id, name }) => ({ id, name, isOwner: id === group.ownerId })),
+      .map(({ id, name, email }) => ({
+        id,
+        name,
+        isOwner: id === group.ownerId,
+        email,
+      })),
     buyers: named
       .filter((person) => person.type === "buyer")
-      .map(({ id, name }) => ({ id, name })),
+      .map(({ id, name, whatsappNumber }) => ({ id, name, whatsappNumber })),
   };
 }
 

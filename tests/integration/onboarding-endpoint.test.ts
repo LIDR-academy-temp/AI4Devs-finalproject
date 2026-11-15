@@ -4,11 +4,18 @@ import { afterAll, describe, expect, it } from "vitest";
 import { getGroups } from "../../src/app/api/v1/groups/definitions";
 import { getMe } from "../../src/app/api/v1/me/definitions";
 import { postOnboarding } from "../../src/app/api/v1/me/onboarding/definitions";
-import { groups, lists, memberships, users } from "../../src/server/db/schema";
+import { seedIds } from "../../scripts/seed-data";
+import {
+  groups,
+  invitations,
+  lists,
+  memberships,
+  users,
+} from "../../src/server/db/schema";
 import { createRouteHandler } from "../../src/server/http/route";
 import type { SessionUser } from "../../src/server/http/session";
 import { meSchema } from "../../src/server/http/schemas";
-import { createUser } from "../support/factories";
+import { createInvitation, createUser } from "../support/factories";
 import {
   apiRequest,
   createTestDatabase,
@@ -141,6 +148,76 @@ describe("POST /me/onboarding", () => {
     ).json();
 
     expect(body.memberships[0].groupName).toBe("Grupo de Marta");
+  });
+
+  it("BR-06 completing onboarding with an invitation creates no group", async () => {
+    const { user, session } = await newUser();
+    const invitation = await createInvitation(db, {
+      groupId: seedIds.groups.garcia,
+      createdBy: seedIds.users.ana,
+    });
+
+    const response = await postAnswers(session, {
+      ...validAnswers,
+      invitationCode: invitation.code,
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expectMatchesSchema(meSchema, body);
+    expect(body).toMatchObject({ onboarded: true, memberships: [] });
+    expect(
+      await db.select().from(groups).where(eq(groups.ownerId, user.id)),
+    ).toEqual([]);
+    const [stored] = await db
+      .select({ status: invitations.status })
+      .from(invitations)
+      .where(eq(invitations.id, invitation.id));
+    expect(stored?.status).toBe("pending");
+  });
+
+  it("BR-06 an invitation that no longer works doesn't stop getting started", async () => {
+    const used = async (status: "accepted" | "cancelled" | "declined") =>
+      (
+        await createInvitation(db, {
+          groupId: seedIds.groups.garcia,
+          createdBy: seedIds.users.ana,
+          status,
+        })
+      ).code;
+    const expired = (
+      await createInvitation(db, {
+        groupId: seedIds.groups.garcia,
+        createdBy: seedIds.users.ana,
+        expiresAt: now,
+      })
+    ).code;
+    const codes = [
+      expired,
+      await used("cancelled"),
+      await used("accepted"),
+      await used("declined"),
+      "x".repeat(43),
+      "not a code",
+    ];
+
+    for (const invitationCode of codes) {
+      const { user, session } = await newUser();
+      const response = await postAnswers(session, {
+        ...validAnswers,
+        invitationCode,
+      });
+
+      expect(response.status).toBe(200);
+      const [owned] = await db
+        .select({ id: groups.id })
+        .from(groups)
+        .where(eq(groups.ownerId, user.id));
+      expect(owned, invitationCode).toBeDefined();
+      expect(
+        await db.select().from(lists).where(eq(lists.groupId, owned!.id)),
+      ).toHaveLength(1);
+    }
   });
 
   it("BR-04 the number is saved in international format", async () => {

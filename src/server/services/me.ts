@@ -5,7 +5,9 @@ import type { Clock } from "../clock";
 import type { Database } from "../db/client";
 import { items, users } from "../db/schema";
 import { NotAvailableError } from "./errors";
+import { isInvitationCode } from "../../shared/invitations";
 import { listGroups, startWithoutInvitationIn } from "./groups";
+import { isUsableInvitationCode } from "./invitations";
 import type { MembershipType } from "./access";
 
 // The signed-in user, their memberships, and whether they have purchases, which
@@ -80,13 +82,17 @@ export type OnboardingAnswers = {
   language: Language;
   /** Already in E.164, from the shared request schema (BR-04, BR-32). */
   whatsappNumber: string;
+  /** The invitation the user signs up through, if any (BR-06). */
+  invitationCode?: string | undefined;
 };
 
 /**
  * Completes onboarding (FR-02): saves the language, the WhatsApp number, and
  * when the terms were accepted (BR-01), then runs getting started (BR-06), all
- * in one transaction with the user's row locked. For a user who has already
- * completed it, changes nothing. Returns the current user either way.
+ * in one transaction with the user's row locked. Getting started is skipped
+ * when the user signs up through a usable invitation, which they then accept
+ * or decline. For a user who has already completed onboarding, changes
+ * nothing. Returns the current user either way.
  */
 export async function completeOnboarding(
   db: Database,
@@ -114,7 +120,13 @@ export async function completeOnboarding(
         updatedAt: now,
       })
       .where(eq(users.id, userId));
-    await startWithoutInvitationIn(tx, clock, userId, answers.language);
+    const { invitationCode } = answers;
+    const throughInvitation =
+      isInvitationCode(invitationCode) &&
+      (await isUsableInvitationCode(tx, now, invitationCode));
+    if (!throughInvitation) {
+      await startWithoutInvitationIn(tx, clock, userId, answers.language);
+    }
   });
   return getCurrentUser(db, userId);
 }

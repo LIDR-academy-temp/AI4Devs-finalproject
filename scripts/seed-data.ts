@@ -58,6 +58,7 @@ export const seedIds = {
     expired: seedId(8, 2),
     accepted: seedId(8, 3),
     cancelled: seedId(8, 4),
+    declined: seedId(8, 5),
   },
 } as const;
 
@@ -166,6 +167,7 @@ const seedInvitations = [
     id: seedIds.invitations.pending,
     groupId: garcia,
     type: "buyer",
+    inviteeName: "Carlos",
     code: invitationCode("pending"),
     createdBy: ana,
     // Far away on purpose: a second load skips this row, so a date near the load would
@@ -203,6 +205,16 @@ const seedInvitations = [
     createdBy: ana,
     expiresAt: day(8),
     createdAt: day(1),
+  },
+  {
+    id: seedIds.invitations.declined,
+    groupId: garcia,
+    type: "member",
+    code: invitationCode("declined"),
+    status: "declined",
+    createdBy: rosa,
+    expiresAt: day(9),
+    createdAt: day(2),
   },
 ] satisfies (typeof invitations.$inferInsert)[];
 

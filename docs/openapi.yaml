@@ -159,8 +159,26 @@ components:
           properties:
             isOwner:
               type: boolean
+            email:
+              type:
+                - string
+                - "null"
+              description: Null for a deleted account (FR-07, BR-05)
           required:
             - isOwner
+            - email
+    GroupBuyer:
+      allOf:
+        - $ref: "#/components/schemas/PersonRef"
+        - type: object
+          properties:
+            whatsappNumber:
+              type:
+                - string
+                - "null"
+              description: E.164; null for a deleted account (BR-04, BR-05)
+          required:
+            - whatsappNumber
     Group:
       type: object
       properties:
@@ -176,12 +194,95 @@ components:
         buyers:
           type: array
           items:
-            $ref: "#/components/schemas/PersonRef"
+            $ref: "#/components/schemas/GroupBuyer"
       required:
         - id
         - name
         - members
         - buyers
+    CreateInvitationRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - member
+            - buyer
+        inviteeName:
+          type: string
+          maxLength: 100
+      required:
+        - type
+    Invitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/MembershipType"
+        inviteeName:
+          type:
+            - string
+            - "null"
+          description: The name the member gave, if any (BR-32)
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - inviteeName
+        - expiresAt
+    InvitationCollection:
+      type: object
+      properties:
+        invitations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invitation"
+      required:
+        - invitations
+    CreatedInvitation:
+      allOf:
+        - $ref: "#/components/schemas/Invitation"
+        - type: object
+          properties:
+            link:
+              type: string
+              format: uri
+              description: The Invitation screen's address, holding the single-use code (BR-08)
+          required:
+            - link
+    InvitationPreview:
+      type: object
+      properties:
+        inviterName:
+          type: string
+          description: '"Former user" for a deleted account'
+        groupName:
+          type: string
+        type:
+          $ref: "#/components/schemas/MembershipType"
+        alreadyInGroup:
+          type: boolean
+          description: The signed-in user already has the access the invitation gives (BR-09); false when signed out
+      required:
+        - inviterName
+        - groupName
+        - type
+        - alreadyInGroup
+    AcceptedInvitation:
+      type: object
+      properties:
+        groupId:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/MembershipType"
+      required:
+        - groupId
+        - type
     List:
       type: object
       properties:
@@ -449,6 +550,9 @@ components:
           type: boolean
           enum:
             - true
+        invitationCode:
+          type: string
+          description: The invitation the user signs up through; a pending invitation that hasn't expired skips getting started (BR-06). Any other value is ignored.
       required:
         - language
         - whatsappNumber
@@ -467,6 +571,110 @@ components:
           type: boolean
   parameters: {}
 paths:
+  /groups/{groupId}/invitations:
+    get:
+      summary: The group's pending invitations that haven't expired, without their links. Members only (BR-12).
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: groupId
+          in: path
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationCollection"
+        "401":
+          description: NOT_SIGNED_IN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: FORBIDDEN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: NOT_AVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: RATE_LIMITED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: INTERNAL_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Create a member or buyer invitation that expires in 7 days, and get its link. Members only (BR-08, BR-12, BR-32).
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: groupId
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvitationRequest"
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedInvitation"
+        "401":
+          description: NOT_SIGNED_IN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: FORBIDDEN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: NOT_AVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: VALIDATION_FAILED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: RATE_LIMITED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: INTERNAL_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /groups/{groupId}/lists:
     get:
       summary: The group's lists that aren't archived, for members and buyers (BR-12)
@@ -642,6 +850,205 @@ paths:
                 $ref: "#/components/schemas/Error"
         "429":
           description: RATE_LIMITED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: INTERNAL_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /invitations/{invitationId}:
+    delete:
+      summary: Cancel a pending invitation, so its link stops working. Members of its group only (BR-08, BR-12).
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: invitationId
+          in: path
+      responses:
+        "204":
+          description: Success, with no content
+        "401":
+          description: NOT_SIGNED_IN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: FORBIDDEN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: NOT_AVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          description: INVITATION_INVALID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: RATE_LIMITED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: INTERNAL_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /invitations/by-code/{code}/accept:
+    post:
+      summary: "Accept an invitation: join its group with its type (BR-08, BR-09). Refused with ALREADY_IN_GROUP if the user already has that access."
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[A-Za-z0-9_-]{43}$
+          required: true
+          name: code
+          in: path
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedInvitation"
+        "401":
+          description: NOT_SIGNED_IN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: FORBIDDEN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: NOT_AVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: RULE_VIOLATION
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          description: INVITATION_INVALID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: RATE_LIMITED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: INTERNAL_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /invitations/by-code/{code}/decline:
+    post:
+      summary: Decline an invitation, which uses up its link; a user who has never had a membership then gets their own group and first list (BR-06, BR-08). Refused with ALREADY_IN_GROUP like accept.
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[A-Za-z0-9_-]{43}$
+          required: true
+          name: code
+          in: path
+      responses:
+        "204":
+          description: Success, with no content
+        "401":
+          description: NOT_SIGNED_IN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: FORBIDDEN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: NOT_AVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: RULE_VIOLATION
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          description: INVITATION_INVALID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: RATE_LIMITED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: INTERNAL_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /invitations/by-code/{code}:
+    get:
+      summary: "Invitation preview: inviter, group, and type, and, for a signed-in user, whether they already have the access it gives. No sign-in required (BR-08, BR-09)."
+      security: []
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[A-Za-z0-9_-]{43}$
+          required: true
+          name: code
+          in: path
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationPreview"
+        "404":
+          description: NOT_AVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          description: INVITATION_INVALID
           content:
             application/json:
               schema:
@@ -1112,7 +1519,7 @@ paths:
                 $ref: "#/components/schemas/Error"
   /me/onboarding:
     post:
-      summary: Save the language, WhatsApp number, and age and terms acceptance, and create the user's group and first list (FR-02, BR-01, BR-04, BR-06). Returns the current user; if onboarding is already complete, changes nothing.
+      summary: Save the language, WhatsApp number, and age and terms acceptance, and create the user's group and first list unless they sign up through a usable invitation (FR-02, BR-01, BR-04, BR-06). Returns the current user; if onboarding is already complete, changes nothing.
       requestBody:
         content:
           application/json:

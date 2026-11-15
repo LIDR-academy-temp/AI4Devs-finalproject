@@ -65,6 +65,8 @@ export type RouteContext<A extends Access> = {
   db: Database;
   clock: Clock;
   request: Request;
+  /** The app's own address, for links the response includes. */
+  appUrl: string | undefined;
 };
 
 export type RouteDefinition<
@@ -214,7 +216,7 @@ export function createRouteHandler<
 
       const result = await definition.handler(
         { params, query, body } as Parameters<typeof definition.handler>[0],
-        { user, language, db, clock, request } as RouteContext<A>,
+        { user, language, db, clock, request, appUrl } as RouteContext<A>,
       );
 
       if (!definition.response) {

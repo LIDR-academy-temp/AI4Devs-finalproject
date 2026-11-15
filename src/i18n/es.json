@@ -13,7 +13,12 @@
     "couldNotSave": "No se pudo guardar. Revisa tu conexión e inténtalo de nuevo",
     "tryAgain": "Intentar de nuevo",
     "cancel": "Cancelar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "notifications": "Notificaciones ({hotkey})",
+    "membershipTypes": {
+      "member": "Miembro",
+      "buyer": "Comprador"
+    }
   },
   "shell": {
     "navigation": "Navegación principal",
@@ -163,5 +168,37 @@
   },
   "people": {
     "formerUser": "Antiguo usuario"
+  },
+  "invitation": {
+    "title": "Invitación",
+    "invitesYou": "{name} te invita",
+    "groupLabel": "Grupo al que te unes",
+    "invitedAs": "Te invitan como",
+    "signInToAccept": "Inicia sesión para aceptar la invitación.",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "noLongerValid": "Esta invitación ya no es válida. Pide una nueva.",
+    "alreadyInGroup": "Ya perteneces a este grupo."
+  },
+  "group": {
+    "managedBy": "Espacio compartido de compras familiares · A cargo de {name}",
+    "inviteMember": "Invitar a un miembro",
+    "inviteBuyer": "Invitar a un comprador",
+    "inviteeName": "¿A quién invitas? (opcional)",
+    "createLink": "Crear enlace",
+    "invitationLink": "Enlace de invitación",
+    "shareOnWhatsApp": "Compartir por WhatsApp",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
+    "expires": "{count, plural, =0 {Expira hoy} one {Expira en 1 día} other {Expira en # días}}",
+    "pendingInvitations": "Invitaciones pendientes ({count})",
+    "invitedAs": "Invitado como {type, select, member {miembro} other {comprador}}",
+    "cancelInvitation": "Cancelar invitación",
+    "invitationCancelled": "Invitación cancelada",
+    "owner": "Propietario",
+    "members": "Miembros",
+    "buyers": "Compradores",
+    "noBuyers": "Invita a quien va a comprar",
+    "invitationMessage": "{hasName, select, yes {Hola {name},} other {Hola,}} {inviter} te invitó a {group} en ComproParaTi como {type, select, member {miembro} other {comprador}}: {link}"
   }
 }

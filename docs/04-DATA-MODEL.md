@@ -1,6 +1,6 @@
 # Data model
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.8 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.9 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -107,7 +107,7 @@ erDiagram
         enum type "member or buyer"
         varchar invitee_name "optional"
         varchar code UK
-        enum status "pending, accepted, cancelled"
+        enum status "pending, accepted, declined, cancelled"
         uuid created_by FK
         timestamptz expires_at
         uuid accepted_by FK
@@ -244,7 +244,7 @@ The domain services enforce everything else:
 - The minimum lengths in BR-32, because whether a value is blank depends on how they trim it.
 - Whether a value is real and not only well formed, such as a phone number or a country code.
 
-**Enumerations:** `language` (es, en) · `membership_type` (member, buyer) · `membership_status` (active, ended) · `invitation_status` (pending, accepted, cancelled) · `item_status` (pending, reserved, purchased, shipped, unavailable) · `link_status` (none, pending, done, failed) · `shipping_service` (maritime, air).
+**Enumerations:** `language` (es, en) · `membership_type` (member, buyer) · `membership_status` (active, ended) · `invitation_status` (pending, accepted, declined, cancelled) · `item_status` (pending, reserved, purchased, shipped, unavailable) · `link_status` (none, pending, done, failed) · `shipping_service` (maritime, air).
 
 **Sign-in tables:** `users`, `accounts`, `sessions`, and `verifications` follow Better Auth's schema, configured with plural table names, snake_case columns, and database-generated `uuid` IDs. The app adds its own columns to `users`.
 
@@ -449,4 +449,4 @@ The seed script loads the same data for local development and automated tests. I
 - **Items in every status:** pending, reserved by Juan, purchased by Juan with a buyer note, purchased by Pedro, shipped in a two-item shipment, and unavailable with a note. One item has no recipient.
 - **Delivery addresses:** "Grandma's house" (default) and "Mom's house".
 - **Pérez Group**, owned by Luis, with one item, for cross-group access tests.
-- **Invitations:** one pending, as a buyer, for Carlos; one expired; one already accepted; and one cancelled. Only the pending one has an invitee name.
+- **Invitations:** one pending, as a buyer, for Carlos; one expired; one already accepted; one declined; and one cancelled. Only the pending one has an invitee name.

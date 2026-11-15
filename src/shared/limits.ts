@@ -3,6 +3,7 @@
 
 export const fieldLimits = {
   name: { min: 1, max: 100 },
+  inviteeName: { max: 100 },
   note: { max: 1000 },
   quantity: { min: 1, max: 99 },
   recipientDetails: {

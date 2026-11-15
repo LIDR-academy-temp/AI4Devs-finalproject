@@ -16,6 +16,7 @@ import { fieldClassName } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/components/ui/utils";
 import { fields } from "@/shared/fields";
+import { invitationPath } from "@/shared/invitations";
 import { LANGUAGES, type Language } from "@/shared/languages";
 
 // The One last step form: language, the age and terms box (BR-01), and the
@@ -27,9 +28,12 @@ type Errors = { acceptsTerms?: string; whatsappNumber?: string };
 export function OnboardingForm({
   language: initialLanguage,
   defaultCountry,
+  invitationCode,
 }: {
   language: Language;
   defaultCountry?: CountryCode;
+  /** The invitation the user came from, which they return to (flow C). */
+  invitationCode?: string | undefined;
 }) {
   const t = useTranslations("onboarding");
   const tCommon = useTranslations("common");
@@ -89,10 +93,13 @@ export function OnboardingForm({
       language,
       whatsappNumber,
       acceptsTerms,
+      invitationCode,
     });
     if (result.ok) {
       rememberLanguage(language);
-      router.replace("/lists");
+      router.replace(
+        invitationCode ? invitationPath(invitationCode) : "/lists",
+      );
       return;
     }
     setPending(false);

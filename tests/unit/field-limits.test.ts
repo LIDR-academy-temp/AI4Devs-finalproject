@@ -51,6 +51,14 @@ describe("BR-32 field limits", () => {
     expect(errorFor(fields.note, "a".repeat(1001))).toBe("too_long");
   });
 
+  it("BR-32 the invitee name is optional and accepts up to 100 characters", () => {
+    expect(fields.inviteeName.parse("  Carlos ")).toBe("Carlos");
+    expect(fields.inviteeName.parse("")).toBeUndefined();
+    expect(fields.inviteeName.parse("   ")).toBeUndefined();
+    expect(accepts(fields.inviteeName, "a".repeat(100))).toBe(true);
+    expect(errorFor(fields.inviteeName, "a".repeat(101))).toBe("too_long");
+  });
+
   it("BR-32 quantity accepts 1 to 99", () => {
     expect(accepts(fields.quantity, 1)).toBe(true);
     expect(accepts(fields.quantity, 99)).toBe(true);

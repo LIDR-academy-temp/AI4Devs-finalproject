@@ -8,6 +8,13 @@
       "when": 1794169623189,
       "tag": "0000_initial_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794780115625,
+      "tag": "0001_invitations_decline_and_invitee_name",
+      "breakpoints": true
     }
   ]
 }

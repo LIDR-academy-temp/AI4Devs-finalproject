@@ -1,6 +1,6 @@
 # Product Requirements Document: Assisted Shopping Platform (MVP)
 
-**Version:** 1.11 · **Date:** November 15, 2026  
+**Version:** 1.12 · **Date:** November 15, 2026  
 **Project Manager and Product owner:** Odalys Jordan Enriquez  
 **Product Name:** ComproParaTi ("I buy for you", [section 16](#16-product-decisions))
 
@@ -226,9 +226,9 @@ Business rules are enforced on the server. The interface reflects them, but neve
 
 ### 12.2 Groups, membership, and invitations
 
-- **BR-06 Getting started.** A user who signs up without an invitation gets a new group, named "{First name}'s group", of which they are the owner, and a list called "My list". A user who signs up through an invitation joins that group with the invitation's type and does not get a group of their own.
+- **BR-06 Getting started.** A user who signs up without an invitation gets a new group, named "{First name}'s group", of which they are the owner, and a list called "My list". A user who signs up through an invitation joins that group with the invitation's type and does not get a group of their own. If they decline the invitation instead, they get their own group and list, as if they had signed up without one.
 - **BR-07 Ownership.** Any user can create a group and own several groups. The owner can transfer ownership to any other member of the group. To leave the group, the owner must first transfer ownership; if they are the only member, leaving deletes the group and everything in it, after a confirmation.
-- **BR-08 Invitations.** Any member can invite people. An invitation is either *member* or *buyer*. Each invitation link can be used once, expires after 7 days, and can be cancelled. A used, expired, or cancelled link shows a message asking for a new invitation.
+- **BR-08 Invitations.** Any member can invite people. An invitation is either *member* or *buyer*. Each invitation link can be used once, expires after 7 days, and can be cancelled. The person invited accepts or declines it, and either one uses up the link. A used, declined, expired, or cancelled link shows a message asking for a new invitation.
 - **BR-09 Existing users and invitations.** If the person opening an invitation already has the access it grants (a member opening either type, or a buyer opening a buyer invitation), they are told they already belong to the group, and the invitation stays valid. A buyer who accepts a member invitation becomes a member.
 - **BR-10 Removing and leaving.** Only the owner can remove members. Any member can remove a buyer. Any member or buyer can leave a group; the owner follows BR-07.
 - **BR-11 When access ends.** When a member or buyer leaves or is removed, their reservations are released, and they keep access only to items they already purchased, until they mark them as shipped. Account deletion follows BR-05 instead.
@@ -350,7 +350,7 @@ Each requirement describes what users can do. The rules that apply are reference
 ### 13.2 Groups and invitations
 
 - **FR-05 Getting started and creating groups.** New users start with a group and a list, or join the group that invited them (BR-06). Any user can create a group from their profile (BR-07).
-- **FR-06 Invitations.** A member creates a member or buyer invitation, optionally giving the invitee's name, and shares its link on WhatsApp or copies it. Members can see pending invitations and cancel them (BR-08, BR-09, BR-32).
+- **FR-06 Invitations.** A member creates a member or buyer invitation, optionally giving the invitee's name, and shares its link on WhatsApp or copies it. The person invited accepts or declines it. Members can see pending invitations and cancel them (BR-08, BR-09, BR-32).
 - **FR-07 Members.** Members view and edit the group's lists, items, recipients, and delivery addresses, and can also buy for their own group without a separate invitation. In Group, they see each member's email and each buyer's WhatsApp number (BR-04, BR-12). Members can rename the group. The owner can remove members and transfer ownership (BR-07, BR-10, BR-12).
 - **FR-08 Single interface.** The app has no mode switch. It shows each user the screens and actions their memberships allow (BR-12): someone who only buys sees the items to buy and their purchases; a member sees lists, recipients, and the group, plus their purchases while they have reserved or purchased items. A user with no remaining access to any group sees "You're not in any group yet." with a **Create a group** button and a note to ask for an invitation.
 
@@ -702,8 +702,8 @@ Each functional requirement, with the user stories, business rules, API endpoint
 | FR-02 Onboarding | US-01 | BR-04 | `/me/onboarding` | users | 1 |
 | FR-03 Age declaration | US-01 | BR-01 | `/me/onboarding` | users | 1 |
 | FR-04 Profile | US-02, US-03 | BR-04, BR-05 | `/me` | users, accounts, sessions | 1 (account deletion: 9) |
-| FR-05 Getting started and creating groups | US-01, US-06 | BR-06, BR-07 | `/me/onboarding`, `/groups` | groups, memberships, lists | 2 (more groups: 6) |
-| FR-06 Invitations | US-04 | BR-08, BR-09, BR-32 | `/groups/{groupId}/invitations`, `/invitations/{invitationId}`, `/invitations/by-code/{code}`, `…/accept` | invitations, memberships | 2 |
+| FR-05 Getting started and creating groups | US-01, US-06 | BR-06, BR-07 | `/me/onboarding`, `/groups`, `/invitations/by-code/{code}/decline` | groups, memberships, lists | 2 (more groups: 6) |
+| FR-06 Invitations | US-04 | BR-08, BR-09, BR-32 | `/groups/{groupId}/invitations`, `/invitations/{invitationId}`, `/invitations/by-code/{code}`, `…/accept`, `…/decline` | invitations, memberships | 2 |
 | FR-07 Members | US-05 | BR-07, BR-10, BR-12 | `/groups/{groupId}`, `…/owner`, `…/memberships/{userId}` | groups, memberships | 2 (rename and transfer: 6; removing: 9) |
 | FR-08 Single interface | US-07 | BR-12 | `/me` | memberships | 2 |
 | FR-09 Recipients | US-09 | BR-15 | `/groups/{groupId}/recipients`, `/recipients/{recipientId}` | recipients, items | 3 (deleting: 6) |

@@ -13,7 +13,12 @@
     "couldNotSave": "Couldn't save. Check your connection and try again",
     "tryAgain": "Try again",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "notifications": "Notifications ({hotkey})",
+    "membershipTypes": {
+      "member": "Member",
+      "buyer": "Buyer"
+    }
   },
   "shell": {
     "navigation": "Main navigation",
@@ -163,5 +168,37 @@
   },
   "people": {
     "formerUser": "Former user"
+  },
+  "invitation": {
+    "title": "Invitation",
+    "invitesYou": "{name} invites you",
+    "groupLabel": "Group you're joining",
+    "invitedAs": "You're invited as",
+    "signInToAccept": "Sign in to accept the invitation.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "noLongerValid": "This invitation is no longer valid. Ask for a new one.",
+    "alreadyInGroup": "You're already in this group."
+  },
+  "group": {
+    "managedBy": "Shared family shopping space · Managed by {name}",
+    "inviteMember": "Invite a member",
+    "inviteBuyer": "Invite a buyer",
+    "inviteeName": "Who are you inviting? (optional)",
+    "createLink": "Create link",
+    "invitationLink": "Invitation link",
+    "shareOnWhatsApp": "Share on WhatsApp",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "expires": "{count, plural, =0 {Expires today} one {Expires in 1 day} other {Expires in # days}}",
+    "pendingInvitations": "Pending invitations ({count})",
+    "invitedAs": "Invited as {type, select, member {member} other {buyer}}",
+    "cancelInvitation": "Cancel invitation",
+    "invitationCancelled": "Invitation cancelled",
+    "owner": "Owner",
+    "members": "Members",
+    "buyers": "Buyers",
+    "noBuyers": "Invite the person who will buy",
+    "invitationMessage": "{hasName, select, yes {Hi {name},} other {Hi,}} {inviter} invited you to {group} on ComproParaTi as a {type, select, member {member} other {buyer}}: {link}"
   }
 }

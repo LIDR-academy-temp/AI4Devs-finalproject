@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 
+import { rememberGroup } from "@/components/current-group";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,19 +15,11 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CURRENT_GROUP_COOKIE } from "@/shared/navigation";
 
 // The left of the header (docs/02-UX-DESIGN.md, section 2.2): the group
 // selector when the user is a member of two or more groups, the group's name
 // with one, and the product name with none. Choosing a group remembers it on
 // this device and reloads the screen (design decision 3 of the T-05 change).
-
-const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
-
-function rememberGroup(groupId: string) {
-  const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${CURRENT_GROUP_COOKIE}=${encodeURIComponent(groupId)}; Path=/; Max-Age=${ONE_YEAR_IN_SECONDS}; SameSite=Lax${secure}`;
-}
 
 // The name wraps to two lines before it is cut, so most group names stay whole
 // next to Refresh and the avatar on a 360px screen.

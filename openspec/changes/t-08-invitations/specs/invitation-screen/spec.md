@@ -30,7 +30,7 @@ On the Invitation screen, **Continue with Google** and the development sign-in S
 
 ### Requirement: A signed-in user accepts or declines
 
-A signed-in, onboarded user who doesn't already have the access SHALL see **Accept** and **Decline**. After accepting, a member SHALL land on Lists with the joined group as the current group, and a buyer on To buy (flow C, step 3). After declining, the user SHALL land on their main screen (docs/02-UX-DESIGN.md §2.2).
+A signed-in, onboarded user who doesn't already have the access SHALL see **Accept** and **Decline**. After accepting, a member SHALL land on Lists with the joined group as the current group, and a buyer on To buy (flow C, step 4). After declining, the user SHALL land on their main screen (flow C, step 5).
 
 #### Scenario: AC-100 a new user accepts a member invitation and lands on Lists
 
@@ -62,7 +62,7 @@ A signed-in, onboarded user who doesn't already have the access SHALL see **Acce
 
 ### Requirement: A link that no longer works says so
 
-When the invitation was used, declined, or cancelled, has expired, or its code matches none, the screen SHALL show only "This invitation is no longer valid. Ask for a new one." and a way back to Welcome, or to the main screen for a signed-in user (BR-08, flow C, step 4).
+When the invitation was used, declined, or cancelled, has expired, or its code matches none, the screen SHALL show only "This invitation is no longer valid. Ask for a new one." and a way back to Welcome, or to the main screen for a signed-in user (BR-08, flow C, step 6).
 
 #### Scenario: AC-11 an expired link on the screen
 
@@ -87,7 +87,7 @@ When the invitation was used, declined, or cancelled, has expired, or its code m
 
 ### Requirement: A user already in the group is told so
 
-When the signed-in user already has the access the invitation gives, the screen SHALL show "You're already in this group." with a way to their main screen, and no Accept or Decline, and the invitation SHALL stay valid (BR-09, flow C, step 5).
+When the signed-in user already has the access the invitation gives, the screen SHALL show "You're already in this group." with a way to their main screen, and no Accept or Decline, and the invitation SHALL stay valid (BR-09, flow C, step 7).
 
 #### Scenario: AC-15 a member opens an invitation to their own group
 
