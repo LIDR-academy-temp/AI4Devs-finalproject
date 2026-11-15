@@ -74,6 +74,7 @@ Build sessions start with delivery 2. Each one lists the work tickets it covers,
 | Part 21 | T-19 | Tests that survive a restyle: browser tests that find elements by role and text, accessibility checks in every main state, the local sign-in instructions in the readme, and pull request #78 | Claude Code | Claude Opus 5.5 | [part-21-restyle-safe-tests.md](docs/ai-conversations/part-21-restyle-safe-tests.md) |
 | Part 22 | — | Screen map: each screen and state mapped to its route, components, Stitch folder, tickets, and fit; the T-10 states assigned to T-24 and T-26; T-21, T-22, T-24, and T-32 moved to delivery D2; and pull request #82 | Claude Code | Claude Opus 5.5 | [part-22-screen-map.md](docs/ai-conversations/part-22-screen-map.md) |
 | Part 23 | T-24 | Lists design: the D2 delivery before T-24; the Lists screen, its loading and empty states, and the New list sheet restyled to DESIGN.md and the Stitch screen; the sheet's first browser test; T-34 and issue #83; and pull request #84 | Claude Code | Claude Opus 5.5 | [part-23-lists-design.md](docs/ai-conversations/part-23-lists-design.md) |
+| Part 24 | T-34 | Bottom bar height: + Agregar placed from the bottom bar's real height, before and after JavaScript runs; tabs sized from their labels so no word breaks; the tailwind-merge text-size issue recorded as T-35 and issue #86; a CI failure in Linux Chromium; and pull request #87 | Claude Code | Claude Opus 5.5 | [part-24-bottom-bar-height.md](docs/ai-conversations/part-24-bottom-bar-height.md) |
 
 ## Tools and phases
 

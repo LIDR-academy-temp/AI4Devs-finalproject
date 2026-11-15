@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.21 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.22 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -83,7 +83,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-15 | [#41](https://github.com/ojordan0/AI4Devs-finalproject/issues/41) | Delivery addresses | E-06 | US-18 | Full stack | 5 | D3 | M | T-07, T-05 | `feat/t-15-delivery-addresses` |
 | T-16 | [#42](https://github.com/ojordan0/AI4Devs-finalproject/issues/42) | Marking items as shipped | E-06 | US-19, US-21 | Full stack | 5 | D3 | L | T-12, T-15 | `feat/t-16-shipments` |
 | T-17 | [#43](https://github.com/ojordan0/AI4Devs-finalproject/issues/43) | End-to-end test of the core cycle and test suite completion | E-08 | None | QA | All | D3 | M | T-16 | `chore/t-17-e2e-core-cycle` |
-| T-18 | [#44](https://github.com/ojordan0/AI4Devs-finalproject/issues/44) | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-32, T-33, T-34 | `docs/t-18-final-documentation` |
+| T-18 | [#44](https://github.com/ojordan0/AI4Devs-finalproject/issues/44) | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-32, T-33, T-34, T-35 | `docs/t-18-final-documentation` |
 | T-19 | [#62](https://github.com/ojordan0/AI4Devs-finalproject/issues/62) | Tests that survive a restyle | E-08 | None | Design | All | D2 | S | None | `chore/t-19-restyle-safe-tests` |
 | T-20 | [#63](https://github.com/ojordan0/AI4Devs-finalproject/issues/63) | Design tokens and base components | E-08 | None | Design | All | D2 | M | T-19, T-05 | `feat/t-20-design-foundation` |
 | T-21 | [#64](https://github.com/ojordan0/AI4Devs-finalproject/issues/64) | Welcome design | E-08 | None | Design | 1 | D2 | S | T-20, T-04 | `feat/t-21-design-welcome` |
@@ -100,6 +100,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-32 | [#75](https://github.com/ojordan0/AI4Devs-finalproject/issues/75) | Profile design | E-08 | None | Design | 1 | D2 | S | T-20, T-04 | `feat/t-32-design-profile` |
 | T-33 | [#76](https://github.com/ojordan0/AI4Devs-finalproject/issues/76) | Design for screens and states without a Stitch screen | E-08 | None | Design | 5 | D3 | M | T-20, T-14, T-15 | `feat/t-33-design-unstitched-states` |
 | T-34 | [#83](https://github.com/ojordan0/AI4Devs-finalproject/issues/83) | Bottom bar height | E-08 | None | Design | All | D2 | S | T-20 | `fix/t-34-bottom-bar-height` |
+| T-35 | [#86](https://github.com/ojordan0/AI4Devs-finalproject/issues/86) | Custom text sizes in cn() | E-08 | None | Design | All | D2 | S | T-20 | `fix/t-35-text-size-classes` |
 
 ## 4. Tickets
 
@@ -366,7 +367,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-18 Deployment evidence and final documentation
 
-**Epic:** E-08 · **Stories:** None · **Type:** Documentation · **Increment:** all of milestone 1 · **Delivery:** D3 · **Size:** S · **Depends on:** T-17 and the design tickets, T-21 to T-34
+**Epic:** E-08 · **Stories:** None · **Type:** Documentation · **Increment:** all of milestone 1 · **Delivery:** D3 · **Size:** S · **Depends on:** T-17 and the design tickets, T-21 to T-35
 
 **Goal:** everything the final course delivery requires, besides the code.
 
@@ -573,4 +574,14 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Problem:** at 360 px with four tabs, "My purchases" wraps onto three lines, the bar grows past the 64 px that **+ Agregar**'s position assumes, and it covers the button. Found in T-24; it was already there before.
 
-**Done when:** tab labels take at most two lines without going below 16 px or being cut short, **+ Agregar** is placed from the bar's real height, it is fully visible in Spanish and English at 360 px and 390 px with three and four tabs, and all tests pass.
+**Done when:** in Spanish and English at 360 px and 390 px, with three, four, and five tabs: tab labels take at most two lines without breaking a word, going below 16 px, or being cut short; labels in neighboring tabs are at least 10 px apart and every tab is at least 48 px wide; **+ Agregar** is placed from the bar's real height and is fully visible; it isn't covered before the page's JavaScript runs; and all tests pass.
+
+### T-35 Custom text sizes in cn()
+
+**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** all of milestone 1 · **Delivery:** D2 · **Size:** S · **Depends on:** T-20
+
+**Goal:** every component renders the text size and color [DESIGN.md](../DESIGN.md) gives it.
+
+**Problem:** tailwind-merge in `cn()` reads the custom text-size classes (`text-body-md`, `text-label-lg`, and the other sizes in DESIGN.md) as text colors, so when a size and a color meet in one `cn()` call, the later class drops the other. The size is dropped, and the text takes its parent's size instead, in `Button` (every variant), `Input`, `Textarea`, and the selects that share their classes, `Label`, `DialogDescription`, `DropdownMenuLabel`, `DropdownMenuItem` when given a color (the item menu's delete action), `StatusChip`, the language switch, and the Lists filter chips. One color is dropped: the onboarding terms label passes `text-body-lg` to `Label`, which drops `Label`'s `text-foreground`; the label inherits the same color, so its contrast is unchanged. Found in T-34, which works around it in the tab bar only.
+
+**Done when:** `cn()` keeps both the custom text sizes and the colors, the tab bar's workaround is removed, a unit test covers the merge, the restyled screens are checked at 360 px and 1280 px, and all tests pass.

@@ -104,7 +104,7 @@ spacing:
 
 # Design system: Warm Utilitarian Care
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.3 · **Date:** November 14, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.4 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](readme.md)). This document owns the visual design: tokens, components, and layout. Behavior, screens, and interface text are defined in [UX design](docs/02-UX-DESIGN.md) and the [PRD](docs/01-PRD.md); where they differ from this document or from the Stitch screens, they take precedence.
 
@@ -174,7 +174,7 @@ The layout is **mobile first**, built for 360px to 390px viewports. Desktop uses
   - One scrolling column with a `16px` page margin.
   - Bottom navigation bar, at least `64px` tall, with icon and text tabs (see [Navigation](#navigation)).
   - Bottom sheets for short tasks, such as Mark as shipped and the buyer note.
-  - On Lists, the **+ Agregar** floating button sits `16px` above the bottom bar.
+  - On Lists, the **+ Agregar** floating button sits `16px` above the bottom bar. Until the page's JavaScript runs, it may sit higher, so the bar never covers it.
 - **Tablet & Desktop (≥ 768px)**:
   - The bottom bar becomes a left sidebar (`260px` to `280px`) with the same tabs.
   - Other screens keep the mobile column, centered, up to `640px` wide.
@@ -183,7 +183,7 @@ The layout is **mobile first**, built for 360px to 390px viewports. Desktop uses
 
 ## Navigation
 
-Which tabs appear, and when, is defined in [UX §2.2](docs/02-UX-DESIGN.md#22-navigation). The header has the group selector on the left and **Actualizar** (↻) and the user's avatar on the right. Tabs pair an icon with text.
+Which tabs appear, and when, is defined in [UX §2.2](docs/02-UX-DESIGN.md#22-navigation). The header has the group selector on the left and **Actualizar** (↻) and the user's avatar on the right. Tabs pair an icon with text. Tab labels stay at `16px` and are never cut off, so the bottom bar grows to fit them. Each tab is as wide as its label's longest word plus `5px` on each side, so labels in neighboring tabs are at least `10px` apart, plus an equal share of the space left, and at least `48px`. From `360px`, with up to five tabs, a label takes at most two lines and no word breaks; on a narrower screen, a word breaks only when the longest words don't fit the bar together.
 
 ## Elevation & Depth
 

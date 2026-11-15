@@ -54,12 +54,12 @@ export function ListColumn({
           openItemId={openItemId}
         />
       )}
-      {/* 16px above the bottom bar (64px and its 1.5px top border) on
-          phones; from 768px, at the column's bottom right. */}
+      {/* 16px above the bottom bar's real height on phones (tab-nav.tsx);
+          from 768px, at the column's bottom right. */}
       <Link
         href={`/items/new?list=${list.id}`}
         aria-label={t("addItem")}
-        className="bg-primary text-label-lg text-primary-foreground shadow-floating hover:bg-primary-hover focus-visible:ring-ring fixed right-4 bottom-[calc(5rem+1.5px+env(safe-area-inset-bottom))] z-30 inline-flex min-h-14 items-center gap-2 rounded-full px-6 font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transition-none md:sticky md:right-auto md:bottom-6 md:self-end"
+        className="bg-primary text-label-lg text-primary-foreground shadow-floating hover:bg-primary-hover focus-visible:ring-ring fixed right-4 bottom-[calc(var(--tab-bar-height,var(--tab-bar-fallback))+1rem)] z-30 inline-flex min-h-14 items-center gap-2 rounded-full px-6 font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transition-none md:sticky md:right-auto md:bottom-6 md:self-end"
       >
         <PlusIcon className="size-6" aria-hidden />
         {t("add")}

@@ -204,7 +204,7 @@ The 26 stories are grouped into 8 epics, which also show what each milestone del
 
 ## 6. Work tickets
 
-Milestone 1 is split into 34 tickets, 16 of them design tickets that restyle the built screens, each with its epic, user stories, type, increment, course delivery, size, dependencies, scope, and the acceptance criteria it must pass. Stories and tickets are tracked in [GitHub Issues](https://github.com/ojordan0/AI4Devs-finalproject/issues), with a [board](https://github.com/users/ojordan0/projects/1) in a GitHub Project linked to the repository. Three representative tickets:
+Milestone 1 is split into 35 tickets, 17 of them design tickets that restyle the built screens, each with its epic, user stories, type, increment, course delivery, size, dependencies, scope, and the acceptance criteria it must pass. Stories and tickets are tracked in [GitHub Issues](https://github.com/ojordan0/AI4Devs-finalproject/issues), with a [board](https://github.com/users/ojordan0/projects/1) in a GitHub Project linked to the repository. Three representative tickets:
 
 **Ticket 1 (database), T-02 Database schema, migrations, and seed data ([#28](https://github.com/ojordan0/AI4Devs-finalproject/issues/28)):** the complete data model in Postgres with Drizzle, including every constraint and index, the first migration, and a seed script that covers every status and permission case. Done when `npm run setup` builds the database from scratch with seed data and the constraint tests pass in CI.
 

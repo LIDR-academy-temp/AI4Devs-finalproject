@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import {
+  addMember,
   addMemberGroup,
   createItem,
   expectNoAccessibilityViolations,
@@ -9,6 +10,7 @@ import {
   messages,
   myGroup,
   sameOrigin,
+  setItemStatus,
   signInAsSeedUser,
   signUpOnboarded,
 } from "./support";
@@ -187,6 +189,188 @@ test.describe("layout", () => {
       await expectNoSidewaysScroll(page);
     }
   });
+});
+
+// The bottom bar's height (T-34; DESIGN.md, Navigation): tab labels stay at
+// 16px, are never cut off, take at most two lines without breaking a word,
+// and stay 10px apart; and + Agregar sits 16px above the bar's real height.
+
+type TabCount = 3 | 4 | 5;
+
+/**
+ * Signs up a member whose bar shows this many tabs: Lists, People, and Group;
+ * My purchases too once they reserve an item; and To buy too as a buyer in
+ * another group (docs/02-UX-DESIGN.md, section 2.2).
+ */
+async function signUpWithTabs(page: Page, language: Language, count: TabCount) {
+  let buyerGroupId: string | undefined;
+  if (count === 5) {
+    await signUpOnboarded(page, { language });
+    buyerGroupId = (await myGroup(page)).groupId;
+  }
+  const email = await signUpOnboarded(page, { language });
+  if (buyerGroupId) await addMember(email, buyerGroupId, "buyer");
+  if (count === 4) {
+    const { lists } = await myGroup(page);
+    const item = await createItem(page, lists[0]!.id, { name: "Shoes" });
+    await setItemStatus(item.id, "reserved", email);
+  }
+}
+
+/**
+ * Each tab's width and its label's text, size, and lines; whether the label
+ * fits its tab uncut and breaks a word; and how far it is from the next tab's
+ * label on the lines they share.
+ */
+async function tabLabels(nav: Locator) {
+  return nav.getByRole("link").evaluateAll((links) => {
+    const labels = links.map((link) => link.lastElementChild as HTMLElement);
+    const lineBoxes = (label: HTMLElement) => {
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      return [...range.getClientRects()];
+    };
+    return links.map((link, index) => {
+      const label = labels[index]!;
+      const style = getComputedStyle(label);
+      const box = label.getBoundingClientRect();
+      const tab = link.getBoundingClientRect();
+      // A word is broken when its letters sit on more than one line.
+      const text = label.firstChild!;
+      let offset = 0;
+      let breaksAWord = false;
+      for (const word of label.textContent!.split(" ")) {
+        const range = document.createRange();
+        range.setStart(text, offset);
+        range.setEnd(text, offset + word.length);
+        const tops = new Set(
+          [...range.getClientRects()].map(({ top }) => Math.round(top)),
+        );
+        if (tops.size > 1) breaksAWord = true;
+        offset += word.length + 1;
+      }
+      const next = labels[index + 1];
+      let gapToNext = Infinity;
+      if (next) {
+        for (const line of lineBoxes(label)) {
+          for (const nextLine of lineBoxes(next)) {
+            if (Math.abs(line.top - nextLine.top) < 2) {
+              gapToNext = Math.min(gapToNext, nextLine.left - line.right);
+            }
+          }
+        }
+      }
+      return {
+        text: label.textContent,
+        tabWidth: tab.width,
+        fontSize: parseFloat(style.fontSize),
+        lines: Math.round(box.height / parseFloat(style.lineHeight)),
+        breaksAWord,
+        gapToNext,
+        insideTab:
+          box.left >= tab.left - 0.5 &&
+          box.right <= tab.right + 0.5 &&
+          box.bottom <= tab.bottom + 0.5,
+        cut:
+          label.scrollWidth > label.clientWidth ||
+          label.scrollHeight > label.clientHeight ||
+          link.scrollWidth > link.clientWidth ||
+          style.textOverflow === "ellipsis",
+      };
+    });
+  });
+}
+
+async function expectLabelsFit(page: Page, language: Language) {
+  const screen = shell(page, language);
+  const labels = await tabLabels(screen.nav);
+  for (const [index, label] of labels.entries()) {
+    const name = label.text!;
+    // Every label but the last shares a line with the next one, so the gap
+    // is measured, not left at Infinity.
+    if (index < labels.length - 1) {
+      expect(Number.isFinite(label.gapToNext), name).toBe(true);
+    }
+    // The whole name is there: not shortened or replaced.
+    expect(Object.values(screen.t.tabs)).toContain(name);
+    expect(label.fontSize, name).toBeGreaterThanOrEqual(16);
+    expect(label.insideTab, name).toBe(true);
+    expect(label.cut, name).toBe(false);
+    expect(label.lines, name).toBeLessThanOrEqual(2);
+    expect(label.breaksAWord, name).toBe(false);
+    expect(label.tabWidth, name).toBeGreaterThanOrEqual(48);
+    expect(Math.round(label.gapToNext * 10) / 10, name).toBeGreaterThanOrEqual(
+      10,
+    );
+  }
+}
+
+/** + Agregar is fully on screen and at least 16px above the bottom bar. */
+async function expectAddAboveBar(page: Page, language: Language) {
+  const screen = shell(page, language);
+  const add = page.getByRole("link", { name: screen.t.lists.addItem });
+  await expect(add).toBeInViewport({ ratio: 1 });
+  // The bar measures itself after a resize, so the button can take a frame
+  // to settle.
+  await expect(async () => {
+    const bar = (await screen.nav.boundingBox())!;
+    const button = (await add.boundingBox())!;
+    const gap = bar.y - (button.y + button.height);
+    expect(Math.round(gap * 10) / 10).toBeGreaterThanOrEqual(16);
+  }).toPass({ timeout: 5_000 });
+}
+
+test.describe("bottom bar height", () => {
+  for (const language of ["es", "en"] as const) {
+    for (const count of [3, 4, 5] as const) {
+      test(`T-34 with ${count} tabs, labels fit on two lines without breaking a word and + Agregar is visible (${language})`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width: 360, height: 740 });
+        await signUpWithTabs(page, language, count);
+        await open(page, "/lists");
+        await expect(shell(page, language).nav.getByRole("link")).toHaveCount(
+          count,
+        );
+
+        for (const width of [360, 390]) {
+          await page.setViewportSize({ width, height: 740 });
+          await expectLabelsFit(page, language);
+          await expectAddAboveBar(page, language);
+          await expectNoSidewaysScroll(page);
+        }
+      });
+    }
+  }
+
+  for (const language of ["es", "en"] as const) {
+    for (const count of [3, 4, 5] as const) {
+      test(`T-34 + Agregar isn't covered before the page's JavaScript runs (${count} tabs, ${language})`, async ({
+        page,
+      }) => {
+        // With JavaScript turned off the screen never streams in, so this
+        // blocks the app's scripts instead: the page arrives whole, as on a
+        // slow connection before the scripts load, and the bar never measures
+        // itself.
+        await page.setViewportSize({ width: 360, height: 740 });
+        await signUpWithTabs(page, language, count);
+        await page.route("**/_next/static/**/*.js", (route) => route.abort());
+        await page.goto("/lists", { waitUntil: "load" });
+        await expect(shell(page, language).nav.getByRole("link")).toHaveCount(
+          count,
+        );
+
+        for (const width of [360, 390]) {
+          await page.setViewportSize({ width, height: 740 });
+          const measured = await page.evaluate(() =>
+            document.documentElement.style.getPropertyValue("--tab-bar-height"),
+          );
+          expect(measured).toBe("");
+          await expectAddAboveBar(page, language);
+        }
+      });
+    }
+  }
 });
 
 test.describe("header", () => {
