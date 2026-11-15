@@ -8,7 +8,7 @@
 - **Model:** Claude Opus 5.5 (Anthropic) · **Effort:** the level already set when the session started; it wasn't changed during the session.
 - **Session:**
   - Turn 1 delivers D2.
-  - Turns 2 to 7 are ticket T-24, Lists design, a design ticket with no OpenSpec change. They restyle the Lists screen, its loading and empty states, and the New list sheet to DESIGN.md and the Stitch screen. They also add the sheet's first browser test and record T-34, Bottom bar height, as a new ticket. They end with pull request #84, which the product owner merged.
+  - Turns 2 to 7 are ticket T-24, Lists design, a design ticket with no OpenSpec change. They restyle the Lists screen, its loading and empty states, and the New list sheet to DESIGN.md and the Stitch screen. They also add the sheet's first browser test and record T-34, Bottom bar height, as a new ticket. Turns 2 to 7 end with pull request #84, which the product owner merged.
   - Turns 8 and 9 record the session.
 - **Subagents:** `adversarial-reviewer`, once, on pull request #84. Its report isn't reproduced here. Its findings are in a comment on the pull request, and turn 7 says what was done about each.
 - **What's included:** every prompt, copied as written, and the visible text of each response, in order. In turn 7, the work continued without a new prompt after the background review finished; that point is marked.
@@ -17,7 +17,7 @@
   - the text of the skills that slash commands load (the Impeccable and commit skills), and the context the Impeccable skill loaded;
   - messages from the tool itself, such as the notice that background work finished, the reminders to post a progress update, and the files the editor reported as opened;
   - the full pull request description and review comment, which are on pull request #84;
-  - what happens after the commit that contains this export: the push, the pull request for this export, its review, the D2 delivery, and turn 9's closing message.
+  - what happens after the commit that contains this export: the push, the pull request for this export, its review, the second D2 delivery that turn 9 asks for, and turn 9's closing message.
 - **Formatting:** links in the responses are shown as plain text.
 
 ---
@@ -378,7 +378,7 @@ The dev server on port 3000 is one that was already running (pid 88358). Mine co
 
 Screenshots are in the session's scratchpad folder: `lists-360.png`, `lists-1280.png`, `newlist-360.png`, and `lists-360-end-open.png` (the end of the page at 360px, with Enviados open).
 
-*Tool activity: edited item-filters.tsx, ui/dialog.tsx, design/screens.md, docs/08-WORK-TICKETS.md, and tests/e2e/lists.spec.ts; measured text size, contrast, + Add clearance, and the sheet header in the browser; took the screenshots; ran the link check, lint, the type check, `npm test`, and the Lists, item page, and app shell browser tests; committed and corrected the commit message.*
+*Tool activity: edited item-filters.tsx, ui/dialog.tsx, design/screens.md, docs/08-WORK-TICKETS.md, and tests/e2e/lists.spec.ts; measured text size, contrast, + Add clearance, and the sheet header in the browser; took the screenshots; ran the link check, lint, the type check, `npm test`, and the Lists, item page, and app shell browser tests; committed as `d6010c3`, then corrected the commit message, which made the commit `c923168`.*
 
 ## Turn 6
 
