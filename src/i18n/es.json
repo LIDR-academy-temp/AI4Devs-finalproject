@@ -12,7 +12,8 @@
     "saved": "Guardado",
     "couldNotSave": "No se pudo guardar. Revisa tu conexión e inténtalo de nuevo",
     "tryAgain": "Intentar de nuevo",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "close": "Cerrar"
   },
   "shell": {
     "navigation": "Navegación principal",

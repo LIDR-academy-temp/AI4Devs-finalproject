@@ -1,6 +1,6 @@
 # UX design
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.10 · **Date:** November 10, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.11 · **Date:** November 14, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -409,6 +409,7 @@ The same page serves everyone. The example shows the buyer who reserved the item
 | List | Lista |
 | Create | Crear |
 | Cancel | Cancelar |
+| Close | Cerrar |
 | Type what you want… | Escribe lo que quieres… |
 | Add | Agregar |
 | Added: {name} | Agregado: {nombre} |

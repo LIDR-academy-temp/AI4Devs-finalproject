@@ -15,6 +15,10 @@ const buttonVariants = cva(
           "min-h-13 bg-primary text-primary-foreground hover:bg-primary-hover",
         secondary:
           "border-2 border-border bg-card text-foreground hover:bg-muted",
+        // DESIGN.md, WhatsApp Action Color: the brand greens fail contrast
+        // with white text.
+        whatsapp:
+          "min-h-13 bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover",
         destructive:
           "border-[1.5px] border-destructive-border bg-destructive-surface text-destructive hover:bg-destructive-surface/70",
         link: "min-h-12 px-2 text-primary underline underline-offset-4 hover:text-primary-hover",
