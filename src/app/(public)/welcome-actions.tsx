@@ -1,6 +1,6 @@
 "use client";
 
-import { LogInIcon } from "lucide-react";
+import { InfoIcon, LogInIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { type FormEvent, useId, useState } from "react";
@@ -68,12 +68,12 @@ export function WelcomeActions({
   }
 
   return (
-    <div className="flex w-full flex-col gap-4 text-left">
+    <div className="gap-space-md flex w-full flex-col">
       {failed && <FormAlert>{t("signInError")}</FormAlert>}
       {google && (
         <Button
           variant="secondary"
-          className="min-h-13 w-full"
+          className="min-h-13 w-full gap-3"
           disabled={pending}
           onClick={continueWithGoogle}
         >
@@ -82,7 +82,8 @@ export function WelcomeActions({
         </Button>
       )}
       {!google && !devSignIn && (
-        <p className="text-body-md text-muted-foreground">
+        <p className="bg-secondary text-body-lg text-secondary-foreground flex items-start gap-3 rounded-lg p-4">
+          <InfoIcon className="mt-0.5 size-5 shrink-0" aria-hidden />
           {t("signInUnavailable")}
         </p>
       )}
@@ -131,12 +132,14 @@ function DevSignInForm() {
       onSubmit={submit}
       noValidate
       aria-labelledby={`${id}-title`}
-      className="border-input flex flex-col gap-3 rounded-lg border-2 border-dashed p-4"
+      className="border-input gap-space-md flex flex-col rounded-lg border-[1.5px] border-dashed p-4"
     >
-      <h2 id={`${id}-title`} className="text-headline-md font-semibold">
-        {t("title")}
-      </h2>
-      <p className="text-body-md text-muted-foreground">{t("description")}</p>
+      <div className="flex flex-col gap-1">
+        <h2 id={`${id}-title`} className="text-headline-md">
+          {t("title")}
+        </h2>
+        <p className="text-body-lg text-muted-foreground">{t("description")}</p>
+      </div>
       {failed && <FormAlert>{t("failed")}</FormAlert>}
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${id}-email`}>{t("email")}</Label>
@@ -156,7 +159,12 @@ function DevSignInForm() {
           <FieldError id={`${id}-error`}>{t("invalidEmail")}</FieldError>
         )}
       </div>
-      <Button type="submit" variant="secondary" disabled={pending}>
+      <Button
+        type="submit"
+        variant="secondary"
+        className="w-full"
+        disabled={pending}
+      >
         <LogInIcon aria-hidden />
         {t("submit")}
       </Button>

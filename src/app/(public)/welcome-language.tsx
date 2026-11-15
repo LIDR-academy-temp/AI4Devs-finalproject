@@ -11,7 +11,8 @@ export function WelcomeLanguage() {
   const router = useRouter();
   return (
     <LanguageSwitch
-      className="self-end sm:w-80"
+      variant="compact"
+      className="items-end self-end"
       onChange={(language) => {
         rememberLanguage(language);
         router.refresh();
