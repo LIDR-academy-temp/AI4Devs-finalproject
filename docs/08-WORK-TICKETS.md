@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.23 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.24 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -16,7 +16,7 @@ Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`
 - **Spec first:** each ticket except design tickets (below) is built as one OpenSpec change, named like its branch without the type prefix (branch `feat/t-07-groups-api`, change `t-07-groups-api`). The change is generated from the ticket and the documents it references; its proposal links the ticket's issue, its requirements cite the PRD IDs instead of copying rule text, and each scenario is named after the acceptance criterion it verifies, for example `AC-59`. A ticket without acceptance criterion IDs names its scenarios as described in [Security and testing §2.6](07-SECURITY-AND-TESTING.md#26-coverage-targets). The change is reviewed before implementation, and archived in the ticket's pull request as its last commit before the merge. If the documents leave a question open, they are updated first.
 - **Branching:** one branch and one pull request per ticket, merged into `main`. The branch is named `<type>/t-<NN>-<slug>`, after the ticket ID, where `<type>` is `feat`, `fix`, `chore`, `docs`, or `refactor`; for example `feat/t-07-groups-api`. Each ticket's branch name is in the [ticket overview](#3-ticket-overview).
 - **Work outside a ticket** happens only when agreed with the project owner, on a branch named `<type>/<slug>`, through a pull request, and without an OpenSpec change.
-- **Design tickets** (type Design) restyle screens that are already built to [DESIGN.md](../DESIGN.md) and the Stitch screens in `design/stitch/`, and change no behavior. They have no OpenSpec change. Before work starts, the screens in scope are summarized and approved. A design ticket depends on the tickets that build its screens. If the work needs a behavior change, that change is a separate ticket with an OpenSpec change. The pull request says how each "Done when" condition was checked.
+- **Design tickets** (type Design) restyle screens that are already built to [DESIGN.md](../DESIGN.md) and the Stitch screens in `design/stitch/`, and change no behavior. The Group and Invitation screens are the exception: the tickets that build them (T-08 and T-15) build them to DESIGN.md and their Stitch screens, and their design tickets (T-28 and T-23) check the finished screens against both, changing no behavior either. Design tickets have no OpenSpec change. Before work starts, the screens in scope are summarized and approved. A design ticket depends on the tickets that build its screens. If the work needs a behavior change, that change is a separate ticket with an OpenSpec change. The pull request says how each "Done when" condition was checked.
 - **Course deliveries:** at each deadline, the state of `main` is pushed to the delivery branch: `feature/entrega-1-OJE` for D1, `feature/entrega-2-OJE` for D2, and `final-project-OJE` for D3.
 
 **Definition of done** for every ticket:
@@ -73,14 +73,14 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-05 | [#31](https://github.com/ojordan0/AI4Devs-finalproject/issues/31) | App shell, navigation, and translations | E-08 | US-25, US-07 | Frontend | 1 | D2 | M | T-04 | `feat/t-05-app-shell` |
 | T-06 | [#32](https://github.com/ojordan0/AI4Devs-finalproject/issues/32) | Production deployment | E-08 | None | DevOps | 1 | D3 | M | T-04 | `chore/t-06-production-deployment` |
 | T-07 | [#33](https://github.com/ojordan0/AI4Devs-finalproject/issues/33) | Groups, memberships, and access | E-02 | US-07, US-01, US-04 | Backend | 2 | D2 | M | T-03 | `feat/t-07-groups-api` |
-| T-08 | [#34](https://github.com/ojordan0/AI4Devs-finalproject/issues/34) | Buyer invitations | E-02 | US-04 | Full stack | 2 | D3 | L | T-07, T-05 | `feat/t-08-buyer-invitations` |
+| T-08 | [#34](https://github.com/ojordan0/AI4Devs-finalproject/issues/34) | Invitations | E-02 | US-04 | Full stack | 2 | D3 | L | T-07, T-05, T-20 | `feat/t-08-invitations` |
 | T-09 | [#35](https://github.com/ojordan0/AI4Devs-finalproject/issues/35) | Lists and items API | E-04 | US-10, US-07, US-11, US-12, US-13 | Backend | 3 | D2 | M | T-07 | `feat/t-09-lists-items-api` |
 | T-10 | [#36](https://github.com/ojordan0/AI4Devs-finalproject/issues/36) | Lists screen, item form, and item page | E-04 | US-10, US-07 | Frontend | 3 | D2 | L | T-09, T-05 | `feat/t-10-lists-screens` |
 | T-11 | [#37](https://github.com/ojordan0/AI4Devs-finalproject/issues/37) | Status changes: reserve, release, purchase | E-05 | US-15, US-14, US-16 | Backend | 4 | D2 | M | T-09 | `feat/t-11-status-changes-api` |
 | T-12 | [#38](https://github.com/ojordan0/AI4Devs-finalproject/issues/38) | To buy, My purchases, and buyer actions | E-05 | US-14, US-15 | Frontend | 4 | D3 | M | T-11, T-10 | `feat/t-12-buyer-screens` |
 | T-13 | [#39](https://github.com/ojordan0/AI4Devs-finalproject/issues/39) | People and their details | E-03 | US-09 | Full stack | 3 | D3 | M | T-10 | `feat/t-13-people` |
 | T-14 | [#40](https://github.com/ojordan0/AI4Devs-finalproject/issues/40) | Couldn't buy it and the item timeline | E-05 | US-16, US-13 | Full stack | 4 | D3 | M | T-12 | `feat/t-14-couldnt-buy-timeline` |
-| T-15 | [#41](https://github.com/ojordan0/AI4Devs-finalproject/issues/41) | Delivery addresses | E-06 | US-18 | Full stack | 5 | D3 | M | T-07, T-05 | `feat/t-15-delivery-addresses` |
+| T-15 | [#41](https://github.com/ojordan0/AI4Devs-finalproject/issues/41) | Delivery addresses | E-06 | US-18 | Full stack | 5 | D3 | M | T-08 | `feat/t-15-delivery-addresses` |
 | T-16 | [#42](https://github.com/ojordan0/AI4Devs-finalproject/issues/42) | Marking items as shipped | E-06 | US-19, US-21 | Full stack | 5 | D3 | L | T-12, T-15 | `feat/t-16-shipments` |
 | T-17 | [#43](https://github.com/ojordan0/AI4Devs-finalproject/issues/43) | End-to-end test of the core cycle and test suite completion | E-08 | None | QA | All | D3 | M | T-16 | `chore/t-17-e2e-core-cycle` |
 | T-18 | [#44](https://github.com/ojordan0/AI4Devs-finalproject/issues/44) | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-32, T-33, T-34, T-35 | `docs/t-18-final-documentation` |
@@ -93,12 +93,12 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-25 | [#68](https://github.com/ojordan0/AI4Devs-finalproject/issues/68) | Item form design | E-08 | None | Design | 3 | D3 | M | T-20, T-10, T-13 | `feat/t-25-design-item-form` |
 | T-26 | [#69](https://github.com/ojordan0/AI4Devs-finalproject/issues/69) | Item page design | E-08 | None | Design | 5 | D3 | M | T-20, T-12, T-13, T-14, T-16 | `feat/t-26-design-item-page` |
 | T-27 | [#70](https://github.com/ojordan0/AI4Devs-finalproject/issues/70) | People design | E-08 | None | Design | 3 | D3 | M | T-20, T-13 | `feat/t-27-design-people` |
-| T-28 | [#71](https://github.com/ojordan0/AI4Devs-finalproject/issues/71) | Group design | E-08 | None | Design | 5 | D3 | M | T-20, T-08, T-15 | `feat/t-28-design-group` |
+| T-28 | [#71](https://github.com/ojordan0/AI4Devs-finalproject/issues/71) | Group design | E-08 | None | Design | 5 | D3 | S | T-20, T-08, T-15 | `feat/t-28-design-group` |
 | T-29 | [#72](https://github.com/ojordan0/AI4Devs-finalproject/issues/72) | To buy design | E-08 | None | Design | 4 | D3 | S | T-20, T-12, T-13 | `feat/t-29-design-to-buy` |
 | T-30 | [#73](https://github.com/ojordan0/AI4Devs-finalproject/issues/73) | My purchases design | E-08 | None | Design | 5 | D3 | S | T-20, T-12, T-13, T-16 | `feat/t-30-design-my-purchases` |
 | T-31 | [#74](https://github.com/ojordan0/AI4Devs-finalproject/issues/74) | Mark as shipped design | E-08 | None | Design | 5 | D3 | S | T-20, T-16 | `feat/t-31-design-mark-as-shipped` |
 | T-32 | [#75](https://github.com/ojordan0/AI4Devs-finalproject/issues/75) | Profile design | E-08 | None | Design | 1 | D2 | S | T-20, T-04 | `feat/t-32-design-profile` |
-| T-33 | [#76](https://github.com/ojordan0/AI4Devs-finalproject/issues/76) | Design for screens and states without a Stitch screen | E-08 | None | Design | 5 | D3 | M | T-20, T-14, T-15 | `feat/t-33-design-unstitched-states` |
+| T-33 | [#76](https://github.com/ojordan0/AI4Devs-finalproject/issues/76) | Design for screens and states without a Stitch screen | E-08 | None | Design | 5 | D3 | M | T-20, T-14 | `feat/t-33-design-unstitched-states` |
 | T-34 | [#83](https://github.com/ojordan0/AI4Devs-finalproject/issues/83) | Bottom bar height | E-08 | None | Design | All | D2 | S | T-20 | `fix/t-34-bottom-bar-height` |
 | T-35 | [#86](https://github.com/ojordan0/AI4Devs-finalproject/issues/86) | Custom text sizes in cn() | E-08 | None | Design | All | D2 | S | T-20 | `fix/t-35-text-size-classes` |
 
@@ -135,7 +135,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Scope:**
 
-- Drizzle schema for every table, enumeration, constraint, and index in [Data model §2](04-DATA-MODEL.md#2-entities). Milestone 2 tables (`job_runs`) are included now, so later increments add no structural migrations.
+- Drizzle schema for every table, enumeration, constraint, and index in [Data model §2](04-DATA-MODEL.md#2-entities). Milestone 2 tables (`job_runs`) are included now. Later tickets add migrations as the model changes.
 - Check constraints, as [Data model §2](04-DATA-MODEL.md#2-entities) lists them: quantity range, a buyer exactly when the status isn't pending, shipment present only when shipped, a note when unavailable, link scheme, phone number format, and country format.
 - Partial unique index: at most one default delivery address per group.
 - First migration generated with drizzle-kit and applied by `npm run db:migrate`.
@@ -226,19 +226,22 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Acceptance criteria:** AC-01, AC-24, AC-26.
 
-### T-08 Buyer invitations
+### T-08 Invitations
 
-**Epic:** E-02 · **Stories:** US-04 · **Type:** Full stack · **Increment:** 2 · **Delivery:** D3 · **Size:** L · **Depends on:** T-07, T-05
+**Epic:** E-02 · **Stories:** US-04 · **Type:** Full stack · **Increment:** 2 · **Delivery:** D3 · **Size:** L · **Depends on:** T-07, T-05, T-20
 
-**Goal:** a member invites a buyer with a link sent on WhatsApp, and the buyer joins.
+**Goal:** a member invites a member or a buyer with a link sent on WhatsApp, and the invitee joins.
 
 **Scope:**
 
-- Create, list, and cancel invitations, and the preview and accept endpoints, for the buyer type (FR-06, BR-08, BR-09). A user who signs up through an invitation skips getting started (BR-06).
-- Group screen with members, buyers, and pending invitations, replacing the placeholder from T-05; invitation screen with sign-in ([UX design §1](02-UX-DESIGN.md#1-user-flows), flow C).
-- Share on WhatsApp and copy link.
+- Create, list, and cancel invitations, and the preview and accept endpoints, for both types, with the optional invitee name (FR-06, BR-08, BR-09, BR-32). This includes the migration that adds `invitee_name` and the name in the seed data ([Data model](04-DATA-MODEL.md#2-entities)). A user who signs up through an invitation skips getting started (BR-06).
+- Members' emails and buyers' WhatsApp numbers in `GET /groups/{groupId}` (FR-07, BR-12).
+- The Toast component in `src/components/ui` ([DESIGN.md, Toast](../DESIGN.md#toast)).
+- Group screen with **Invite a member** and **Invite a buyer**, members, buyers, and pending invitations, replacing the placeholder from T-05 ([UX design §2.4](02-UX-DESIGN.md#24-key-screens)), built to [DESIGN.md](../DESIGN.md) and `design/stitch/08-group`.
+- Invitation screen with sign-in ([UX design §1](02-UX-DESIGN.md#1-user-flows), flow C), built to DESIGN.md and `design/stitch/03-invitation`.
+- Share on WhatsApp and copy link, with the invitation message in [UX design §2.6](02-UX-DESIGN.md#26-whatsapp-and-email-content).
 
-**Acceptance criteria:** AC-10, AC-11, AC-12, AC-13, AC-15, AC-16.
+**Acceptance criteria:** AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-100, AC-101, AC-102.
 
 ### T-09 Lists and items API
 
@@ -326,14 +329,14 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-15 Delivery addresses
 
-**Epic:** E-06 · **Stories:** US-18 · **Type:** Full stack · **Increment:** 5 · **Delivery:** D3 · **Size:** M · **Depends on:** T-07, T-05
+**Epic:** E-06 · **Stories:** US-18 · **Type:** Full stack · **Increment:** 5 · **Delivery:** D3 · **Size:** M · **Depends on:** T-08
 
 **Goal:** each group keeps the addresses its items can be sent to.
 
 **Scope:**
 
 - Add, edit, delete, and make default (FR-27, BR-27); buyers can view them.
-- Delivery addresses in the Group screen ([UX design §2.4](02-UX-DESIGN.md#24-key-screens)).
+- Delivery addresses in the Group screen and the address form ([UX design §2.4](02-UX-DESIGN.md#24-key-screens)), built to [DESIGN.md](../DESIGN.md) and `design/stitch/08-group`, the form from its `addAddressModal` sheet. Saving, deleting, and making an address the default show the toast ([UX design §2.7](02-UX-DESIGN.md#27-empty-states-loading-and-errors)).
 
 **Acceptance criteria:** AC-77, AC-78, AC-79.
 
@@ -434,7 +437,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 2 · **Delivery:** D3 · **Size:** S · **Depends on:** T-20, T-08
 
-**Goal:** The Invitation screen looks like its approved Stitch screen.
+**Goal:** check that the Invitation screen built by T-08 follows DESIGN.md and its Stitch screen, `03-invitation`.
 
 **Screens:** Invitation (screen 3), in each of its states ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
 
@@ -494,15 +497,15 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-28 Group design
 
-**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 5 · **Delivery:** D3 · **Size:** M · **Depends on:** T-20, T-08, T-15
+**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 5 · **Delivery:** D3 · **Size:** S · **Depends on:** T-20, T-08, T-15
 
-**Goal:** The Group screen looks like its approved Stitch screen.
+**Goal:** check that the Group screen built by T-08 and T-15 follows DESIGN.md and its Stitch screen, `08-group`.
 
-**Screens:** Group (screen 8), with delivery addresses ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
+**Screens:** Group (screen 8), with delivery addresses and the address form ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
 
-**Stitch folders:** `design/stitch/08-group`, with the differences to ignore listed in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
+**Stitch folders:** `design/stitch/08-group` only, with the address form as its `addAddressModal` sheet, and the differences to ignore listed in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
-**Done when:** the screen follows DESIGN.md and its Stitch screen, and all tests pass.
+**Done when:** at 360 px, 390 px, and desktop, in Spanish and English, the screen follows DESIGN.md and `08-group` in every state: no buyers, no pending invitations, an invitation with and without a name, no addresses, 10 addresses, the address form when adding and when editing, an owner and a non-owner member, and the toast shown. The Group rows in `design/screens.md` are Restyled, and all tests pass.
 
 ### T-29 To buy design
 
@@ -556,11 +559,11 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-33 Design for screens and states without a Stitch screen
 
-**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 5 · **Delivery:** D3 · **Size:** M · **Depends on:** T-20, T-14, T-15
+**Epic:** E-08 · **Stories:** None · **Type:** Design · **Increment:** 5 · **Delivery:** D3 · **Size:** M · **Depends on:** T-20, T-14
 
 **Goal:** the parts of the app with no Stitch screen match the rest of the design.
 
-**Screens:** the address form (T-15), the "No lo pude comprar" sheet (T-14), and the shared empty, loading, and error states (T-05), built from [UX design §2.4](02-UX-DESIGN.md#24-key-screens) and [§2.7](02-UX-DESIGN.md#27-empty-states-loading-and-errors).
+**Screens:** the "No lo pude comprar" sheet (T-14), and the shared empty, loading, and error states (T-05), built from [UX design §2.4](02-UX-DESIGN.md#24-key-screens) and [§2.7](02-UX-DESIGN.md#27-empty-states-loading-and-errors).
 
 **Stitch folders:** none. The ticket uses the components in [DESIGN.md](../DESIGN.md).
 

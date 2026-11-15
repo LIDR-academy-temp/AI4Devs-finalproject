@@ -36,7 +36,7 @@ Part of the project documentation ([readme](../readme.md)). Maps each screen in 
 | 7 People (list) | `/people` | — (shows `src/app/(app)/placeholder-screen.tsx`) | `07-person-list` | — → T-27 | Not built | Placeholder |
 | 7 People (person page) | — | — | `07-person-detail` | — → T-27 | Not built | Placeholder |
 | 8 Group | `/group` | — (shows `src/app/(app)/placeholder-screen.tsx`) | `08-group` | — → T-28 | Not built | Placeholder |
-| 8 Group: address form | — | — | None | — → T-33 | Not built | Placeholder |
+| 8 Group: address form | — | — | `08-group` | — → T-28 | Not built | Placeholder |
 | 9 To buy | `/to-buy` | — (shows `src/app/(app)/placeholder-screen.tsx`) | `09-to-buy` | — → T-29 | Not built | Placeholder |
 | 10 My purchases | `/purchases` | — (shows `src/app/(app)/placeholder-screen.tsx`) | `10-my-purchases` | — → T-30 | Not built | Placeholder |
 | 11 Mark as shipped | — | — | `11-mark-as-shipped` | — → T-31 | Not built | Placeholder |
@@ -58,6 +58,7 @@ Part of the project documentation ([readme](../readme.md)). Maps each screen in 
 | Empty: no lists, no items, choose an item | `/lists` | `src/app/(app)/lists/page.tsx`, `src/components/lists/list-column.tsx`, `EmptyState` in `src/components/screen-states.tsx` | None | T-10 → T-24 | No Stitch design | Restyled |
 | New list sheet | `/lists` | `src/components/lists/new-list-dialog.tsx` | None | T-10 → T-24 | No Stitch design | Restyled |
 | Delete item confirmation | `/items/[itemId]` | `src/components/lists/item-actions.tsx` | None | T-10 → T-26 | No Stitch design | Placeholder |
+| Success toast | — | `src/components/ui/toast.tsx` | `08-group` | — → T-28 | Not built | Placeholder |
 
 ## Not matched
 
