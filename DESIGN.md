@@ -104,7 +104,7 @@ spacing:
 
 # Design system: Warm Utilitarian Care
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.2 · **Date:** November 14, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.3 · **Date:** November 14, 2026
 
 Part of the project documentation ([readme](readme.md)). This document owns the visual design: tokens, components, and layout. Behavior, screens, and interface text are defined in [UX design](docs/02-UX-DESIGN.md) and the [PRD](docs/01-PRD.md); where they differ from this document or from the Stitch screens, they take precedence.
 
