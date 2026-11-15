@@ -3,7 +3,7 @@
 > Este archivo se genera desde `openspec/specs` y no se edita a mano.
 > Para regenerarlo, desde `backend/`: `uv run python -m herramientas.documentar_especificaciones`.
 
-Qué hace Weather Track, según sus especificaciones de OpenSpec: 15 capacidades, 106 requisitos y 228 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
+Qué hace Weather Track, según sus especificaciones de OpenSpec: 15 capacidades, 107 requisitos y 231 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
 
 ## Índice
 
@@ -19,7 +19,7 @@ Qué hace Weather Track, según sus especificaciones de OpenSpec: 15 capacidades
 | [customer-base](#customer-base) | Convierte las cuentas confirmadas en una base de clientes potenciales, con el consentimiento de cada persona registrado y una exportación para el administrador. | 3 | 4 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 | [living-documentation](#living-documentation) | Ofrece una guía legible de lo que hace Weather Track, generada a partir de las especificaciones de OpenSpec para que nunca quede vieja. | 3 | 4 | [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07 |
 | [sat2-contract](#sat2-contract) | Mantiene las pruebas de Weather Track alineadas con las respuestas reales de SAT2, sin exponer datos sensibles, y avisa cuando SAT2 cambia la forma de sus respuestas. | 5 | 9 | [weather-track-contrato-sat2](../../openspec/changes/archive/2026-11-11-weather-track-contrato-sat2/proposal.md), 2026-11-11 |
-| [sat2-ingestion](#sat2-ingestion) | Mantiene los datos de las estaciones actualizados y con su calidad identificada, obteniéndolos de SAT2 de forma automática e independiente de las sesiones de usuario. | 18 | 50 | [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09 |
+| [sat2-ingestion](#sat2-ingestion) | Mantiene los datos de las estaciones actualizados y con su calidad identificada, obteniéndolos de SAT2 de forma automática e independiente de las sesiones de usuario. | 19 | 53 | [weather-track-aislamiento-env](../../openspec/changes/archive/2026-11-15-weather-track-aislamiento-env/proposal.md), 2026-11-15 |
 | [sensor-history](#sensor-history) | Permite revisar cómo evolucionó un sensor en un período reciente, con un gráfico y un resumen estadístico, para entender las condiciones y planificar la próxima aplicación. | 6 | 17 | [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09 |
 | [station-conditions](#station-conditions) | Muestra las últimas lecturas de una estación con su calidad, sus alarmas y su antigüedad, para que la persona sepa qué se midió y cuánto puede confiar en ese dato. | 6 | 17 | [weather-track-estaciones](../../openspec/changes/archive/2026-11-05-weather-track-estaciones/proposal.md), 2026-11-05 |
 | [system-monitoring](#system-monitoring) | Avisa a los administradores de Weather Track cuando la ingesta, la base de datos o los accesos muestran un problema, en pantalla y por correo, guarda la historia de esas mediciones para verla en Grafana y muestra a todas las cuentas la salud de cada estación. | 7 | 18 | [weather-track-monitoreo](../../openspec/changes/archive/2026-11-11-weather-track-monitoreo/proposal.md), 2026-11-11 |
@@ -648,7 +648,7 @@ Escenarios:
 
 Mantiene los datos de las estaciones actualizados y con su calidad identificada, obteniéndolos de SAT2 de forma automática e independiente de las sesiones de usuario.
 
-Especificación: [openspec/specs/sat2-ingestion/spec.md](../../openspec/specs/sat2-ingestion/spec.md). Último cambio archivado: [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09.
+Especificación: [openspec/specs/sat2-ingestion/spec.md](../../openspec/specs/sat2-ingestion/spec.md). Último cambio archivado: [weather-track-aislamiento-env](../../openspec/changes/archive/2026-11-15-weather-track-aislamiento-env/proposal.md), 2026-11-15.
 
 ### Ciclo automático de lecturas
 
@@ -825,6 +825,16 @@ Escenarios:
 - Día sin datos en SAT2
 - Día en curso
 - Ciclo durante la recuperación
+
+### Pilas aisladas sin credenciales reales
+
+Una pila de Docker Compose levantada con un nombre de proyecto propio, para pruebas o verificaciones, MUST NOT cargar el `.env` de la instalación real en ningún servicio. Su proceso de ingesta SHALL recibir solo las variables del archivo indicado para esa pila. La instalación real SHALL seguir leyendo su `.env` sin ninguna configuración adicional.
+
+Escenarios:
+
+- Pruebas de extremo a extremo
+- Instalación real
+- Herramienta nueva sin aislar
 
 ## sensor-history
 

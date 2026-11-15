@@ -13,7 +13,7 @@
 ## 3. Reglas y aprobación
 
 - [x] 3.1 Sumar la regla a `CLAUDE.md` y `.github/copilot-instructions.md`. La guía de instalación no cambia: su única pila aislada es la copia de prueba, que ya fija `ARCHIVO_ENV` en la herramienta. Verificación: `uv run pytest` y `openspec validate --all --strict` pasan
-- [ ] 3.2 El responsable revisa el cambio y lo aprueba
+- [x] 3.2 El responsable revisa el cambio y lo aprueba (15 de noviembre: aprobado, después de la E2E y de las 143 pruebas negativas)
 
 ## Workflow follow-up
 
