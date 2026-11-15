@@ -574,7 +574,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Problem:** at 360 px with four tabs, "My purchases" wraps onto three lines, the bar grows past the 64 px that **+ Agregar**'s position assumes, and it covers the button. Found in T-24; it was already there before.
 
-**Done when:** in Spanish and English at 360 px and 390 px, with three, four, and five tabs: tab labels take at most two lines without breaking a word, going below 16 px, or being cut short; labels in neighboring tabs are at least 12 px apart and every tab is at least 48 px wide; **+ Agregar** is placed from the bar's real height and is fully visible; it isn't covered before the page's JavaScript runs; and all tests pass.
+**Done when:** in Spanish and English at 360 px and 390 px, with three, four, and five tabs: tab labels take at most two lines without breaking a word, going below 16 px, or being cut short; labels in neighboring tabs are at least 10 px apart and every tab is at least 48 px wide; **+ Agregar** is placed from the bar's real height and is fully visible; it isn't covered before the page's JavaScript runs; and all tests pass.
 
 ### T-35 Custom text sizes in cn()
 

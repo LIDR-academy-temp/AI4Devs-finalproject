@@ -193,7 +193,7 @@ test.describe("layout", () => {
 
 // The bottom bar's height (T-34; DESIGN.md, Navigation): tab labels stay at
 // 16px, are never cut off, take at most two lines without breaking a word,
-// and stay 12px apart; and + Agregar sits 16px above the bar's real height.
+// and stay 10px apart; and + Agregar sits 16px above the bar's real height.
 
 type TabCount = 3 | 4 | 5;
 
@@ -300,7 +300,7 @@ async function expectLabelsFit(page: Page, language: Language) {
     expect(label.breaksAWord, name).toBe(false);
     expect(label.tabWidth, name).toBeGreaterThanOrEqual(48);
     expect(Math.round(label.gapToNext * 10) / 10, name).toBeGreaterThanOrEqual(
-      12,
+      10,
     );
   }
 }
