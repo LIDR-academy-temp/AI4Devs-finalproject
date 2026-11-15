@@ -136,7 +136,7 @@ These smaller ones are decided here, and are also written into the documents:
 ## Risks / Trade-offs
 
 - [The preview is public, so it has no per-user rate limit] → Codes are 256 random bits, so guessing one is not feasible, and the preview shows only the inviter's name, the group's name, and the type.
-- [A new user who completes One last step from an invitation and then closes the app has no group] → They see "You're not in any group yet." (FR-08), and the invitation link still works for them until it expires.
+- [A new user who completes One last step from an invitation and then doesn't accept it has no group, and stays that way if the link is cancelled, expires, or is used by someone else] → They see "You're not in any group yet." (FR-08), and the invitation link still works for them while it is pending. The project owner accepted this until milestone 2, which adds **Create a group** (BR-07, AC-22, AC-32; PRD §8.2, increment 6) before the pilot.
 - [`ALTER TYPE … ADD VALUE` can't run in the same transaction as statements that use the new value] → The migration only adds the value and the column; nothing in it uses `declined`.
 - [Rounding the expiry to the nearest day can read "Expires in 1 day" with 13 hours left] → Acceptable for a 7-day link; it is never shown after expiry, because expired invitations aren't listed.
 - [Writing the current-group cookie from the client after accepting] → If it fails, the shell falls back to the first group by name, as it does today.
