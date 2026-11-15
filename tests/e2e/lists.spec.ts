@@ -592,6 +592,20 @@ test.describe("New list sheet", () => {
       24,
     );
     expect(Math.abs(box.width - viewport.width)).toBeLessThanOrEqual(1);
+
+    // On a screen too short for the sheet, its content scrolls and Create
+    // stays in view at the bottom edge, before any scrolling.
+    await page.setViewportSize({ width: viewport.width, height: 260 });
+    const scroll = await sheet.newListDialog.evaluate((el) => ({
+      overflows: el.scrollHeight > el.clientHeight,
+      top: el.scrollTop,
+    }));
+    expect(scroll).toEqual({ overflows: true, top: 0 });
+    const short = (await sheet.newListDialog
+      .getByRole("button", { name: sheet.t.lists.create })
+      .boundingBox())!;
+    expect(short.y + short.height).toBeLessThanOrEqual(260);
+    expect(260 - (short.y + short.height)).toBeLessThanOrEqual(24);
   });
 
   test("T-24 the New list sheet opens as a centered dialog from 768px", async ({
