@@ -174,7 +174,7 @@ The layout is **mobile first**, built for 360px to 390px viewports. Desktop uses
   - One scrolling column with a `16px` page margin.
   - Bottom navigation bar, at least `64px` tall, with icon and text tabs (see [Navigation](#navigation)).
   - Bottom sheets for short tasks, such as Mark as shipped and the buyer note.
-  - On Lists, the **+ Agregar** floating button sits `16px` above the bottom bar.
+  - On Lists, the **+ Agregar** floating button sits `16px` above the bottom bar. Until the page's JavaScript runs, it may sit higher, so the bar never covers it.
 - **Tablet & Desktop (≥ 768px)**:
   - The bottom bar becomes a left sidebar (`260px` to `280px`) with the same tabs.
   - Other screens keep the mobile column, centered, up to `640px` wide.

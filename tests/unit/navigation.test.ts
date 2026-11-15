@@ -4,6 +4,7 @@ import {
   chooseCurrentGroup,
   mainScreenPath,
   sortGroupsByName,
+  tabLabelLines,
   visibleTabs,
 } from "../../src/shared/navigation";
 
@@ -52,6 +53,13 @@ describe("visibleTabs", () => {
 
   it("FR-08 a user with no group gets no tabs", () => {
     expect(visibleTabs({ memberships: [], hasPurchases: false })).toEqual([]);
+  });
+});
+
+describe("tabLabelLines", () => {
+  it("T-34 the bar makes room for two label lines, or three with five tabs", () => {
+    expect([1, 2, 3, 4].map(tabLabelLines)).toEqual([2, 2, 2, 2]);
+    expect(tabLabelLines(5)).toBe(3);
   });
 });
 

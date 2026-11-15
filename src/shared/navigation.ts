@@ -46,6 +46,17 @@ export const TAB_PATHS: Record<Tab, string> = {
 };
 
 /**
+ * How many lines of tab label the bottom bar makes room for before it measures
+ * itself (DESIGN.md, Navigation; tab-nav.tsx). It's sized for the narrowest
+ * screens: from 360px labels take at most two lines, but five tabs on a
+ * narrower screen can take three, so with five tabs + Agregar sits higher
+ * until the bar measures itself.
+ */
+export function tabLabelLines(tabCount: number): 2 | 3 {
+  return tabCount > 4 ? 3 : 2;
+}
+
+/**
  * Where the user starts: their first tab, or Profile when they have none
  * (docs/02-UX-DESIGN.md, section 2.2).
  */

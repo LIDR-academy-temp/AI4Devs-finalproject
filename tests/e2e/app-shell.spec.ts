@@ -283,8 +283,14 @@ async function tabLabels(nav: Locator) {
 
 async function expectLabelsFit(page: Page, language: Language) {
   const screen = shell(page, language);
-  for (const label of await tabLabels(screen.nav)) {
+  const labels = await tabLabels(screen.nav);
+  for (const [index, label] of labels.entries()) {
     const name = label.text!;
+    // Every label but the last shares a line with the next one, so the gap
+    // is measured, not left at Infinity.
+    if (index < labels.length - 1) {
+      expect(Number.isFinite(label.gapToNext), name).toBe(true);
+    }
     // The whole name is there: not shortened or replaced.
     expect(Object.values(screen.t.tabs)).toContain(name);
     expect(label.fontSize, name).toBeGreaterThanOrEqual(16);
@@ -337,25 +343,33 @@ test.describe("bottom bar height", () => {
     }
   }
 
-  for (const count of [3, 4, 5] as const) {
-    test(`T-34 + Agregar isn't covered before the page's JavaScript runs (${count} tabs)`, async ({
-      page,
-    }) => {
-      // With JavaScript turned off the screen never streams in, so this
-      // blocks the app's scripts instead: the page arrives whole, as on a slow
-      // connection before the scripts load, and the bar never measures itself.
-      await page.setViewportSize({ width: 360, height: 740 });
-      await signUpWithTabs(page, "en", count);
-      await page.route("**/_next/static/**/*.js", (route) => route.abort());
-      await page.goto("/lists", { waitUntil: "load" });
+  for (const language of ["es", "en"] as const) {
+    for (const count of [3, 4, 5] as const) {
+      test(`T-34 + Agregar isn't covered before the page's JavaScript runs (${count} tabs, ${language})`, async ({
+        page,
+      }) => {
+        // With JavaScript turned off the screen never streams in, so this
+        // blocks the app's scripts instead: the page arrives whole, as on a
+        // slow connection before the scripts load, and the bar never measures
+        // itself.
+        await page.setViewportSize({ width: 360, height: 740 });
+        await signUpWithTabs(page, language, count);
+        await page.route("**/_next/static/**/*.js", (route) => route.abort());
+        await page.goto("/lists", { waitUntil: "load" });
+        await expect(shell(page, language).nav.getByRole("link")).toHaveCount(
+          count,
+        );
 
-      await expect(shell(page, "en").nav.getByRole("link")).toHaveCount(count);
-      const measured = await page.evaluate(() =>
-        document.documentElement.style.getPropertyValue("--tab-bar-height"),
-      );
-      expect(measured).toBe("");
-      await expectAddAboveBar(page, "en");
-    });
+        for (const width of [360, 390]) {
+          await page.setViewportSize({ width, height: 740 });
+          const measured = await page.evaluate(() =>
+            document.documentElement.style.getPropertyValue("--tab-bar-height"),
+          );
+          expect(measured).toBe("");
+          await expectAddAboveBar(page, language);
+        }
+      });
+    }
   }
 });
 

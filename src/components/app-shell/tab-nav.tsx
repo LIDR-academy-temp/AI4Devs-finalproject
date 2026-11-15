@@ -26,7 +26,7 @@ import { TAB_ICONS } from "./tab-icons";
 // + Agregar and the screen's bottom padding sit above the bar's real height,
 // which the bar measures into --tab-bar-height. Until it does, they use
 // --tab-bar-fallback, the tallest bar the labels can produce (globals.css and
-// tabLabelLines in app-shell.tsx), so nothing is covered before the page's
+// tabLabelLines in src/shared/navigation.ts), so nothing is covered before the page's
 // JavaScript runs.
 
 function isCurrent(pathname: string, path: string) {

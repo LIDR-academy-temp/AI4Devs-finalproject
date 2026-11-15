@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import type { CSSProperties, ReactNode } from "react";
 
 import { NoGroupNotice } from "@/components/screen-states";
-import type { Tab } from "@/shared/navigation";
+import { type Tab, tabLabelLines } from "@/shared/navigation";
 
 import { GroupSelector } from "./group-selector";
 import { RefreshButton } from "./refresh-button";
@@ -23,16 +23,6 @@ export function initialsOf(name: string | null, email: string | null): string {
   if (letters.length > 0) return letters.join("").toLocaleUpperCase();
   const first = Array.from(email ?? "")[0];
   return first ? first.toLocaleUpperCase() : "?";
-}
-
-/**
- * The most lines a tab label can take with this many tabs, which sets the
- * bottom bar's height before it measures itself (tab-nav.tsx). From 360px,
- * labels take at most two lines; five tabs on a narrower screen can take
- * three.
- */
-export function tabLabelLines(tabCount: number): 2 | 3 {
-  return tabCount > 4 ? 3 : 2;
 }
 
 export function AppShell({
