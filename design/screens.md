@@ -56,7 +56,7 @@ Part of the project documentation ([readme](../readme.md)). Maps each screen in 
 | Not available, unknown address | Any unknown route | `src/app/not-found.tsx`, `NotAvailable` in `src/components/screen-states.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
 | Not in any group yet | Every route in `src/app/(app)` | `NoGroupNotice` in `src/components/screen-states.tsx`, rendered by `src/components/app-shell/app-shell.tsx` | None | T-05 → T-33 | No Stitch design | Placeholder |
 | Empty: no lists, no items, choose an item | `/lists` | `src/app/(app)/lists/page.tsx`, `src/components/lists/list-column.tsx`, `EmptyState` in `src/components/screen-states.tsx` | None | T-10 → T-24 | No Stitch design | Restyled |
-| New list dialog | `/lists` | `src/components/lists/new-list-dialog.tsx` | None | T-10 → T-24 | No Stitch design | Restyled |
+| New list sheet | `/lists` | `src/components/lists/new-list-dialog.tsx` | None | T-10 → T-24 | No Stitch design | Restyled |
 | Delete item confirmation | `/items/[itemId]` | `src/components/lists/item-actions.tsx` | None | T-10 → T-26 | No Stitch design | Placeholder |
 
 ## Not matched

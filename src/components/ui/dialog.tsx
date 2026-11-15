@@ -20,7 +20,9 @@ import { cn } from "./utils";
 //   sheet with 16px top corners, a handle, a Close button, and its footer
 //   fixed at the bottom; from 768px a centered dialog with the same Close
 //   button. The Close button comes first, so it takes focus when the sheet
-//   opens (DESIGN.md, Sheet Focus).
+//   opens (DESIGN.md, Sheet Focus). A sheet is a two-column grid: its
+//   DialogHeader sits on Close's row, on the left, and everything else spans
+//   both columns.
 
 export function Dialog(props: ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -44,6 +46,8 @@ const centered =
 // A sheet ends with its DialogFooter, which holds the bottom padding so it can
 // stick to the bottom edge while the content scrolls.
 const sheet = cn(
+  // The grid: dense, so the header fills the cell left of Close.
+  "grid grid-flow-row-dense grid-cols-[minmax(0,1fr)_auto] content-start gap-x-3 *:col-span-2",
   // Below 768px: along the bottom edge.
   "inset-x-0 bottom-0 w-full rounded-t-xl border-b-0 pt-2 pb-0",
   // From 768px: the centered dialog.
@@ -69,20 +73,24 @@ export function DialogContent({
         data-slot="dialog-content"
         data-variant={variant}
         className={cn(
-          "group/dialog border-border bg-card text-card-foreground shadow-dialog fixed z-50 flex max-h-[calc(100dvh-2rem)] flex-col gap-5 overflow-y-auto border-[1.5px] p-5 outline-none md:p-6",
-          variant === "sheet" ? sheet : centered,
+          "group/dialog border-border bg-card text-card-foreground shadow-dialog fixed z-50 max-h-[calc(100dvh-2rem)] gap-y-5 overflow-y-auto border-[1.5px] p-5 outline-none md:p-6",
+          variant === "sheet" ? sheet : cn("flex flex-col", centered),
           className,
         )}
         {...props}
       >
         {variant === "sheet" && (
-          <div className="-mb-3 flex flex-col gap-1">
+          // No box of its own: the handle and Close are cells of the grid.
+          <div className="contents">
             <span
               aria-hidden
-              className="bg-sheet-handle mx-auto h-[5px] w-9 rounded-full md:hidden"
+              className="bg-sheet-handle col-span-2 -mb-3 h-[5px] w-9 justify-self-center rounded-full md:hidden"
             />
             <DialogPrimitive.Close asChild>
-              <Button variant="secondary" className="self-end px-4">
+              <Button
+                variant="secondary"
+                className="col-start-2 self-start px-4"
+              >
                 <XIcon aria-hidden />
                 {t("close")}
               </Button>
@@ -99,7 +107,12 @@ export function DialogHeader({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn(
+        "flex flex-col gap-2",
+        // In a sheet: the cell left of Close, centered on its row.
+        "group-data-[variant=sheet]/dialog:col-span-1 group-data-[variant=sheet]/dialog:col-start-1 group-data-[variant=sheet]/dialog:min-h-12 group-data-[variant=sheet]/dialog:justify-center",
+        className,
+      )}
       {...props}
     />
   );

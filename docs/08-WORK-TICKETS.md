@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.20 · **Date:** November 14, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.21 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -446,11 +446,13 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Goal:** Lists looks like its approved Stitch screen.
 
-**Screens:** Lists (screen 4), with its loading and empty states and the New list dialog ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
+**Screens:** Lists (screen 4), with its loading and empty states and the New list sheet ([UX design §2.3](02-UX-DESIGN.md#23-screens)).
 
 **Stitch folders:** `design/stitch/04-lists`, with the differences to ignore listed in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
-**Done when:** the screen follows DESIGN.md and its Stitch screen, and all tests pass.
+**Sheet test:** New list opens as the dialog's `sheet` variant, the first screen to use it, and this ticket adds the sheet's first browser test, following [DESIGN.md, Collapsible Groups & Sheets](../DESIGN.md#collapsible-groups--sheets): the close button has first focus at every screen size, it and Escape close the sheet, its label comes from the translation files in Spanish and English, the actions stay at the bottom edge below 768 px, and the sheet opens as a centered dialog from 768 px.
+
+**Done when:** the screen follows DESIGN.md and its Stitch screen, the sheet test passes, and all tests pass.
 
 ### T-25 Item form design
 
@@ -534,7 +536,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Stitch folders:** `design/stitch/11-mark-as-shipped`, with the differences to ignore listed in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
-**Sheet test:** the screen opens as the dialog's `sheet` variant, and this ticket adds its first browser test, following [DESIGN.md, Collapsible Groups & Sheets](../DESIGN.md#collapsible-groups--sheets): the close button has first focus at every screen size, it and Escape close the sheet, its label comes from the translation files in Spanish and English, the actions stay at the bottom edge below 768 px, and the sheet opens as a centered dialog from 768 px.
+**Sheet test:** the screen opens as the dialog's `sheet` variant, and this ticket adds a browser test that runs the checks of [T-24's sheet test](#t-24-lists-design) on the Mark as shipped sheet.
 
 **Done when:** the screen follows DESIGN.md and its Stitch screen, the sheet test passes, and all tests pass.
 

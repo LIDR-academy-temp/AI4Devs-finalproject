@@ -494,3 +494,123 @@ test.describe("languages and accessibility", () => {
     await expectNoAccessibilityViolations(page);
   });
 });
+
+// The New list sheet, the first screen on the dialog's sheet variant
+// (DESIGN.md, Collapsible Groups & Sheets; T-24's sheet test in
+// docs/08-WORK-TICKETS.md). Both projects emulate phones; the wider checks
+// resize the page.
+test.describe("New list sheet", () => {
+  const desktopWidths = [
+    { width: 768, height: 1024 },
+    { width: 1280, height: 900 },
+  ];
+
+  /** Opens Lists as a new user and opens New list from the list menu. */
+  async function openSheet(page: Page, language: Language = "en") {
+    await signUpOnboarded(page, { language });
+    await open(page, "/lists");
+    const screen = lists(page, language);
+    await screen.listMenu.click();
+    await page.getByRole("menuitem", { name: screen.t.lists.newList }).click();
+    await expect(screen.newListDialog).toBeVisible();
+    return {
+      ...screen,
+      close: screen.newListDialog.getByRole("button", {
+        name: screen.t.common.close,
+      }),
+    };
+  }
+
+  test("T-24 Close has first focus in the New list sheet at every screen size", async ({
+    page,
+  }) => {
+    const sheet = await openSheet(page);
+    await expect(sheet.close).toBeFocused();
+    await expect(
+      sheet.newListDialog.getByLabel(sheet.t.lists.listName),
+    ).not.toBeFocused();
+
+    for (const size of desktopWidths) {
+      await page.keyboard.press("Escape");
+      await page.setViewportSize(size);
+      await sheet.listMenu.click();
+      await page.getByRole("menuitem", { name: sheet.t.lists.newList }).click();
+      await expect(sheet.close).toBeFocused();
+    }
+  });
+
+  test("T-24 Close and Escape close the New list sheet", async ({ page }) => {
+    const sheet = await openSheet(page);
+
+    await sheet.close.click();
+    await expect(sheet.newListDialog).toBeHidden();
+
+    await sheet.listMenu.click();
+    await page.getByRole("menuitem", { name: sheet.t.lists.newList }).click();
+    await expect(sheet.newListDialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(sheet.newListDialog).toBeHidden();
+  });
+
+  for (const language of ["es", "en"] as const) {
+    test(`T-24 the New list sheet's text comes from the translation files (${language})`, async ({
+      page,
+    }) => {
+      const sheet = await openSheet(page, language);
+      const { t } = sheet;
+
+      await expect(
+        sheet.newListDialog.getByRole("heading", { name: t.lists.newList }),
+      ).toBeVisible();
+      await expect(sheet.close).toHaveText(t.common.close);
+      await expect(
+        sheet.newListDialog.getByLabel(t.lists.listName),
+      ).toBeVisible();
+      await expect(
+        sheet.newListDialog.getByRole("button", { name: t.lists.create }),
+      ).toBeVisible();
+    });
+  }
+
+  test("T-24 the New list sheet keeps its actions at the bottom edge below 768px", async ({
+    page,
+  }) => {
+    const sheet = await openSheet(page);
+    const viewport = page.viewportSize()!;
+    expect(viewport.width).toBeLessThan(768);
+
+    const box = (await sheet.newListDialog.boundingBox())!;
+    const create = (await sheet.newListDialog
+      .getByRole("button", { name: sheet.t.lists.create })
+      .boundingBox())!;
+    // The sheet sits on the bottom edge, and Create is its last row, above
+    // the footer's 20px bottom padding.
+    expect(Math.abs(box.y + box.height - viewport.height)).toBeLessThanOrEqual(
+      1,
+    );
+    expect(viewport.height - (create.y + create.height)).toBeLessThanOrEqual(
+      24,
+    );
+    expect(Math.abs(box.width - viewport.width)).toBeLessThanOrEqual(1);
+  });
+
+  test("T-24 the New list sheet opens as a centered dialog from 768px", async ({
+    page,
+  }) => {
+    await page.setViewportSize(desktopWidths[0]!);
+    const sheet = await openSheet(page);
+
+    for (const size of desktopWidths) {
+      await page.setViewportSize(size);
+      const box = (await sheet.newListDialog.boundingBox())!;
+      expect(
+        Math.abs(box.x + box.width / 2 - size.width / 2),
+      ).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(box.y + box.height / 2 - size.height / 2),
+      ).toBeLessThanOrEqual(1);
+      expect(box.y + box.height).toBeLessThan(size.height);
+      expect(box.width).toBeLessThan(size.width);
+    }
+  });
+});

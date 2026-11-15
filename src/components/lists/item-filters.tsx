@@ -43,7 +43,7 @@ function Chip({
       aria-pressed={pressed}
       onClick={onClick}
       className={cn(
-        "text-label-lg focus-visible:ring-ring inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full border-[1.5px] px-4 font-semibold whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [&_svg]:size-5",
+        "text-label-lg focus-visible:ring-ring inline-flex min-h-12 max-w-full items-center gap-2 rounded-full border-[1.5px] px-4 py-2 text-left font-semibold [overflow-wrap:anywhere] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [&_svg]:size-5 [&_svg]:shrink-0",
         pressed
           ? "border-primary bg-primary text-primary-foreground hover:border-primary-hover hover:bg-primary-hover"
           : (colors ?? "border-border bg-card text-foreground hover:bg-muted"),
@@ -62,13 +62,9 @@ function ChipRow({ label, children }: { label: string; children: ReactNode }) {
       <span id={id} className="text-label-lg text-muted-foreground">
         {label}
       </span>
-      {/* Scrolls sideways; on phones it runs to the screen's edges, so a
-          chip cut off at the edge shows there are more. */}
-      <div
-        role="group"
-        aria-labelledby={id}
-        className="-mx-margin px-margin flex [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent] gap-2 overflow-x-auto py-1 md:-mx-1 md:px-1"
-      >
+      {/* Wraps onto more lines, so every chip is in view with no sideways
+          scrolling (DESIGN.md, Radical Clarity). */}
+      <div role="group" aria-labelledby={id} className="flex flex-wrap gap-2">
         {children}
       </div>
     </div>
