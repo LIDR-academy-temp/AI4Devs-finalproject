@@ -1,10 +1,9 @@
-# Spec Delta
+# invitation-screen Specification
 
 ## Purpose
-
 The screen a person opens from an invitation link, which shows who is inviting them, to which group, and as what, and takes them through sign-in and One last step to accept or decline it (US-04, FR-06, docs/02-UX-DESIGN.md §1, flow C, and §2.3, screen 3).
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: The link opens the Invitation screen
 
@@ -62,7 +61,7 @@ A signed-in, onboarded user who doesn't already have the access SHALL see **Acce
 
 ### Requirement: A link that no longer works says so
 
-When the invitation was used, declined, or cancelled, has expired, or its code matches none, the screen SHALL show only "This invitation is no longer valid. Ask for a new one." and a way back to Welcome, or to the main screen for a signed-in user (BR-08, flow C, step 6).
+When the invitation was used, declined, or cancelled, has expired, or its code matches none, the screen SHALL show only the message asking for a new invitation and a way back to Welcome, or to the main screen for a signed-in user (BR-08, flow C, step 6).
 
 #### Scenario: AC-11 an expired link on the screen
 
@@ -87,13 +86,13 @@ When the invitation was used, declined, or cancelled, has expired, or its code m
 
 ### Requirement: A user already in the group is told so
 
-When the signed-in user already has the access the invitation gives, the screen SHALL show "You're already in this group." with a way to their main screen, and no Accept or Decline, and the invitation SHALL stay valid (BR-09, flow C, step 7).
+When the signed-in user already has the access the invitation gives, the screen SHALL show the message that they already belong to the group, with a way to their main screen, and no Accept or Decline, and the invitation SHALL stay valid (BR-09, flow C, step 7).
 
 #### Scenario: AC-15 a member opens an invitation to their own group
 
 - **GIVEN** a seed member of the García Group, and the seed's pending buyer invitation to it (docs/01-PRD.md §17.2, AC-15)
 - **WHEN** they open its link
-- **THEN** they see "You're already in this group." with no Accept or Decline, and the invitation is still pending
+- **THEN** they see the message that they already belong to the group, with no Accept or Decline, and the invitation is still pending
 - Verified by a browser test.
 
 ### Requirement: The Invitation screen works in both languages and is accessible

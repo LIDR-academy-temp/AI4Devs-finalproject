@@ -28,7 +28,7 @@ The seed SHALL load exactly the data in Data model §3 into an empty database.
 #### Scenario: Invitations cover every state
 
 - **WHEN** the seed has been loaded
-- **THEN** the García Group has one pending invitation that hasn't expired, one pending invitation past its expiry, one accepted invitation with the person who accepted it, and one cancelled invitation (BR-08)
+- **THEN** the García Group has one pending buyer invitation for Carlos that hasn't expired, one pending invitation past its expiry, one accepted invitation with the person who accepted it, one cancelled invitation, and one declined invitation (BR-08), and only Carlos's has an invitee name
 
 #### Scenario: Cross-group data exists
 

@@ -21,12 +21,12 @@ Group SHALL show the current group (T-05) with its name, the subtitle naming its
 
 - **GIVEN** a new user who has completed onboarding, whose group has no buyers
 - **WHEN** they open Group
-- **THEN** the buyers section shows "Invite the person who will buy" with **Invite a buyer** (docs/02-UX-DESIGN.md §2.7)
+- **THEN** the buyers section shows the empty state asking them to invite the person who will buy, with **Invite a buyer** (docs/02-UX-DESIGN.md §2.7)
 - Verified by a browser test.
 
 ### Requirement: Members create an invitation link from Group
 
-**Invite a member** and **Invite a buyer** SHALL each open a sheet with the optional "Who are you inviting?" field (BR-32) and **Create link**. Once created, the sheet SHALL show the link, **Share on WhatsApp**, **Copy link**, and when the link expires, with no toast (docs/02-UX-DESIGN.md §2.4 and §2.7). When it closes, the new invitation SHALL be among the pending invitations.
+**Invite a member** and **Invite a buyer** SHALL each open a sheet with the optional invitee name field (BR-32) and **Create link**. Once created, the sheet SHALL show the link, **Share on WhatsApp**, **Copy link**, and when the link expires, with no toast (docs/02-UX-DESIGN.md §2.4 and §2.7). When it closes, the new invitation SHALL be among the pending invitations.
 
 #### Scenario: FR-06 a member creates a buyer invitation and shares it on WhatsApp
 
@@ -65,7 +65,7 @@ Group SHALL show the current group (T-05) with its name, the subtitle naming its
 
 ### Requirement: Group lists the pending invitations
 
-Group SHALL list the pending invitations that haven't expired, under a heading with their count. Each row SHALL show the invitee's name, or the invitation's type when it has none, "Invited as {type}", when it expires, and **Cancel invitation** (FR-06, docs/02-UX-DESIGN.md §2.4). The section SHALL not be shown when there are none.
+Group SHALL list the pending invitations that haven't expired, under a heading with their count. Each row SHALL show the invitee's name, or the invitation's type when it has none, the type it invites as, when it expires, and **Cancel invitation** (FR-06, docs/02-UX-DESIGN.md §2.4). The section SHALL not be shown when there are none.
 
 #### Scenario: AC-101 the pending invitation for Carlos
 
@@ -76,13 +76,13 @@ Group SHALL list the pending invitations that haven't expired, under a heading w
 
 ### Requirement: Members cancel a pending invitation from Group
 
-**Cancel invitation** SHALL cancel the invitation, remove its row, and confirm with the "Invitation cancelled" toast (FR-06, docs/02-UX-DESIGN.md §2.7). If cancelling fails, the row SHALL stay and the error SHALL be shown inline, never in a toast.
+**Cancel invitation** SHALL cancel the invitation, remove its row, and confirm the cancellation with the success toast (FR-06, docs/02-UX-DESIGN.md §2.7). If cancelling fails, the row SHALL stay and the error SHALL be shown inline, never in a toast.
 
 #### Scenario: FR-06 a member cancels an invitation
 
 - **GIVEN** a member on Group with a pending invitation
 - **WHEN** they tap **Cancel invitation** on it
-- **THEN** the row is gone, the "Invitation cancelled" toast appears, and the invitation's link shows the message asking for a new invitation
+- **THEN** the row is gone, the toast confirming the cancellation appears, and the invitation's link shows the message asking for a new invitation
 - Verified by a browser test.
 
 ### Requirement: Successful actions are confirmed with a toast
