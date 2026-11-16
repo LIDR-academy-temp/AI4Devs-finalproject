@@ -161,6 +161,11 @@ Los tickets de backend, frontend y base de datos se redactaron con tareas, crite
 **Prompt 2 (Entrega 2, a partir de la devolución):**
 La revisión señaló que el ticket de backend concentraba demasiado y que el agente local no tenía ticket propio. La IA dividió el backend en cuatro sub-tickets ordenados por hito: carga y versionado, motor PAdES con proveedor `local`, validación de confianza, y auditoría con webhook. Con eso la épica pasó de 14 h a 34 h. Además detalló el agente como Ticket 4, con criterios verificables con SoftHSM, y separó el widget en hito 1 (firma propia) y hito 2 (token).
 
+**Prompt 3 (Entrega 2, widget de firma con OpenSpec):**
+> actualmente mi codigo cumple con: Entrega 2 — Código funcional: Archivos actualizados + scaffolds de tu arquitectura conectados + el flujo principal parcialmente operativo: al menos una funcionalidad operativa de extremo a extremo
+
+La IA comparó el repositorio con la consigna y encontró que el flujo solo funcionaba por API, sin interfaz. El autor eligió el alcance completo (widget, panel y scaffold del agente) y trabajar con un change de OpenSpec por componente. El change `add-signing-widget-viewer` agregó al contrato `file_name` y `size_bytes`, la consulta `GET /signature-requests/{id}` con el token del enlace, CORS por lista de orígenes y el widget en React. El widget lee el enlace, quita el fragmento de la barra y muestra el documento con una vista previa hecha con pdf.js. Los tests se escribieron antes que el código, según los escenarios de la spec: 17 tests nuevos de backend y 40 de Vitest.
+
 ---
 
 ### 7. Pull Requests
@@ -200,3 +205,7 @@ Pendiente: se completará con los Pull Requests de la Entrega 2 y la Entrega fin
 - **Ticket 1a (herramientas):** `TestClient` de Starlette emitía un aviso de obsolescencia con `httpx`; se reemplazó por `httpx2` en `requirements-dev.txt`. La tarea de prueba manual decía `uvicorn app.main:app`, pero la app se construye con una fábrica (`create_app(settings)`) para que los tests inyecten su configuración; se corrigió a `uvicorn app.main:create_app --factory`.
 - **Ticket 1a (test corregido):** un test generado por la IA afirmaba que el corte previo sobre el texto base64 coincidía exactamente con el tamaño máximo. Base64 codifica de a 3 bytes, así que 1000 y 1001 bytes ocupan lo mismo. Se corrigió el test para comprobar lo que el diseño pedía: el corte previo es una cota superior que nunca rechaza un archivo válido, y el límite exacto se aplica después de decodificar.
 - **Ticket 1a (escenario reubicado):** el escenario «token de enlace de otra solicitud» se probó en los tests de descarga, con documentos reales, y no con un endpoint de prueba, porque es ahí donde se aplica la regla.
+- **Widget (bundle):** la primera compilación importaba pdf.js de forma estática y el paquete principal superaba el límite de Vite. Como ya preveía el diseño, se pasó a `import()` dinámico: la pantalla carga primero y pdf.js llega solo cuando hay que dibujar la vista previa.
+- **Widget (prueba manual):** al copiar el token desde PowerShell, `.Split('#t=')` corta en cada carácter y no en la cadena completa, así que el token quedaba truncado y la API respondía `401`. Se usó `-split '#t='`. La captura con Edge en modo headless y `--virtual-time-budget` salía con «Cargando vista previa…», porque el tiempo virtual no espera al worker de pdf.js. Se tomó controlando el navegador en tiempo real por el protocolo de depuración, y así se verificó también que el fragmento desaparece y que la recarga sigue mostrando el documento.
+- **Widget (texto):** la IA había redactado un texto legal confuso para la «Firma propia»; se reescribió como «es inmediata, pero sin la presunción legal de la firma digital».
+- **Widget (tests):** con `restoreMocks` activado, Vitest reiniciaba el mock de `renderFirstPage` definido a nivel de módulo; se movió su configuración a `beforeEach`.

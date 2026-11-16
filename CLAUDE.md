@@ -46,16 +46,24 @@ alembic upgrade head && python -m app.seed    # esquema + datos demo (idempotent
 alembic check                                 # los modelos no difieren de las migraciones
 pytest                                        # tests (los de integración usan firmadoc_test)
 uvicorn app.main:create_app --factory --reload   # API en :8000; exige FIRMADOC_SIGNING_LINK_SECRET >= 32 caracteres
+
+cd widget                                     # widget de firma (Node 20+)
+npm install
+npm test                                      # Vitest con jsdom
+npm run build                                 # tsc + vite build
+npm run dev                                   # :5173; lee VITE_FIRMADOC_API_URL de widget/.env
 ```
 
-Pendientes de crear: `widget/` (`npm run dev`, :5173) y `frontend/` (`npm start`, :4200). Actualizá esta sección cuando existan.
+La API acepta peticiones del navegador solo desde `FIRMADOC_CORS_ORIGINS` (lista separada por comas; vacía desactiva CORS) y arma la `signing_url` con `FIRMADOC_PUBLIC_BASE_URL`, que es la URL del widget.
+
+Pendiente de crear: `frontend/` (`npm start`, :4200). Actualizá esta sección cuando exista.
 
 ## Estructura del backend
 
 - `app/main.py`: `create_app(settings)` (fábrica; los tests la llaman con su propia `Settings`), prefijo `/api/v1`.
 - `app/api/`: un router fino por recurso (`health`, `admin`, `signature_requests`, `documents`); traduce la entrada y llama a un servicio.
-- `app/services/`: lógica de negocio (`intake` para el alta de solicitudes, `pdf_validation`, `signing_links`, `demo_pki`).
-- `app/core/`: configuración, credenciales (`auth.py`: `require_integrator`, `require_admin`, `require_document_reader`) y errores (`AppError` → esquema `Error` del contrato).
+- `app/services/`: lógica de negocio (`intake` para el alta de solicitudes, `request_status` para consultarlas, `pdf_validation`, `signing_links`, `demo_pki`).
+- `app/core/`: configuración, credenciales (`auth.py`: `require_integrator`, `require_admin`, `require_document_reader`, `require_request_reader`) y errores (`AppError` → esquema `Error` del contrato).
 - `app/schemas/`: modelos Pydantic de entrada y salida; `app/models/`: entidades SQLAlchemy.
 - `tests/unit/` sin base; `tests/integration/` con PostgreSQL y el fixture `client`; PDF de prueba en `tests/fixtures/pdfs.py`.
 

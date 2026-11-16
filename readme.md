@@ -94,7 +94,11 @@ El panel Angular del MVP es una página mínima («Firmar documento» y listado 
 
 ### **1.3. Diseño y experiencia de usuario:**
 
-Al no haber código todavía (esta entrega es 100% documentación), se describe el flujo objetivo — las capturas reales se incorporarán en la Entrega 2. La firma **parte, en general, de cargar un PDF** en la sección «Firmar documento» del panel de administración y se completa con el widget embebido en esa misma página; los sistemas integradores usan el mismo widget dentro de su propia interfaz, con la `signing_url` que devuelve la API.
+**Estado actual (Entrega 2).** El widget ya abre la `signing_url` que devuelve la carga: muestra el nombre del documento, las páginas, el tamaño, el estado y una vista previa de la primera página, y presenta la «Firma propia» (todavía deshabilitada, se activa con el Ticket 3). El fragmento `#t=...` desaparece de la barra de direcciones apenas se lee, y una recarga sigue mostrando el documento.
+
+![Widget de firma con un PDF de tres páginas pendiente de firma](docs/screenshots/widget-documento.png)
+
+A continuación se describe el flujo objetivo completo. La firma **parte, en general, de cargar un PDF** en la sección «Firmar documento» del panel de administración y se completa con el widget embebido en esa misma página; los sistemas integradores usan el mismo widget dentro de su propia interfaz, con la `signing_url` que devuelve la API.
 
 1. **Cargar el PDF.** Se completan el nombre y el CUIL del firmante (que queda registrado como `Signer`) y se arrastra o se elige uno o varios PDF; con varios se arma la lista (se puede quitar alguno) y se firman en lote con un solo PIN. El original queda como versión v1.
 2. **Elegir el método de firma.** Tarjetas con su validez: **firma con token** (firma digital; el widget indica si Firmadoc Agent y el token están conectados), **firma remota** (redirige al servicio) y **firma propia** (demostración, inmediata, firma electrónica sin la presunción legal de la firma digital). Se ve el documento (nombre, páginas, tamaño, estado y vencimiento).
@@ -105,9 +109,9 @@ Al no haber código todavía (esta entrega es 100% documentación), se describe 
 
 ### **1.4. Instrucciones de instalación:**
 
-#### Puesta en marcha (estado actual: base de datos, API de carga y descarga)
+#### Puesta en marcha (estado actual: base de datos, API y widget de firma)
 
-Requisitos: Python 3.12 o superior (probado con 3.14), Docker con Docker Compose y Git. Los comandos son para PowerShell; en Linux o macOS, el entorno virtual se activa con `source .venv/bin/activate`.
+Requisitos: Python 3.12 o superior (probado con 3.14), Node 20 o superior (probado con 24), Docker con Docker Compose y Git. Los comandos son para PowerShell; en Linux o macOS, el entorno virtual se activa con `source .venv/bin/activate`.
 
 ```powershell
 git clone https://github.com/bv3rgara/AI4Devs-finalproject.git
@@ -136,7 +140,16 @@ pytest
 
 # 5. API en http://127.0.0.1:8000 (documentación interactiva en /docs)
 uvicorn app.main:create_app --factory --reload
+
+# 6. Widget de firma en http://localhost:5173, en otra consola desde la raíz del repo
+cd widget
+Copy-Item .env.example .env    # VITE_FIRMADOC_API_URL=http://localhost:8000/api/v1
+npm install
+npm test                       # tests de Vitest
+npm run dev
 ```
+
+La API solo acepta peticiones del navegador desde los orígenes de `FIRMADOC_CORS_ORIGINS` (por defecto, el panel en `:4200` y el widget en `:5173`). `FIRMADOC_PUBLIC_BASE_URL` es la URL del widget: con ella la API arma la `signing_url`.
 
 El seed es idempotente y crea: el sistema integrador «Sistema integrador demo» (orígenes permitidos `http://localhost:4200`), el firmante «Firmante Demo» (CUIL `20123456786`) y una PKI de demostración para el proveedor `local`. La PKI se guarda en `backend/var/keys/`, fuera de git: un PKCS#12 cifrado con la passphrase del `.env` y `demo-ca.crt`. Si se define `FIRMADOC_DEMO_API_KEY`, el integrador demo usa esa clave en lugar de generar una.
 
@@ -166,6 +179,12 @@ curl.exe -o v1.pdf -H "Authorization: Bearer $token" `
 ```
 
 La `signing_url` lleva el token del enlace en el fragmento (`#t=...`), que el navegador no envía a ningún servidor ni deja en logs. El sistema integrador debe usarla entera: si recorta el fragmento, el widget queda sin credencial. El token vence a las 24 horas.
+
+Para ver el documento en el widget, abrir en el navegador la `signing_url` que devolvió la carga (con la API y `npm run dev` levantados). El widget consulta la solicitud con `GET /api/v1/signature-requests/{id}`, que también admite la API key del integrador dueño (solo para las solicitudes que ese integrador creó; las cargadas desde el panel responden `404`):
+
+```powershell
+curl.exe -H "X-API-Key: $apiKey" http://127.0.0.1:8000/api/v1/signature-requests/<id>
+```
 
 #### Objetivo para la Entrega final
 
@@ -297,8 +316,8 @@ firmadoc/
 │   ├── firmadoc_agent/
 │   ├── diagnostico.py           # lista certificados y verifica la biblioteca PKCS#11 sin pedir PIN
 │   └── pyproject.toml
-├── widget/                      # widget de firma embebible (React)
-│   ├── src/
+├── widget/                      # widget de firma embebible (React + Vite, se sirve en la signing_url)
+│   ├── src/                     # link.ts (enlace y token), api.ts, pdfPreview.ts (pdf.js) y componentes
 │   └── package.json
 ├── frontend/                    # panel de administración/auditoría (Angular + PrimeNG)
 │   ├── src/
