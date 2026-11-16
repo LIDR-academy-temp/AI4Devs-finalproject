@@ -324,6 +324,33 @@ export async function inviteFromNewMember(
 }
 
 /**
+ * React's hydration errors: in a production build, the minified errors 418,
+ * 423 and 425 with a link to react.dev; in development, the full message.
+ */
+const hydrationError =
+  /react\.dev\/errors\/(418|423|425)\b|react error #(418|423|425)\b|hydrat/i;
+
+/**
+ * Starts collecting the page's hydration errors, from uncaught errors and
+ * console errors alike. Call it before opening the screen; the returned list
+ * fills in as the page reports them. Other errors are left out, so a test
+ * fails only for a hydration error.
+ */
+export function collectHydrationErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => {
+    const text = `${error.message}\n${error.stack ?? ""}`;
+    if (hydrationError.test(text)) errors.push(error.message);
+  });
+  page.on("console", (message) => {
+    if (message.type() === "error" && hydrationError.test(message.text())) {
+      errors.push(message.text());
+    }
+  });
+  return errors;
+}
+
+/**
  * Waits until React has hydrated the element, so what a test types reaches the
  * component's state. Typing earlier changes only the page's HTML: on a slow
  * browser the form then still sees an empty field when it's submitted.

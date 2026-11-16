@@ -1,11 +1,15 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { getCountries, getCountryCallingCode } from "libphonenumber-js";
+
 import {
+  collectHydrationErrors,
   expectNoAccessibilityViolations,
   type Language,
   messages,
   readMe,
   signUpOnboarded,
+  waitUntilHydrated,
 } from "./support";
 
 // Profile (docs/02-UX-DESIGN.md, section 2.3, screen 12; FR-04). Each test
@@ -23,6 +27,7 @@ function profile(page: Page, language: Language) {
   const t = messages[language];
   return {
     heading: page.getByRole("heading", { level: 1, name: t.profile.title }),
+    country: page.getByRole("combobox", { name: t.phoneField.country }),
     number: page.getByRole("textbox", { name: t.phoneField.number }),
     save: page.getByRole("button", { name: t.common.save }),
     emails: page.getByRole("switch", { name: t.profile.emails }),
@@ -47,6 +52,52 @@ test("AC-04 Profile doesn't let the user remove their WhatsApp number", async ({
   await page.reload();
   await expect(screen.number).toHaveValue("(202) 555-0123");
   expect((await readMe(page)).whatsappNumber).toBe("+12025550123");
+});
+
+test("T-36 Profile loads without a hydration error in Spanish and English", async ({
+  page,
+}) => {
+  const hydrationErrors = collectHydrationErrors(page);
+  // Hong Kong's name differs between Node, which renders the server's HTML,
+  // and the browsers, so its selected option is where a mismatch would show.
+  const cases = [
+    { language: "es", whatsappNumber: "+12025550123", country: "US" },
+    { language: "en", whatsappNumber: "+12025550123", country: "US" },
+    { language: "es", whatsappNumber: "+85221234567", country: "HK" },
+  ] as const;
+
+  for (const { language, whatsappNumber, country } of cases) {
+    await signUpOnboarded(page, { language, whatsappNumber });
+
+    await openProfile(page);
+
+    const selector = profile(page, language).country;
+    await waitUntilHydrated(selector);
+    // The full list is built only once hydration has finished, so React has
+    // reported any hydration error by then.
+    await expect(selector.locator("option")).toHaveCount(
+      getCountries().length + 1,
+    );
+    await expect(selector).toHaveValue(country);
+    const browserName = await page.evaluate(
+      ([language, country]) =>
+        new Intl.DisplayNames([language], { type: "region" }).of(country),
+      [language, country] as const,
+    );
+    await expect(selector.locator("option:checked")).toHaveText(
+      `${browserName} (+${getCountryCallingCode(country)})`,
+    );
+    if (country === "HK") {
+      const nodeName = new Intl.DisplayNames([language], {
+        type: "region",
+      }).of(country);
+      expect(
+        browserName,
+        "the names differ, so the case is meaningful",
+      ).not.toBe(nodeName);
+    }
+    expect(hydrationErrors, `${language} ${country}`).toEqual([]);
+  }
 });
 
 test("AC-99 Profile in English", async ({ page }) => {
