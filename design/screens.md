@@ -1,6 +1,6 @@
 # Screens and Stitch folders
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.4 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.4 · **Date:** November 16, 2026
 
 Part of the project documentation ([readme](../readme.md)). Maps each screen in [UX §2.3](../docs/02-UX-DESIGN.md#23-screens), and each state the code builds, to its route, its components, its Stitch folder in [design/stitch/](stitch/), and its tickets in [Work tickets](../docs/08-WORK-TICKETS.md#3-ticket-overview). How to use the Stitch folders, and the differences to ignore in each, are in [DESIGN.md, Using the Stitch Screens](../DESIGN.md#using-the-stitch-screens).
 
