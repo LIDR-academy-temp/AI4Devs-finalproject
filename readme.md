@@ -94,9 +94,20 @@ El panel Angular del MVP es una página mínima («Firmar documento» y listado 
 
 ### **1.3. Diseño y experiencia de usuario:**
 
-**Estado actual (Entrega 2).** El widget ya abre la `signing_url` que devuelve la carga: muestra el nombre del documento, las páginas, el tamaño, el estado y una vista previa de la primera página, y presenta la «Firma propia» (todavía deshabilitada, se activa con el Ticket 3). El fragmento `#t=...` desaparece de la barra de direcciones apenas se lee, y una recarga sigue mostrando el documento.
+**Estado actual (Entrega 2).** El flujo funciona de punta a punta en el navegador:
+1. En el panel, el funcionario ingresa con el token de administración.
+2. En «Firmar documento» completa nombre y CUIL del firmante y elige el PDF. El panel valida los datos antes de enviarlos.
+3. Al cargar, la API crea la v1 y la solicitud, y el panel muestra el widget embebido con la `signing_url`.
+4. El widget muestra el nombre, las páginas, el tamaño, el estado y una vista previa de la primera página. Presenta la «Firma propia», todavía deshabilitada hasta el Ticket 1b.
+5. «Descargar original» baja la v1 con su nombre, byte por byte igual a la subida.
 
-![Widget de firma con un PDF de tres páginas pendiente de firma](docs/screenshots/widget-documento.png)
+![Panel «Firmar documento» con el widget embebido mostrando el PDF cargado](docs/screenshots/panel-firmar.png)
+
+![Validaciones del formulario: CUIL con guiones y archivo que no es PDF](docs/screenshots/panel-validaciones.png)
+
+El widget también funciona fuera del panel, abriendo la `signing_url` directamente. El fragmento `#t=...` desaparece de la barra de direcciones apenas se lee, y una recarga sigue mostrando el documento.
+
+![Widget de firma abierto directamente con un PDF de tres páginas](docs/screenshots/widget-documento.png)
 
 A continuación se describe el flujo objetivo completo. La firma **parte, en general, de cargar un PDF** en la sección «Firmar documento» del panel de administración y se completa con el widget embebido en esa misma página; los sistemas integradores usan el mismo widget dentro de su propia interfaz, con la `signing_url` que devuelve la API.
 
@@ -109,7 +120,7 @@ A continuación se describe el flujo objetivo completo. La firma **parte, en gen
 
 ### **1.4. Instrucciones de instalación:**
 
-#### Puesta en marcha (estado actual: base de datos, API y widget de firma)
+#### Puesta en marcha (estado actual: base de datos, API, widget de firma y panel)
 
 Requisitos: Python 3.12 o superior (probado con 3.14), Node 20 o superior (probado con 24), Docker con Docker Compose y Git. Los comandos son para PowerShell; en Linux o macOS, el entorno virtual se activa con `source .venv/bin/activate`.
 
@@ -147,7 +158,15 @@ Copy-Item .env.example .env    # VITE_FIRMADOC_API_URL=http://localhost:8000/api
 npm install
 npm test                       # tests de Vitest
 npm run dev
+
+# 7. Panel de administración en http://localhost:4200, en otra consola desde la raíz del repo
+cd frontend
+npm install
+npm test -- --watch=false      # tests de Vitest
+npm start
 ```
+
+Con los tres procesos levantados, abrir http://localhost:4200, ingresar el `FIRMADOC_ADMIN_TOKEN` del `.env` y cargar un PDF en «Firmar documento». Las URL de la API y del widget que usa el panel están en `frontend/src/environments/`.
 
 La API solo acepta peticiones del navegador desde los orígenes de `FIRMADOC_CORS_ORIGINS` (por defecto, el panel en `:4200` y el widget en `:5173`). `FIRMADOC_PUBLIC_BASE_URL` es la URL del widget: con ella la API arma la `signing_url`.
 
@@ -320,7 +339,8 @@ firmadoc/
 │   ├── src/                     # link.ts (enlace y token), api.ts, pdfPreview.ts (pdf.js) y componentes
 │   └── package.json
 ├── frontend/                    # panel de administración/auditoría (Angular + PrimeNG)
-│   ├── src/
+│   ├── src/app/                 # core/ (token, interceptor, guard), access/ y signing/ («Firmar documento»)
+│   ├── src/environments/        # apiUrl, widgetUrl y maxUploadMb
 │   └── package.json
 ├── docs/
 │   └── openapi.yaml             # contrato de la API (fuente de verdad, se escribe antes que el código)
@@ -700,7 +720,7 @@ Criterios de aceptación:
 
 ## 6. Tickets de Trabajo
 
-Los tres tickets de la plantilla (backend, frontend y base de datos) se detallan abajo. El de backend se divide en cuatro sub-tickets, cada uno implementable y testeable por separado y en el orden indicado. El agente local tiene su propio ticket completo (Ticket 4) porque es la pieza de mayor riesgo.
+Los tres tickets de la plantilla (backend, frontend y base de datos) se detallan abajo. El de backend se divide en cuatro sub-tickets, cada uno implementable y testeable por separado y en el orden indicado. El agente local tiene su propio ticket completo (Ticket 4) porque es la pieza de mayor riesgo. El panel de administración se agregó en la Entrega 2 como Ticket 5.
 
 **Ticket 1 — Backend: flujo de firma diferida (`create` / `prepare` / `complete`)** — épica, 34 h en total
 
@@ -768,6 +788,18 @@ Los tres tickets de la plantilla (backend, frontend y base de datos) se detallan
   - Empaquetado para Windows con PyInstaller (sin instalador MSI en el MVP).
 - **Criterios de aceptación**: con SoftHSM, `GET /certificates` devuelve el certificado de prueba; una firma devuelta por `/sign` es aceptada por `complete` y el PDF pasa `pdfsig`; una petición desde un origen no permitido devuelve `403`; un PIN incorrecto no dispara un segundo intento; el diagnóstico corre sin token y sin pedir el PIN. Prueba manual documentada con un token físico.
 - **Estimación**: 14 h.
+
+**Ticket 5 — Panel de administración: «Firmar documento» (Angular + PrimeNG)** (hito 1)
+
+- **Descripción**: crear el panel en `frontend/` (Angular 21 + PrimeNG 21) con su primera sección real. Un funcionario ingresa con el token de administración, carga un PDF con los datos del firmante y ve el widget embebido en la misma pantalla. Es la cara de HU1 en el navegador.
+- **Tareas**:
+  - Scaffold Angular con componentes standalone, rutas `/acceso` y `/firmar` (cargadas de forma diferida), PrimeNG con el tema Aura y `environments` con `apiUrl`, `widgetUrl` y `maxUploadMb`.
+  - Acceso: el token de administración se guarda en `sessionStorage`; un interceptor agrega `Authorization: Bearer` solo a las llamadas a la API y, ante un `401`, borra el token y vuelve al acceso. Un guard protege `/firmar` y hay un botón «Salir».
+  - Formulario tipado con nombre, CUIL (11 dígitos, sin guiones), email opcional y un PDF de hasta `maxUploadMb`, con «Cargar» deshabilitado mientras sea inválido.
+  - Carga multipart a `POST /api/v1/admin/signing-uploads` y resultado con el widget en un iframe. La `signing_url` se marca como confiable solo si empieza con `widgetUrl`. Incluye «Descargar original» (blob con el nombre de `Content-Disposition`) y «Cargar otro documento».
+  - Errores de la API en lenguaje claro: `invalid_pdf`, `file_too_large`, `validation_error` marcado en su campo, y API no disponible.
+- **Criterios de aceptación**: sin token no se ve «Firmar documento»; un `401` vuelve al acceso con «El token de administración no es válido»; un CUIL con guiones o un archivo que no es PDF muestran su mensaje y no permiten cargar; una carga válida muestra el widget con el documento; «Descargar original» guarda un archivo con el mismo SHA-256 que el subido; ante un error de la API el formulario conserva los datos.
+- **Estimación**: 8 h.
 
 ---
 

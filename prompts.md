@@ -166,6 +166,11 @@ La revisión señaló que el ticket de backend concentraba demasiado y que el ag
 
 La IA comparó el repositorio con la consigna y encontró que el flujo solo funcionaba por API, sin interfaz. El autor eligió el alcance completo (widget, panel y scaffold del agente) y trabajar con un change de OpenSpec por componente. El change `add-signing-widget-viewer` agregó al contrato `file_name` y `size_bytes`, la consulta `GET /signature-requests/{id}` con el token del enlace, CORS por lista de orígenes y el widget en React. El widget lee el enlace, quita el fragmento de la barra y muestra el documento con una vista previa hecha con pdf.js. Los tests se escribieron antes que el código, según los escenarios de la spec: 17 tests nuevos de backend y 40 de Vitest.
 
+**Prompt 4 (Entrega 2, panel de administración con OpenSpec):**
+> ok (aplicar los changes: primero el widget, después el panel y por último el scaffold del agente)
+
+Con el change `add-admin-signing-panel` la IA creó `frontend/` (Angular 21 + PrimeNG 21 con Aura) y agregó el Ticket 5 al readme. El panel tiene el acceso con el token de administración (`sessionStorage`, interceptor y guard), el formulario «Firmar documento» con sus validaciones y la carga real con el widget embebido. También incluye la descarga del original y los errores de la API en lenguaje claro. Los tests de Vitest se escribieron antes del código, uno por escenario de la spec (54 en total). La prueba manual se automatizó en Edge por el protocolo de depuración: ingreso con un token equivocado y uno correcto, validaciones, carga, descarga con el mismo SHA-256, «Cargar otro documento» y «Salir».
+
 ---
 
 ### 7. Pull Requests
@@ -209,3 +214,7 @@ Pendiente: se completará con los Pull Requests de la Entrega 2 y la Entrega fin
 - **Widget (prueba manual):** al copiar el token desde PowerShell, `.Split('#t=')` corta en cada carácter y no en la cadena completa, así que el token quedaba truncado y la API respondía `401`. Se usó `-split '#t='`. La captura con Edge en modo headless y `--virtual-time-budget` salía con «Cargando vista previa…», porque el tiempo virtual no espera al worker de pdf.js. Se tomó controlando el navegador en tiempo real por el protocolo de depuración, y así se verificó también que el fragmento desaparece y que la recarga sigue mostrando el documento.
 - **Widget (texto):** la IA había redactado un texto legal confuso para la «Firma propia»; se reescribió como «es inmediata, pero sin la presunción legal de la firma digital».
 - **Widget (tests):** con `restoreMocks` activado, Vitest reiniciaba el mock de `renderFirstPage` definido a nivel de módulo; se movió su configuración a `beforeEach`.
+- **Panel (bug que encontró un test):** la primera versión de la pantalla de acceso tenía un `<form>` con `(ngSubmit)` pero sin `[formGroup]`. Así, `ngSubmit` nunca se emitía y, en el navegador, el submit habría recargado la página. Lo detectó el test del escenario «Token ingresado» y se corrigió con un `FormGroup`. En el mismo test apareció que jsdom no implementa `requestSubmit`, así que los tests envían el formulario con un evento `submit`.
+- **Panel (selector de archivo):** el design pedía `FileUpload` de PrimeNG en modo básico. Sin `auto`, ese modo convierte el botón «Elegir» en un botón de subida una vez elegido el archivo, y quedaban dos botones de carga. Se usó `auto` con `customUpload`: el componente entrega el archivo al formulario, que lo valida con sus propios mensajes, y el envío lo hace el servicio.
+- **Panel (tamaño del bundle):** el bundle inicial superaba el presupuesto de 500 kB. Se cargaron las rutas con `loadComponent`, y el resto lo ocupa el preset Aura de PrimeNG, que se necesita al inicio; el aviso se subió a 600 kB y el error quedó en 1 MB.
+- **Panel (prueba manual):** la primera captura mostró el widget cortado dentro del iframe; se aumentó su altura.
