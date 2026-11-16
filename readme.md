@@ -168,6 +168,17 @@ npm start
 
 Con los tres procesos levantados, abrir http://localhost:4200, ingresar el `FIRMADOC_ADMIN_TOKEN` del `.env` y cargar un PDF en «Firmar documento». Las URL de la API y del widget que usa el panel están en `frontend/src/environments/`.
 
+El agente local (hito 2) por ahora es un *scaffold*: escucha solo en `127.0.0.1`, rechaza con `403` los orígenes que no están en `FIRMADOC_AGENT_ALLOWED_ORIGINS` y expone `GET /health`. No hace falta para el flujo actual.
+
+```powershell
+cd agent
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+pytest
+python -m firmadoc_agent       # http://127.0.0.1:8765/health
+```
+
 La API solo acepta peticiones del navegador desde los orígenes de `FIRMADOC_CORS_ORIGINS` (por defecto, el panel en `:4200` y el widget en `:5173`). `FIRMADOC_PUBLIC_BASE_URL` es la URL del widget: con ella la API arma la `signing_url`.
 
 El seed es idempotente y crea: el sistema integrador «Sistema integrador demo» (orígenes permitidos `http://localhost:4200`), el firmante «Firmante Demo» (CUIL `20123456786`) y una PKI de demostración para el proveedor `local`. La PKI se guarda en `backend/var/keys/`, fuera de git: un PKCS#12 cifrado con la passphrase del `.env` y `demo-ca.crt`. Si se define `FIRMADOC_DEMO_API_KEY`, el integrador demo usa esa clave en lugar de generar una.
@@ -332,8 +343,9 @@ firmadoc/
 │   ├── alembic/                 # migraciones
 │   └── requirements.txt
 ├── agent/                       # Firmadoc Agent: app local para firmar hashes con token (PKCS#11)
-│   ├── firmadoc_agent/
-│   ├── diagnostico.py           # lista certificados y verifica la biblioteca PKCS#11 sin pedir PIN
+│   ├── firmadoc_agent/          # app.py (FastAPI con OriginGuard), config.py y __main__.py (escucha en 127.0.0.1)
+│   ├── tests/
+│   ├── diagnostico.py           # (Ticket 4) lista certificados y verifica la biblioteca PKCS#11 sin pedir PIN
 │   └── pyproject.toml
 ├── widget/                      # widget de firma embebible (React + Vite, se sirve en la signing_url)
 │   ├── src/                     # link.ts (enlace y token), api.ts, pdfPreview.ts (pdf.js) y componentes
@@ -651,7 +663,7 @@ Toda firma completada deja el documento **descargable** (`download_url` / `signe
 - `PATCH /api/v1/documents/{id}`: cambia `signing_status` (`draft` ↔ `pending_signature`) y fija `signature_deadline`. `GET /api/v1/documents/{id}/signatures`: listado de firmantes (nombre, fecha, certificado, proveedor). `POST /api/v1/documents/{id}/verify`: verifica integridad y cadena de confianza de un documento firmado.
 - `POST /api/v1/providers/firmar/callback`: lo consume el servicio de firma remota (mock en el MVP) para notificar que el usuario firmó con su certificado remoto (OTP + PIN en el servicio); replica el contrato de integración de FirmAR/SIU.
 
-**Contrato del agente local** (no es parte de la API de Firmadoc; lo consume el widget en `http://127.0.0.1:{puerto}`): `GET /certificates` lista los certificados públicos del token; `POST /sign` recibe los hashes y los nombres de los documentos, muestra la confirmación, pide el PIN una vez y devuelve las firmas. Solo acepta pedidos de los orígenes permitidos.
+**Contrato del agente local** (no es parte de la API de Firmadoc; lo consume el widget en `http://127.0.0.1:{puerto}`): `GET /health` permite al widget detectar si el agente está corriendo y si tiene configurada la biblioteca PKCS#11 (sin revelar su ruta); `GET /certificates` lista los certificados públicos del token; `POST /sign` recibe los hashes y los nombres de los documentos, muestra la confirmación, pide el PIN una vez y devuelve las firmas. Solo acepta pedidos de los orígenes permitidos.
 
 ---
 

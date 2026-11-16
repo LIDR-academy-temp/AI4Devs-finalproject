@@ -171,6 +171,8 @@ La IA comparó el repositorio con la consigna y encontró que el flujo solo func
 
 Con el change `add-admin-signing-panel` la IA creó `frontend/` (Angular 21 + PrimeNG 21 con Aura) y agregó el Ticket 5 al readme. El panel tiene el acceso con el token de administración (`sessionStorage`, interceptor y guard), el formulario «Firmar documento» con sus validaciones y la carga real con el widget embebido. También incluye la descarga del original y los errores de la API en lenguaje claro. Los tests de Vitest se escribieron antes del código, uno por escenario de la spec (54 en total). La prueba manual se automatizó en Edge por el protocolo de depuración: ingreso con un token equivocado y uno correcto, validaciones, carga, descarga con el mismo SHA-256, «Cargar otro documento» y «Salir».
 
+**Prompt 5 (Entrega 2, scaffold del agente):** dentro del mismo «ok», la IA creó `agent/` con lo mínimo para que la pieza exista y esté conectada a la arquitectura, sin anticipar el Ticket 4. Incluye FastAPI con `create_app(settings)` igual que el backend, escucha fija en `127.0.0.1` y un middleware que rechaza con `403` los orígenes no permitidos (incluido `null`). También tiene `GET /health`, que se agregó al contrato del agente para que el widget pueda detectarlo, y 12 tests escritos antes del código. `GET /certificates`, `POST /sign` y PKCS#11 quedan para el Ticket 4.
+
 ---
 
 ### 7. Pull Requests

@@ -58,6 +58,12 @@ npm install
 npm test -- --watch=false                     # Vitest con jsdom (ng test)
 npm run build                                 # presupuesto inicial: aviso a 600 kB por el tema Aura
 npm start                                     # :4200; apiUrl y widgetUrl en src/environments/
+
+cd agent                                      # Firmadoc Agent (scaffold del hito 2)
+python -m venv .venv && .venv\Scripts\activate
+pip install -e ".[dev]"
+pytest
+python -m firmadoc_agent                      # solo 127.0.0.1:FIRMADOC_AGENT_PORT (8765)
 ```
 
 La API acepta peticiones del navegador solo desde `FIRMADOC_CORS_ORIGINS` (lista separada por comas; vacía desactiva CORS) y arma la `signing_url` con `FIRMADOC_PUBLIC_BASE_URL`, que es la URL del widget.
@@ -66,6 +72,7 @@ La API acepta peticiones del navegador solo desde `FIRMADOC_CORS_ORIGINS` (lista
 
 - `frontend/`: componentes standalone, estado en señales, formularios reactivos tipados y rutas con `loadComponent`. PrimeNG fijado en `^21` (nunca 22). El token de administración vive en `sessionStorage` (`firmadoc:admin-token`) y solo el `authInterceptor` lo agrega, y solo para `environment.apiUrl`.
 - `widget/`: el token del enlace llega en el fragmento `#t=` y se guarda en `sessionStorage` por solicitud; pdf.js se importa de forma diferida.
+- `agent/`: `create_app(settings)` como en el backend; `OriginGuard` rechaza con `403` todo `Origin` fuera de `FIRMADOC_AGENT_ALLOWED_ORIGINS` (incluido `null`) y el host está fijo en `127.0.0.1`, no es configurable.
 - jsdom no implementa `requestSubmit`: en los tests, enviá los formularios con `form.dispatchEvent(new Event('submit'))`.
 
 ## Estructura del backend
