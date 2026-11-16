@@ -84,8 +84,6 @@ Recorrido principal de un cliente. *Las capturas están en `img/` (clic para amp
 | 5. Modelo 130 | Borrador del trimestre con el pago fraccionado de IRPF acumulado, gastos y amortizaciones, y botón de PDF. | <a href="img/05-modelo-130.png"><img src="img/05-modelo-130.png" alt="Modelo 130" width="280"></a> |
 | 6. Modelos 303, 349 y 390 | Resto de borradores fiscales. | <a href="img/06-modelos.png"><img src="img/06-modelos.png" alt="Modelos 303, 349 y 390" width="280"></a> |
 
-Vídeo tutorial: `docs/video/recorrido.mp4` *(pendiente de grabar)*.
-
 ### 1.4. Instrucciones de instalación
 
 **Requisitos:** Node.js 20+, npm 11, MySQL 8.4. Opcional: clave de Anthropic para la lectura de facturas.
