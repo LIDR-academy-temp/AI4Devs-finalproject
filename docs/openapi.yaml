@@ -24,8 +24,35 @@ tags:
     description: Operaciones del panel de administración
   - name: documents
     description: Documentos y sus versiones
+  - name: health
+    description: Estado operativo del servicio
 
 paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      summary: Estado del servicio y de su conexión a la base de datos
+      security: []
+      responses:
+        '200':
+          description: Servicio disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+        '503':
+          description: La base de datos no responde
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /signature-requests:
     post:
       tags: [signature-requests]
@@ -60,6 +87,17 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: El external_document_id ya existe en este sistema integrador; usar el document_id que llega en details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: duplicate_external_document_id
+                message: El external_document_id ya fue usado por este sistema integrador
+                details:
+                  document_id: d4a2e9f1-0000-4000-8000-000000000000
         '422':
           $ref: '#/components/responses/ValidationError'
       callbacks:
@@ -313,7 +351,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     ValidationError:
-      description: Datos inválidos (PDF inválido, tamaño excedido, CUIL mal formado)
+      description: Datos inválidos (validation_error, invalid_pdf, file_too_large o unsupported_provider)
       content:
         application/json:
           schema:
@@ -532,7 +570,13 @@ components:
       properties:
         code:
           type: string
-          example: certificate_revoked
+          description: |
+            Valores usados por la API:
+            unauthorized, not_found, validation_error, invalid_pdf, file_too_large,
+            unsupported_provider, duplicate_external_document_id, database_unavailable.
+            Los de prepare/complete (por ejemplo certificate_revoked o challenge_expired)
+            se agregan con el Ticket 1b.
+          example: invalid_pdf
         message:
           type: string
         details:
