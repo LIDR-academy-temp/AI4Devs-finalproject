@@ -75,6 +75,7 @@ def settings() -> Settings:
         FIRMADOC_SIGNING_LINK_SECRET=SIGNING_LINK_SECRET,
         FIRMADOC_MAX_UPLOAD_MB=1,
         FIRMADOC_REQUIRE_CUIL_MATCH=False,
+        FIRMADOC_CORS_ORIGINS="http://localhost:4200, http://localhost:5173",
     )
 
 

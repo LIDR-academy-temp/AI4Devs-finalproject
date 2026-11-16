@@ -5,7 +5,7 @@ from typing import Annotated, Self
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, StringConstraints, UrlConstraints, model_validator
 
 from app.models.entities import CUIL_PATTERN
-from app.models.enums import Provider, SignatureRequestStatus
+from app.models.enums import Provider, SignatureLevel, SignatureRequestStatus, SigningStatus
 
 Cuil = Annotated[str, StringConstraints(pattern=CUIL_PATTERN)]
 SignerName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -38,6 +38,28 @@ class CreateSignatureRequest(BaseModel):
         if self.document_base64 is not None and self.file_name is None:
             raise ValueError("file_name es obligatorio junto con document_base64")
         return self
+
+
+class DocumentResult(BaseModel):
+    id: uuid.UUID
+    external_document_id: str | None
+    version_number: int
+    is_active_version: bool
+    signing_status: SigningStatus
+    signature_level: SignatureLevel | None
+    file_name: str
+    size_bytes: int
+    download_url: str
+
+
+class SignatureRequestOut(BaseModel):
+    id: uuid.UUID
+    status: SignatureRequestStatus
+    provider: Provider
+    certificate: None = None
+    document: DocumentResult
+    created_at: datetime
+    signed_at: datetime | None
 
 
 class SignatureRequestCreated(BaseModel):

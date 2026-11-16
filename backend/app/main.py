@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import admin, documents, health, signature_requests
 from app.core.config import Settings, get_settings
@@ -20,6 +21,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _check_settings(settings)
     app = FastAPI(title="Firmadoc API", version="0.1.0", openapi_url=f"{API_PREFIX}/openapi.json")
     app.state.settings = settings
+    if settings.cors_origin_list:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.cors_origin_list,
+            allow_credentials=False,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Signing-Token"],
+            expose_headers=["Content-Disposition"],
+        )
     register_error_handlers(app)
     app.include_router(health.router, prefix=API_PREFIX)
     app.include_router(admin.router, prefix=API_PREFIX)

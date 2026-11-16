@@ -58,12 +58,13 @@ def require_admin(
         raise unauthorized()
 
 
-def require_document_reader(
-    session: Annotated[Session, Depends(get_session)],
-    settings: Annotated[Settings, Depends(get_app_settings)],
-    x_api_key: Annotated[str | None, Header()] = None,
-    authorization: Annotated[str | None, Header()] = None,
-    x_signing_token: Annotated[str | None, Header()] = None,
+def _resolve_principal(
+    session: Session,
+    settings: Settings,
+    x_api_key: str | None,
+    authorization: str | None,
+    x_signing_token: str | None,
+    allow_admin: bool,
 ) -> Principal:
     if x_api_key:
         system = _integrator_for_key(session, x_api_key)
@@ -71,7 +72,7 @@ def require_document_reader(
             raise unauthorized()
         return Principal(kind="integrator", integrating_system_id=system.id)
     if authorization:
-        if not _is_admin(settings, authorization):
+        if not allow_admin or not _is_admin(settings, authorization):
             raise unauthorized()
         return Principal(kind="admin")
     if x_signing_token:
@@ -81,3 +82,24 @@ def require_document_reader(
             raise unauthorized(str(exc)) from exc
         return Principal(kind="signing_link", signature_request_id=request_id)
     raise unauthorized()
+
+
+def require_document_reader(
+    session: Annotated[Session, Depends(get_session)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
+    x_api_key: Annotated[str | None, Header()] = None,
+    authorization: Annotated[str | None, Header()] = None,
+    x_signing_token: Annotated[str | None, Header()] = None,
+) -> Principal:
+    return _resolve_principal(session, settings, x_api_key, authorization, x_signing_token, allow_admin=True)
+
+
+def require_request_reader(
+    session: Annotated[Session, Depends(get_session)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
+    x_api_key: Annotated[str | None, Header()] = None,
+    authorization: Annotated[str | None, Header()] = None,
+    x_signing_token: Annotated[str | None, Header()] = None,
+) -> Principal:
+    """Integrador o enlace de firma; el contrato no admite el token de administración en la consulta."""
+    return _resolve_principal(session, settings, x_api_key, authorization, x_signing_token, allow_admin=False)

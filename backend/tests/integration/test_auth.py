@@ -7,7 +7,13 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.core.auth import Principal, require_admin, require_document_reader, require_integrator
+from app.core.auth import (
+    Principal,
+    require_admin,
+    require_document_reader,
+    require_integrator,
+    require_request_reader,
+)
 from app.core.config import Settings
 from app.core.security import hash_api_key
 from app.main import create_app
@@ -37,6 +43,10 @@ def app(app: FastAPI) -> FastAPI:
             "integrating_system_id": str(principal.integrating_system_id) if principal.integrating_system_id else None,
             "signature_request_id": str(principal.signature_request_id) if principal.signature_request_id else None,
         }
+
+    @router.get("/request-reader")
+    def request_reader(principal: Annotated[Principal, Depends(require_request_reader)]) -> dict[str, str]:
+        return {"kind": principal.kind}
 
     app.include_router(router)
     return app
@@ -131,6 +141,28 @@ def test_tampered_signing_token_is_rejected(client: TestClient) -> None:
     response = client.get("/api/v1/_test/reader", headers={"X-Signing-Token": forged})
 
     assert response.status_code == 401
+
+
+def test_request_reader_accepts_integrator_and_signing_link(client: TestClient, integrator: IntegratingSystem) -> None:
+    token = issue_signing_token(uuid.uuid4(), SIGNING_LINK_SECRET)
+
+    as_integrator = client.get("/api/v1/_test/request-reader", headers={"X-API-Key": API_KEY})
+    as_link = client.get("/api/v1/_test/request-reader", headers={"X-Signing-Token": token})
+
+    assert as_integrator.json() == {"kind": "integrator"}
+    assert as_link.json() == {"kind": "signing_link"}
+
+
+@pytest.mark.parametrize(
+    "headers", [{"Authorization": f"Bearer {ADMIN_TOKEN}"}, {}], ids=["token-de-administracion", "sin-credenciales"]
+)
+def test_request_reader_rejects_admin_token_and_missing_credentials(
+    client: TestClient, headers: dict[str, str]
+) -> None:
+    response = client.get("/api/v1/_test/request-reader", headers=headers)
+
+    assert response.status_code == 401
+    assert response.json()["code"] == "unauthorized"
 
 
 @pytest.mark.parametrize("secret", ["", "corto"])

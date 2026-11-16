@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://firmadoc:firmadoc@localhost:5432/firmadoc"
     test_database_url: str = "postgresql+psycopg://firmadoc:firmadoc@localhost:5432/firmadoc_test"
 
-    public_base_url: str = Field("http://localhost:8000", alias="FIRMADOC_PUBLIC_BASE_URL")
+    public_base_url: str = Field("http://localhost:5173", alias="FIRMADOC_PUBLIC_BASE_URL")
+    cors_origins: str = Field("", alias="FIRMADOC_CORS_ORIGINS")
     admin_token: str = Field("", alias="FIRMADOC_ADMIN_TOKEN")
     signing_link_secret: str = Field("", alias="FIRMADOC_SIGNING_LINK_SECRET")
     require_cuil_match: bool = Field(False, alias="FIRMADOC_REQUIRE_CUIL_MATCH")
@@ -24,6 +25,10 @@ class Settings(BaseSettings):
     local_keystore_passphrase: str = Field("", alias="FIRMADOC_LOCAL_KEYSTORE_PASSPHRASE")
 
     demo_api_key: str = Field("", alias="FIRMADOC_DEMO_API_KEY")
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 @lru_cache

@@ -1,3 +1,9 @@
-from app.schemas.signature_requests import CreateSignatureRequest, SignatureRequestCreated, SignerIn
+from app.schemas.signature_requests import (
+    CreateSignatureRequest,
+    DocumentResult,
+    SignatureRequestCreated,
+    SignatureRequestOut,
+    SignerIn,
+)
 
-__all__ = ["CreateSignatureRequest", "SignatureRequestCreated", "SignerIn"]
+__all__ = ["CreateSignatureRequest", "DocumentResult", "SignatureRequestCreated", "SignatureRequestOut", "SignerIn"]

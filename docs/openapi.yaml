@@ -500,7 +500,8 @@ components:
 
     DocumentResult:
       type: object
-      required: [id, version_number, is_active_version, signing_status, download_url]
+      description: Versión vigente del documento de la solicitud.
+      required: [id, version_number, is_active_version, signing_status, file_name, size_bytes, download_url]
       properties:
         id:
           type: string
@@ -518,9 +519,16 @@ components:
         signature_level:
           type: [string, 'null']
           enum: [B-B, B-T, B-LT, B-LTA, null]
+        file_name:
+          type: string
+          description: Nombre original del archivo, sin ruta.
+        size_bytes:
+          type: integer
+          minimum: 1
         download_url:
           type: string
           format: uri
+          description: URL absoluta de GET /documents/{id}/versions/{version_number}/download de esta versión.
         signed_document_base64:
           type: string
           contentEncoding: base64
