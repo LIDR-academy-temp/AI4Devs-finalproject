@@ -73,16 +73,16 @@ El repositorio contiene código confidencial, por lo que **no se enlaza una URL 
 
 ### 1.3. Diseño y experiencia de usuario
 
-Recorrido principal de un cliente. *Las capturas están en `docs/img/` (clic para ampliar).*
+Recorrido principal de un cliente. *Las capturas están en `img/` (clic para ampliar).*
 
 | Paso | Qué ocurre | Imagen |
 |------|-----------|--------|
-| 1. Acceso | Pantalla de login; tras 5 intentos fallidos se bloquea temporalmente. | <a href="docs/img/01-login.png"><img src="docs/img/01-login.png" alt="Acceso" width="280"></a> |
-| 2. Listado de facturas | Tabla de facturas del usuario con filtros por año, trimestre y estado, y contador de comentarios no leídos. | <a href="docs/img/02-facturas.png"><img src="docs/img/02-facturas.png" alt="Listado de facturas" width="280"></a> |
-| 3. Nueva factura con IA | Se arrastra el PDF; el formulario se rellena y la persona revisa los datos. | <a href="docs/img/03-nueva-factura-ia.png"><img src="docs/img/03-nueva-factura-ia.png" alt="Nueva factura con IA" width="280"></a> |
-| 4. Detalle y comentarios | Datos, adjunto y conversación con el contable. | <a href="docs/img/04-comentarios.png"><img src="docs/img/04-comentarios.png" alt="Detalle y comentarios" width="280"></a> |
-| 5. Modelo 130 | Borrador del trimestre con el pago fraccionado de IRPF acumulado, gastos y amortizaciones, y botón de PDF. | <a href="docs/img/05-modelo-130.png"><img src="docs/img/05-modelo-130.png" alt="Modelo 130" width="280"></a> |
-| 6. Modelos 303, 349 y 390 | Resto de borradores fiscales. | <a href="docs/img/06-modelos.png"><img src="docs/img/06-modelos.png" alt="Modelos 303, 349 y 390" width="280"></a> |
+| 1. Acceso | Pantalla de login; tras 5 intentos fallidos se bloquea temporalmente. | <a href="img/01-login.png"><img src="img/01-login.png" alt="Acceso" width="280"></a> |
+| 2. Listado de facturas | Tabla de facturas del usuario con filtros por año, trimestre y estado, y contador de comentarios no leídos. | <a href="img/02-facturas.png"><img src="img/02-facturas.png" alt="Listado de facturas" width="280"></a> |
+| 3. Nueva factura con IA | Se arrastra el PDF; el formulario se rellena y la persona revisa los datos. | <a href="img/03-nueva-factura-ia.png"><img src="img/03-nueva-factura-ia.png" alt="Nueva factura con IA" width="280"></a> |
+| 4. Detalle y comentarios | Datos, adjunto y conversación con el contable. | <a href="img/04-comentarios.png"><img src="img/04-comentarios.png" alt="Detalle y comentarios" width="280"></a> |
+| 5. Modelo 130 | Borrador del trimestre con el pago fraccionado de IRPF acumulado, gastos y amortizaciones, y botón de PDF. | <a href="img/05-modelo-130.png"><img src="img/05-modelo-130.png" alt="Modelo 130" width="280"></a> |
+| 6. Modelos 303, 349 y 390 | Resto de borradores fiscales. | <a href="img/06-modelos.png"><img src="img/06-modelos.png" alt="Modelos 303, 349 y 390" width="280"></a> |
 
 Vídeo tutorial: `docs/video/recorrido.mp4` *(pendiente de grabar)*.
 
