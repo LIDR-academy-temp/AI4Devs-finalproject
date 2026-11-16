@@ -5,16 +5,22 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
+from app.db import get_session
+from app.main import create_app
 from app.models import Document, DocumentVersion, Signer
 from app.models.enums import VersionOrigin
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 PDF_BYTES = b"%PDF-1.4\n%test\n"
+ADMIN_TOKEN = "admin-token-de-prueba"
+SIGNING_LINK_SECRET = "secreto-de-enlaces-de-prueba-de-32-caracteres"
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
@@ -59,6 +65,31 @@ def session(engine: Engine) -> Iterator[Session]:
         with Session(bind=connection, join_transaction_mode="create_savepoint") as db_session:
             yield db_session
         transaction.rollback()
+
+
+@pytest.fixture
+def settings() -> Settings:
+    return Settings(
+        FIRMADOC_PUBLIC_BASE_URL="http://firmadoc.test",
+        FIRMADOC_ADMIN_TOKEN=ADMIN_TOKEN,
+        FIRMADOC_SIGNING_LINK_SECRET=SIGNING_LINK_SECRET,
+        FIRMADOC_MAX_UPLOAD_MB=1,
+        FIRMADOC_REQUIRE_CUIL_MATCH=False,
+    )
+
+
+@pytest.fixture
+def app(settings: Settings) -> FastAPI:
+    return create_app(settings)
+
+
+@pytest.fixture
+def client(app: FastAPI, session: Session) -> Iterator[TestClient]:
+    """Cliente HTTP que comparte la transacción revertida del fixture `session`."""
+    app.dependency_overrides[get_session] = lambda: session
+    with TestClient(app, raise_server_exceptions=True) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
 
 
 def make_signer(session: Session, cuil: str = "20123456786") -> Signer:
