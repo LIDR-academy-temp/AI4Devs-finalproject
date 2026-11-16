@@ -15,7 +15,7 @@ context: |
   Frontends: widget/ en React + TypeScript + Vite con Vitest y Testing Library (se sirve en
   la signing_url y se embebe por iframe), y frontend/ en Angular 21 + PrimeNG 21 con Vitest
   (panel de administración; nunca PrimeNG 22). Node 20 o superior.
-  Specs ya archivadas en openspec/specs: api-access, document-intake y document-versions.
+  Specs ya archivadas en openspec/specs: api-access, document-intake, document-versions, signature-request-status y signing-widget.
   Alcance actual: hito 1 (carga de PDF + firma con proveedor local + versión vigente
   descargable). Fuera de alcance: lote, FirmAR, TSA/B-LT, Web Component, OAuth2,
   reintentos de webhooks.
