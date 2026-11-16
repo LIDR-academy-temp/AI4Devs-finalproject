@@ -1,4 +1,4 @@
-schema: spec-driven
+﻿schema: spec-driven
 
 context: |
   Language: es
@@ -11,28 +11,28 @@ context: |
   6 (tickets), y CLAUDE.md (stack, decisiones cerradas, comandos y convenciones).
   Stack del backend: Python 3.12+, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2,
   pyHanko y pytest, sobre PostgreSQL 16 (nunca SQLite). El esquema del MVP ya existe
-  (migración 0001_initial_schema) con triggers append-only en document_version y audit_event.
+  (migraciÃ³n 0001_initial_schema) con triggers append-only en document_version y audit_event.
   Frontends: widget/ en React + TypeScript + Vite con Vitest y Testing Library (se sirve en
   la signing_url y se embebe por iframe), y frontend/ en Angular 21 + PrimeNG 21 con Vitest
-  (panel de administración; nunca PrimeNG 22). Node 20 o superior.
-  Specs ya archivadas en openspec/specs: api-access, document-intake, document-versions, signature-request-status y signing-widget.
-  Alcance actual: hito 1 (carga de PDF + firma con proveedor local + versión vigente
+  (panel de administraciÃ³n; nunca PrimeNG 22). Node 20 o superior.
+  Specs ya archivadas en openspec/specs: api-access, document-intake, document-versions, signature-request-status, signing-widget y admin-panel.
+  Alcance actual: hito 1 (carga de PDF + firma con proveedor local + versiÃ³n vigente
   descargable). Fuera de alcance: lote, FirmAR, TSA/B-LT, Web Component, OAuth2,
   reintentos de webhooks.
 
 rules:
   proposal:
-    - Referenciar el ticket del readme (sección 6) y las historias de usuario que cubre
-    - Declarar explícitamente qué queda fuera de alcance
+    - Referenciar el ticket del readme (secciÃ³n 6) y las historias de usuario que cubre
+    - Declarar explÃ­citamente quÃ© queda fuera de alcance
   specs:
-    - Cada requirement con al menos un escenario de rechazo además del camino feliz
-    - Los códigos de estado y esquemas deben coincidir con docs/openapi.yaml; si hace falta cambiarlo, decirlo en el proposal
+    - Cada requirement con al menos un escenario de rechazo ademÃ¡s del camino feliz
+    - Los cÃ³digos de estado y esquemas deben coincidir con docs/openapi.yaml; si hace falta cambiarlo, decirlo en el proposal
   design:
-    - No reabrir decisiones cerradas de CLAUDE.md; si una se contradice, señalarlo como riesgo
+    - No reabrir decisiones cerradas de CLAUDE.md; si una se contradice, seÃ±alarlo como riesgo
   tasks:
-    - Tests primero - cada grupo empieza por los tests de integración derivados de los escenarios
-    - Tareas de no más de 2 horas
-    - Incluir una tarea final de documentación (readme, CLAUDE.md y prompts.md)
+    - Tests primero - cada grupo empieza por los tests de integraciÃ³n derivados de los escenarios
+    - Tareas de no mÃ¡s de 2 horas
+    - Incluir una tarea final de documentaciÃ³n (readme, CLAUDE.md y prompts.md)
 
 operations:
   apply:
