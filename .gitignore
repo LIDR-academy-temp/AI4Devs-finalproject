@@ -9,3 +9,4 @@ node_modules/
 dist/
 
 backend/var/
+*.egg-info/
