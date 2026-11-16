@@ -105,7 +105,7 @@ Al no haber código todavía (esta entrega es 100% documentación), se describe 
 
 ### **1.4. Instrucciones de instalación:**
 
-#### Puesta en marcha (estado actual: base de datos, migraciones y seed)
+#### Puesta en marcha (estado actual: base de datos, API de carga y descarga)
 
 Requisitos: Python 3.12 o superior (probado con 3.14), Docker con Docker Compose y Git. Los comandos son para PowerShell; en Linux o macOS, el entorno virtual se activa con `source .venv/bin/activate`.
 
@@ -115,7 +115,9 @@ cd AI4Devs-finalproject
 git checkout feature/entrega-2-bbmv
 
 # 1. Variables de entorno: copiar el ejemplo y completar como mínimo
-#    FIRMADOC_LOCAL_KEYSTORE_PASSPHRASE (cualquier valor de prueba) y FIRMADOC_ADMIN_TOKEN.
+#    FIRMADOC_LOCAL_KEYSTORE_PASSPHRASE (cualquier valor de prueba), FIRMADOC_ADMIN_TOKEN y
+#    FIRMADOC_SIGNING_LINK_SECRET (32 caracteres o más; sin él la API no arranca).
+#    Para generar valores aleatorios: python -c "import secrets; print(secrets.token_urlsafe(32))"
 Copy-Item .env.example .env
 
 # 2. PostgreSQL 16 (crea las bases firmadoc y firmadoc_test)
@@ -129,11 +131,41 @@ pip install -r requirements-dev.txt
 alembic upgrade head
 python -m app.seed      # muestra una única vez la API key del sistema integrador demo
 
-# 4. Tests de integración (usan firmadoc_test, que se migra desde cero en cada corrida)
+# 4. Tests (unitarios y de integración; los de integración usan firmadoc_test, que se migra desde cero en cada corrida)
 pytest
+
+# 5. API en http://127.0.0.1:8000 (documentación interactiva en /docs)
+uvicorn app.main:create_app --factory --reload
 ```
 
 El seed es idempotente y crea: el sistema integrador «Sistema integrador demo» (orígenes permitidos `http://localhost:4200`), el firmante «Firmante Demo» (CUIL `20123456786`) y una PKI de demostración para el proveedor `local`. La PKI se guarda en `backend/var/keys/`, fuera de git: un PKCS#12 cifrado con la passphrase del `.env` y `demo-ca.crt`. Si se define `FIRMADOC_DEMO_API_KEY`, el integrador demo usa esa clave en lugar de generar una.
+
+#### Probar la carga y la descarga con `curl`
+
+Con la API levantada, en otra consola de PowerShell (`curl.exe`, no el alias `curl` de PowerShell). `$token` es el `FIRMADOC_ADMIN_TOKEN` del `.env` y `$apiKey`, la clave que mostró el seed:
+
+```powershell
+curl.exe http://127.0.0.1:8000/api/v1/health
+
+# Carga desde el panel (multipart): responde 201 con id, document_id, status y signing_url
+curl.exe -X POST http://127.0.0.1:8000/api/v1/admin/signing-uploads `
+  -H "Authorization: Bearer $token" `
+  -F "file=@resolucion.pdf;type=application/pdf" `
+  -F "signer_full_name=Firmante Demo" -F "signer_identifier=20123456786"
+
+# Envío por un sistema integrador (JSON con el PDF en base64)
+$pdf = [Convert]::ToBase64String([IO.File]::ReadAllBytes("$PWD\resolucion.pdf"))
+@{ document_base64 = $pdf; file_name = "resolucion.pdf"; external_document_id = "EXP-1";
+   signer = @{ full_name = "Firmante Demo"; identifier = "20123456786" } } | ConvertTo-Json | Set-Content body.json
+curl.exe -X POST http://127.0.0.1:8000/api/v1/signature-requests `
+  -H "X-API-Key: $apiKey" -H "Content-Type: application/json" --data-binary "@body.json"
+
+# Descarga de la versión original (con el token de administración, la API key del dueño o el token del enlace)
+curl.exe -o v1.pdf -H "Authorization: Bearer $token" `
+  http://127.0.0.1:8000/api/v1/documents/<document_id>/versions/1/download
+```
+
+La `signing_url` lleva el token del enlace en el fragmento (`#t=...`), que el navegador no envía a ningún servidor ni deja en logs. El sistema integrador debe usarla entera: si recorta el fragmento, el widget queda sin credencial. El token vence a las 24 horas.
 
 #### Objetivo para la Entrega final
 

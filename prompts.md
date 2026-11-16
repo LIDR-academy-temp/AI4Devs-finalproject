@@ -10,6 +10,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 | Jira (vía MCP de Atlassian) | — | Carga y seguimiento del backlog en el proyecto `FIRDOC` |
 | Cursor (agente) | Claude Opus 5.5 | Análisis de la devolución de la Entrega 1, cierre de contradicciones del readme, contrato `docs/openapi.yaml` y `CLAUDE.md` |
 | Redocly CLI | — | Lint del contrato OpenAPI generado por la IA |
+| OpenSpec 2.0 | — | Desarrollo guiado por especificaciones: propuesta, specs, diseño y tareas por cambio (Ticket 1a en adelante) |
 
 En la Entrega 1 no se usaron subagentes ni comandos personalizados; el trabajo fue conversacional directo con Claude Code, más búsqueda y lectura web para la investigación de antecedentes y conectores MCP (GitHub, Atlassian). Desde la Entrega 2, el contexto de la IA se fija en `CLAUDE.md` (stack, fuentes de verdad, decisiones cerradas, comandos y la regla de un ticket por vez).
 
@@ -127,6 +128,14 @@ Tras el requisito de versionado, se ajustaron `POST /signature-requests`, `GET /
 
 La revisión pedía el contrato en formato OpenAPI. La IA escribió `docs/openapi.yaml` (OpenAPI 3.1) con los endpoints del hito 1, el de carga del panel (`POST /admin/signing-uploads`, que antes solo figuraba en las historias), la descarga de versiones y el webhook como `callback`. También unificó `prepare` / `complete` para que `local` y `token` usen el mismo flujo (con `local` se omiten el certificado y las firmas). El contrato se validó con Redocly y se corrigieron los errores que marcó.
 
+**Prompt 3 (Entrega 2, Ticket 1a con desarrollo guiado por especificaciones):**
+> "me gustaría instalar primero OpenSpec y aplicar ese cambio del Ticket 1 con SDD" y luego `/openspec-apply-change`
+
+Se instaló OpenSpec (esquema `spec-driven`) y se acotó el change `add-document-upload` al sub-ticket 1a. La IA redactó `proposal.md`, tres specs con escenarios WHEN/THEN (`api-access`, `document-intake` y `document-versions`), un `design.md` con ocho decisiones y 21 tareas ordenadas con los tests primero. Después las implementó una por una con `openspec-apply-change`, comprobando antes de cada implementación que los tests fallaban:
+- `POST /api/v1/admin/signing-uploads` (panel, multipart), `POST /api/v1/signature-requests` (integrador, JSON con base64 o `document_id`) y `GET /api/v1/documents/{id}/versions/{n}/download`, sobre un único servicio de alta (`app/services/intake.py`).
+- Validación del PDF con pyHanko antes de abrir la transacción, credenciales como dependencias de FastAPI y token del enlace de firma con HMAC en el fragmento de la URL.
+- 120 tests (unitarios y de integración contra PostgreSQL), `alembic check` sin diferencias y `openspec validate --strict`. La verificación manual con `curl` confirmó que el SHA-256 del PDF descargado coincide con el cargado.
+
 ---
 
 ### 5. Historias de Usuario
@@ -188,3 +197,6 @@ Pendiente: se completará con los Pull Requests de la Entrega 2 y la Entrega fin
 ### Ajustes durante la implementación
 
 - **Ticket 3:** un test generado por la IA esperaba que un CUIL con guiones fuera rechazado por el `CHECK` (`IntegrityError`). Al ejecutarlo contra PostgreSQL real, el rechazo llegó antes por la longitud de la columna (`DataError`). Se corrigió el test para aceptar cualquier rechazo de la base: la protección existe en las dos capas. Es un ejemplo de por qué los tests corren contra la base real y no contra mocks.
+- **Ticket 1a (herramientas):** `TestClient` de Starlette emitía un aviso de obsolescencia con `httpx`; se reemplazó por `httpx2` en `requirements-dev.txt`. La tarea de prueba manual decía `uvicorn app.main:app`, pero la app se construye con una fábrica (`create_app(settings)`) para que los tests inyecten su configuración; se corrigió a `uvicorn app.main:create_app --factory`.
+- **Ticket 1a (test corregido):** un test generado por la IA afirmaba que el corte previo sobre el texto base64 coincidía exactamente con el tamaño máximo. Base64 codifica de a 3 bytes, así que 1000 y 1001 bytes ocupan lo mismo. Se corrigió el test para comprobar lo que el diseño pedía: el corte previo es una cota superior que nunca rechaza un archivo válido, y el límite exacto se aplica después de decodificar.
+- **Ticket 1a (escenario reubicado):** el escenario «token de enlace de otra solicitud» se probó en los tests de descarga, con documentos reales, y no con un endpoint de prueba, porque es ahí donde se aplica la regla.

@@ -45,15 +45,27 @@ pip install -r requirements-dev.txt
 alembic upgrade head && python -m app.seed    # esquema + datos demo (idempotente)
 alembic check                                 # los modelos no difieren de las migraciones
 pytest                                        # tests (los de integración usan firmadoc_test)
+uvicorn app.main:create_app --factory --reload   # API en :8000; exige FIRMADOC_SIGNING_LINK_SECRET >= 32 caracteres
 ```
 
-Pendientes de crear: `uvicorn app.main:app --reload` (API en :8000), `widget/` (`npm run dev`, :5173) y `frontend/` (`npm start`, :4200). Actualizá esta sección cuando existan.
+Pendientes de crear: `widget/` (`npm run dev`, :5173) y `frontend/` (`npm start`, :4200). Actualizá esta sección cuando existan.
+
+## Estructura del backend
+
+- `app/main.py`: `create_app(settings)` (fábrica; los tests la llaman con su propia `Settings`), prefijo `/api/v1`.
+- `app/api/`: un router fino por recurso (`health`, `admin`, `signature_requests`, `documents`); traduce la entrada y llama a un servicio.
+- `app/services/`: lógica de negocio (`intake` para el alta de solicitudes, `pdf_validation`, `signing_links`, `demo_pki`).
+- `app/core/`: configuración, credenciales (`auth.py`: `require_integrator`, `require_admin`, `require_document_reader`) y errores (`AppError` → esquema `Error` del contrato).
+- `app/schemas/`: modelos Pydantic de entrada y salida; `app/models/`: entidades SQLAlchemy.
+- `tests/unit/` sin base; `tests/integration/` con PostgreSQL y el fixture `client`; PDF de prueba en `tests/fixtures/pdfs.py`.
 
 ## Convenciones del backend
 
 - Migraciones escritas a mano y congeladas (no importan modelos); después de cada cambio de modelos, `alembic check` debe dar "No new upgrade operations detected".
 - Enums como `VARCHAR` + `CHECK` (no tipos nativos de PostgreSQL), con nombres de constraint según `NAMING_CONVENTION` de `app/models/base.py`.
-- Tests de integración: cada test corre en una transacción que se revierte; los errores esperados de la base se prueban dentro de `session.begin_nested()`.
+- Tests de integración: cada test corre en una transacción que se revierte; los errores esperados de la base se prueban dentro de `session.begin_nested()`. Los datos que un test necesita después de una petición que falla se confirman con `session.commit()` en el fixture (el `rollback` del servicio solo deshace hasta el último commit).
+- Errores: lanzá `AppError(status, code, message, details)`; nunca devuelvas `HTTPException` con otro formato. Un recurso de otro integrador responde `404`, no `403`.
+- Una petición, una transacción: el servicio hace un único `commit` y `rollback` ante cualquier error.
 
 ## Forma de trabajo
 
