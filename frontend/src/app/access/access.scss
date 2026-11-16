@@ -1,0 +1,27 @@
+:host {
+  display: block;
+  max-width: 28rem;
+  margin: 3rem auto;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.hint {
+  margin: 0 0 1rem;
+  color: var(--p-text-muted-color);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+p-button {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
