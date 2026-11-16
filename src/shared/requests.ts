@@ -12,9 +12,25 @@ export const onboardingRequestShape = {
   whatsappNumber: fields.phone,
   /** The "I am 18 or older and accept the terms" box, which must be checked. */
   acceptsTerms: z.literal(true),
+  /**
+   * The invitation the user is signing up through, if any (BR-06). A code that
+   * isn't usable, or isn't shaped like one, is ignored, never refused.
+   */
+  invitationCode: z.string().optional().meta({
+    description:
+      "The invitation the user signs up through; a pending invitation that hasn't expired skips getting started (BR-06). Any other value is ignored.",
+  }),
 };
 
 export const onboardingRequest = z.object(onboardingRequestShape);
+
+/** A new invitation (FR-06): its type, and the optional name of the person invited (BR-32). */
+export const createInvitationRequestShape = {
+  type: z.enum(["member", "buyer"]),
+  inviteeName: fields.inviteeName.optional(),
+};
+
+export const createInvitationRequest = z.object(createInvitationRequestShape);
 
 /** Profile (FR-04). The WhatsApp number can be changed but not removed (BR-04). */
 export const updateMeRequestShape = {

@@ -44,10 +44,13 @@ export function WelcomeActions({
   google,
   devSignIn,
   signInError,
+  returnTo = "/",
 }: {
   google: boolean;
   devSignIn: boolean;
   signInError: boolean;
+  /** Where Google sign-in comes back to: Welcome, or an invitation (flow C). */
+  returnTo?: string;
 }) {
   const t = useTranslations("welcome");
   const [pending, setPending] = useState(false);
@@ -58,8 +61,8 @@ export function WelcomeActions({
     setFailed(false);
     const { error } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/",
-      errorCallbackURL: "/?error=sign-in",
+      callbackURL: returnTo,
+      errorCallbackURL: `${returnTo}?error=sign-in`,
     });
     if (error) {
       setPending(false);

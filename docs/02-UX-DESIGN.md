@@ -1,6 +1,6 @@
 # UX design
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.12 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.13 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -22,9 +22,11 @@ Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`
 **C. Invite**
 1. In Group, a member taps "Invite a member" or "Invite a buyer", can type the person's name, and taps **Create link**.
 2. They tap **Share on WhatsApp**, and WhatsApp opens with a message and the link ([section 2.6](#26-whatsapp-and-email-content)). They can also copy the link.
-3. The invitee opens the link, taps **Continue with Google**, completes step 2 of flow A, and accepts. They join that group, and no group of their own is created. A member lands on Lists; a buyer lands on To buy.
-4. If the link was used, expired, or cancelled (BR-08): "This invitation is no longer valid. Ask for a new one."
-5. If the user already belongs to the group with that access: "You're already in this group." (BR-09)
+3. The invitee opens the link, at `/invitations/{code}`, and sees who is inviting them, to which group, and as member or buyer. They tap **Continue with Google**, complete step 2 of flow A, and come back to the invitation, where they tap **Accept** or **Decline**.
+4. If they accept, they join that group, and no group of their own is created. A member lands on Lists; a buyer lands on To buy.
+5. If they decline, the link stops working (BR-08). A user who has never belonged to a group then gets their own group and first list (BR-06) and lands on Lists; anyone else lands on their main screen.
+6. If the link was used, declined, expired, or cancelled (BR-08): "This invitation is no longer valid. Ask for a new one."
+7. If the user already belongs to the group with that access: "You're already in this group." (BR-09)
 
 **D. Notify the buyer:** in the list, a member taps **Notify** and WhatsApp opens with "I added things to the Medicine list: {link}". If there are several buyers, they choose who.
 
@@ -363,12 +365,17 @@ The same page serves everyone. The example shows the buyer who reserved the item
 | Member / Buyer | Miembro / Comprador |
 | Invite a member | Invitar a un miembro |
 | Invite a buyer | Invitar a un comprador |
+| Invite the person who will buy | Invita a quien va a comprar |
+| Members | Miembros |
+| Buyers | Compradores |
+| Invitation link | Enlace de invitación |
 | Shared family shopping space · Managed by {name} | Espacio compartido de compras familiares · A cargo de {nombre} |
 | Owner | Propietario |
 | Who are you inviting? (optional) | ¿A quién invitas? (opcional) |
 | Create link | Crear enlace |
 | Share on WhatsApp | Compartir por WhatsApp |
 | Copy link | Copiar enlace |
+| Link copied | Enlace copiado |
 | Pending invitations ({count}) | Invitaciones pendientes ({count}) |
 | Invited as {type} | Invitado como {tipo} |
 | Expires in 1 day | Expira en 1 día |
@@ -414,6 +421,13 @@ The same page serves everyone. The example shows the buyer who reserved the item
 | Add where things should be sent | Agrega a dónde enviar las cosas |
 | This group has no delivery address yet | Este grupo todavía no tiene dirección de entrega |
 | Someone else already reserved it | Otra persona ya lo reservó |
+| Invitation | Invitación |
+| {name} invites you | {name} te invita |
+| Group you're joining | Grupo al que te unes |
+| You're invited as | Te invitan como |
+| Sign in to accept the invitation. | Inicia sesión para aceptar la invitación. |
+| Accept | Aceptar |
+| Decline | Rechazar |
 | This invitation is no longer valid. Ask for a new one. | Esta invitación ya no es válida. Pide una nueva. |
 | You're already in this group. | Ya perteneces a este grupo. |
 | Refresh | Actualizar |

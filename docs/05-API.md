@@ -1,6 +1,6 @@
 # API specification
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.10 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.11 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -28,8 +28,8 @@ Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`
 | 404 | `NOT_AVAILABLE` | Outside the user's groups, deleted, or archived (BR-13) |
 | 409 | `ALREADY_RESERVED` | Someone else reserved the item first (BR-23) |
 | 409 | `ITEM_CHANGED` | The item changed since the user loaded it (BR-20), or the action no longer applies to its status |
-| 409 | `RULE_VIOLATION` | A business rule refuses the action; `reason` names it, for example `LIST_NOT_DELETABLE` (BR-18) or `OWNERSHIP_TRANSFER_REQUIRED` (BR-07) |
-| 410 | `INVITATION_INVALID` | The invitation was used, expired, or cancelled (BR-08) |
+| 409 | `RULE_VIOLATION` | A business rule refuses the action; `reason` names it, for example `LIST_NOT_DELETABLE` (BR-18), `OWNERSHIP_TRANSFER_REQUIRED` (BR-07), or `ALREADY_IN_GROUP` (BR-09) |
+| 410 | `INVITATION_INVALID` | The invitation was used, declined, expired, or cancelled (BR-08) |
 | 422 | `VALIDATION_FAILED` | A field breaks BR-32 or a required field is missing |
 | 429 | `RATE_LIMITED` | Over a rate limit ([Security and testing §1](07-SECURITY-AND-TESTING.md#1-security)) |
 | 500 | `INTERNAL_ERROR` | An unexpected failure. The message is generic and the response contains no internal details. |
@@ -39,7 +39,7 @@ Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`
 | Method | Path | Purpose | Rules |
 | --- | --- | --- | --- |
 | GET | `/me` | Current user, memberships, and onboarding state | FR-08 |
-| POST | `/me/onboarding` | Language, WhatsApp number, and age and terms acceptance; completing it without an invitation creates the user's group and first list. Returns the current user, as `GET /me` does; if onboarding is already complete, it changes nothing. | FR-02, BR-01, BR-04, BR-06 |
+| POST | `/me/onboarding` | Language, WhatsApp number, and age and terms acceptance, and an optional `invitationCode`; completing it creates the user's group and first list, unless `invitationCode` names a pending invitation that hasn't expired. Returns the current user, as `GET /me` does; if onboarding is already complete, it changes nothing. | FR-02, BR-01, BR-04, BR-06 |
 | PATCH | `/me` | Change language, WhatsApp number, or email setting | FR-04 |
 | DELETE | `/me` | Delete the account | BR-05 |
 | GET, POST | `/groups` | List the user's groups; create a group | BR-07 |
@@ -48,8 +48,9 @@ Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`
 | DELETE | `/groups/{groupId}/memberships/{userId}` | Remove someone, or leave with `me` | BR-07, BR-10, BR-11 |
 | GET, POST | `/groups/{groupId}/invitations` | Pending invitations, each with its type, `inviteeName`, and expiry; create one, with an optional `inviteeName`, and get its link | BR-08, BR-32 |
 | DELETE | `/invitations/{invitationId}` | Cancel an invitation | BR-08 |
-| GET | `/invitations/by-code/{code}` | Invitation preview: inviter, group, and type. No sign-in required. | BR-08 |
-| POST | `/invitations/by-code/{code}/accept` | Accept an invitation | BR-08, BR-09 |
+| GET | `/invitations/by-code/{code}` | Invitation preview: inviter, group, and type, and, for a signed-in user, whether they already have the access it gives. No sign-in required. | BR-08, BR-09 |
+| POST | `/invitations/by-code/{code}/accept` | Accept an invitation; refused with `ALREADY_IN_GROUP` if the user already has the access it gives | BR-08, BR-09 |
+| POST | `/invitations/by-code/{code}/decline` | Decline an invitation; a user who has never had a membership then gets their own group and first list. Refused with `ALREADY_IN_GROUP` like accept. | BR-06, BR-08, BR-09 |
 | GET, POST | `/groups/{groupId}/recipients` | List and create recipients | FR-09 |
 | GET, PATCH, DELETE | `/recipients/{recipientId}` | Read, edit (including details), or delete a recipient | BR-15, BR-32 |
 | GET, POST | `/groups/{groupId}/lists` | List and create lists; `?archived=true` lists archived ones | FR-12 |

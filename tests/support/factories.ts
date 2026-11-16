@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import { expect } from "vitest";
 
@@ -105,7 +105,8 @@ export async function createInvitation(
       .insert(invitations)
       .values({
         type: "buyer",
-        code: randomUUID(),
+        // The shape of a real code (docs/04-DATA-MODEL.md, section 2).
+        code: randomBytes(32).toString("base64url"),
         expiresAt: FAR_FUTURE,
         ...values,
       })

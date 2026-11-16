@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.24 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.25 · **Date:** November 15, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -234,11 +234,11 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 **Scope:**
 
-- Create, list, and cancel invitations, and the preview and accept endpoints, for both types, with the optional invitee name (FR-06, BR-08, BR-09, BR-32). This includes the migration that adds `invitee_name` and the name in the seed data ([Data model](04-DATA-MODEL.md#2-entities)). A user who signs up through an invitation skips getting started (BR-06).
+- Create, list, and cancel invitations, and the preview, accept, and decline endpoints, for both types, with the optional invitee name (FR-06, BR-08, BR-09, BR-32). This includes the migration that adds `invitee_name` and the `declined` status, and the name and a declined invitation in the seed data ([Data model](04-DATA-MODEL.md#2-entities)). A user who signs up through an invitation skips getting started, through the optional invitation code on `POST /me/onboarding`, unless they decline it (BR-06).
 - Members' emails and buyers' WhatsApp numbers in `GET /groups/{groupId}` (FR-07, BR-12).
 - The Toast component in `src/components/ui` ([DESIGN.md, Toast](../DESIGN.md#toast)).
 - Group screen with **Invite a member** and **Invite a buyer**, members, buyers, and pending invitations, replacing the placeholder from T-05 ([UX design §2.4](02-UX-DESIGN.md#24-key-screens)), built to [DESIGN.md](../DESIGN.md) and `design/stitch/08-group`.
-- Invitation screen with sign-in ([UX design §1](02-UX-DESIGN.md#1-user-flows), flow C), built to DESIGN.md and `design/stitch/03-invitation`.
+- Invitation screen at `/invitations/{code}` with sign-in, One last step, Accept, and Decline ([UX design §1](02-UX-DESIGN.md#1-user-flows), flow C), built to DESIGN.md and `design/stitch/03-invitation`.
 - Share on WhatsApp and copy link, with the invitation message in [UX design §2.6](02-UX-DESIGN.md#26-whatsapp-and-email-content).
 
 **Acceptance criteria:** AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-100, AC-101, AC-102.

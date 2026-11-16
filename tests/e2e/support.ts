@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import {
+  type APIRequestContext,
+  expect,
+  type Locator,
+  type Page,
+  test,
+} from "@playwright/test";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
@@ -259,4 +265,75 @@ export async function createItem(
   const item: { id: string; name: string; version: number } =
     await response.json();
   return item;
+}
+
+/** The code of a seed invitation: the length of a real one, but plainly not random (scripts/seed-data.ts). */
+export function seedInvitationCode(
+  name: "pending" | "expired" | "accepted" | "cancelled" | "declined",
+) {
+  return `seed-${name}-`.padEnd(43, "0");
+}
+
+export type CreatedInvitation = {
+  groupId: string;
+  groupName: string;
+  /** The Invitation screen's address, from the link. */
+  path: string;
+};
+
+/**
+ * Creates an invitation to the signed-in member's group through the API, as
+ * Create link does. `api` is a page's `request`, or the test's own `request`
+ * for an inviter with a cookie jar apart from the invitee's.
+ */
+export async function createInvitation(
+  api: APIRequestContext,
+  body: { type: "member" | "buyer"; inviteeName?: string },
+): Promise<CreatedInvitation> {
+  const me = await (await api.get("/api/v1/me")).json();
+  const { groupId, groupName } = me.memberships[0];
+  const response = await api.post(`/api/v1/groups/${groupId}/invitations`, {
+    data: body,
+    headers: sameOrigin(),
+  });
+  expect(response.status()).toBe(201);
+  const { link } = await response.json();
+  return { groupId, groupName, path: new URL(link).pathname };
+}
+
+/**
+ * Signs up a new member in the given request context, apart from the page, and
+ * has them invite someone: the inviter in flow C.
+ */
+export async function inviteFromNewMember(
+  request: APIRequestContext,
+  body: { type: "member" | "buyer"; inviteeName?: string },
+  language: Language = "en",
+): Promise<CreatedInvitation> {
+  const signIn = await request.post("/api/auth/dev/sign-in", {
+    data: { email: newEmail() },
+    headers: sameOrigin(),
+  });
+  expect(signIn.ok()).toBe(true);
+  const onboarding = await request.post("/api/v1/me/onboarding", {
+    data: { language, whatsappNumber: "+12025550144", acceptsTerms: true },
+    headers: sameOrigin(),
+  });
+  expect(onboarding.ok()).toBe(true);
+  return createInvitation(request, body);
+}
+
+/**
+ * Waits until React has hydrated the element, so what a test types reaches the
+ * component's state. Typing earlier changes only the page's HTML: on a slow
+ * browser the form then still sees an empty field when it's submitted.
+ */
+export async function waitUntilHydrated(locator: Locator) {
+  await expect
+    .poll(() =>
+      locator.evaluate((element) =>
+        Object.keys(element).some((key) => key.startsWith("__reactProps$")),
+      ),
+    )
+    .toBe(true);
 }

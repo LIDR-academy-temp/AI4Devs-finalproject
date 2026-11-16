@@ -6,6 +6,7 @@ import { LANGUAGES } from "../../shared/languages";
 import { fieldLimits } from "../../shared/limits";
 import {
   changesSomething,
+  createInvitationRequestShape,
   createItemRequestShape,
   createListRequestShape,
   ITEM_STATUSES,
@@ -89,7 +90,22 @@ export const groupListSchema = openApiRegistry.register(
 
 export const groupMemberSchema = openApiRegistry.register(
   "GroupMember",
-  personRefSchema.extend({ isOwner: z.boolean() }),
+  personRefSchema.extend({
+    isOwner: z.boolean(),
+    email: z
+      .string()
+      .nullable()
+      .meta({ description: "Null for a deleted account (FR-07, BR-05)" }),
+  }),
+);
+
+export const groupBuyerSchema = openApiRegistry.register(
+  "GroupBuyer",
+  personRefSchema.extend({
+    whatsappNumber: z.string().nullable().meta({
+      description: "E.164; null for a deleted account (BR-04, BR-05)",
+    }),
+  }),
 );
 
 export const groupSchema = openApiRegistry.register(
@@ -98,8 +114,63 @@ export const groupSchema = openApiRegistry.register(
     id: z.uuid(),
     name: z.string(),
     members: z.array(groupMemberSchema),
-    buyers: z.array(personRefSchema),
+    buyers: z.array(groupBuyerSchema),
   }),
+);
+
+// Invitations (docs/05-API.md, section 2; FR-06, BR-08, BR-09).
+
+export const createInvitationRequestSchema = openApiRegistry.register(
+  "CreateInvitationRequest",
+  z.object(createInvitationRequestShape),
+);
+
+export const invitationSchema = openApiRegistry.register(
+  "Invitation",
+  z.object({
+    id: z.uuid(),
+    type: membershipTypeSchema,
+    inviteeName: z
+      .string()
+      .nullable()
+      .meta({ description: "The name the member gave, if any (BR-32)" }),
+    expiresAt: z.iso.datetime(),
+  }),
+);
+
+export const invitationCollectionSchema = openApiRegistry.register(
+  "InvitationCollection",
+  z.object({ invitations: z.array(invitationSchema) }),
+);
+
+export const createdInvitationSchema = openApiRegistry.register(
+  "CreatedInvitation",
+  invitationSchema.extend({
+    link: z.url().meta({
+      description:
+        "The Invitation screen's address, holding the single-use code (BR-08)",
+    }),
+  }),
+);
+
+export const invitationPreviewSchema = openApiRegistry.register(
+  "InvitationPreview",
+  z.object({
+    inviterName: z
+      .string()
+      .meta({ description: '"Former user" for a deleted account' }),
+    groupName: z.string(),
+    type: membershipTypeSchema,
+    alreadyInGroup: z.boolean().meta({
+      description:
+        "The signed-in user already has the access the invitation gives (BR-09); false when signed out",
+    }),
+  }),
+);
+
+export const acceptedInvitationSchema = openApiRegistry.register(
+  "AcceptedInvitation",
+  z.object({ groupId: z.uuid(), type: membershipTypeSchema }),
 );
 
 // Lists and items (docs/05-API.md, section 3). Request schemas are rebuilt here

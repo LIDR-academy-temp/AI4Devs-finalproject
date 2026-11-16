@@ -65,7 +65,7 @@ describe("Seed contents", () => {
       verifications: 0,
       groups: 2,
       memberships: 6,
-      invitations: 4,
+      invitations: 5,
       recipients: 3,
       recipient_details: 3,
       lists: 4,
@@ -224,7 +224,7 @@ describe("Seed contents", () => {
       .from(invitations)
       .where(eq(invitations.groupId, seedIds.groups.garcia));
     const byId = new Map(rows.map((row) => [row.id, row]));
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
 
     const pending = byId.get(seedIds.invitations.pending);
     expect(pending?.status).toBe("pending");
@@ -240,6 +240,12 @@ describe("Seed contents", () => {
       acceptedAt: expect.any(Date) as unknown as Date,
     });
     expect(byId.get(seedIds.invitations.cancelled)?.status).toBe("cancelled");
+    expect(byId.get(seedIds.invitations.declined)?.status).toBe("declined");
+
+    expect(pending?.inviteeName).toBe("Carlos");
+    expect(
+      rows.filter((row) => row.inviteeName !== null).map((row) => row.id),
+    ).toEqual([seedIds.invitations.pending]);
   });
 
   it("the Pérez Group has one item, and only Luis has access to it", async () => {

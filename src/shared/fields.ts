@@ -18,6 +18,10 @@ const { recipientDetails } = fieldLimits;
 export const fields = {
   /** Names of items, lists, groups, and recipients; address label; receiver's name. */
   name: text(fieldLimits.name),
+  /** The optional name of the person invited; blank means none (FR-06). */
+  inviteeName: text(fieldLimits.inviteeName).transform(
+    (value) => value || undefined,
+  ),
   /** Item notes, recipient notes, buyer note, and the "Couldn't buy it" note. */
   note: text(fieldLimits.note),
   quantity: z

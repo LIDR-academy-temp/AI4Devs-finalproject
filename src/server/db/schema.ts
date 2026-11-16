@@ -28,6 +28,7 @@ export const membershipStatus = pgEnum("membership_status", [
 export const invitationStatus = pgEnum("invitation_status", [
   "pending",
   "accepted",
+  "declined",
   "cancelled",
 ]);
 export const itemStatus = pgEnum("item_status", [
@@ -175,6 +176,7 @@ export const invitations = pgTable("invitations", {
     .notNull()
     .references(() => groups.id, { onDelete: "cascade" }),
   type: membershipType("type").notNull(),
+  inviteeName: varchar("invitee_name", { length: 100 }),
   code: varchar("code", { length: 43 }).notNull().unique(),
   status: invitationStatus("status").notNull().default("pending"),
   createdBy: uuid("created_by")

@@ -225,7 +225,7 @@ describe("Schema built from migrations", () => {
       language: ["es", "en"],
       membership_type: ["member", "buyer"],
       membership_status: ["active", "ended"],
-      invitation_status: ["pending", "accepted", "cancelled"],
+      invitation_status: ["pending", "accepted", "declined", "cancelled"],
       item_status: [
         "pending",
         "reserved",
@@ -689,6 +689,10 @@ describe("Required values, enumerations, and text limits", () => {
     },
   );
 
+  it("accepts a declined invitation (BR-08)", async () => {
+    await expectAccepted("invitations", { status: "declined" });
+  });
+
   // Each value is valid apart from its length, so the format checks don't get in the way.
   const phoneOfLength = (length: number) => `+1${"2".repeat(length - 2)}`;
   const textOfLength = (length: number) => "x".repeat(length);
@@ -706,6 +710,7 @@ describe("Required values, enumerations, and text limits", () => {
     ["verifications", "identifier", 255, textOfLength],
     ["groups", "name", 100, textOfLength],
     ["invitations", "code", 43, textOfLength],
+    ["invitations", "invitee_name", 100, textOfLength],
     ["recipients", "name", 100, textOfLength],
     ["recipients", "notes", 1000, textOfLength],
     ["recipient_details", "name", 40, textOfLength],

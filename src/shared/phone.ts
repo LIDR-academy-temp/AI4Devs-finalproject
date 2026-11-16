@@ -60,3 +60,8 @@ export function splitPhone(value: string | null | undefined): {
   if (!parsed?.country) return { country: undefined, national: value ?? "" };
   return { country: parsed.country, national: parsed.formatNational() };
 }
+
+/** An E.164 number as people write it internationally, for example +1 202 555 0103. */
+export function formatInternational(e164: string): string {
+  return parsePhoneNumberFromString(e164)?.formatInternational() ?? e164;
+}
