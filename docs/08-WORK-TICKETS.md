@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.25 · **Date:** November 15, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.26 · **Date:** November 16, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -73,7 +73,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-05 | [#31](https://github.com/ojordan0/AI4Devs-finalproject/issues/31) | App shell, navigation, and translations | E-08 | US-25, US-07 | Frontend | 1 | D2 | M | T-04 | `feat/t-05-app-shell` |
 | T-06 | [#32](https://github.com/ojordan0/AI4Devs-finalproject/issues/32) | Production deployment | E-08 | None | DevOps | 1 | D3 | M | T-04 | `chore/t-06-production-deployment` |
 | T-07 | [#33](https://github.com/ojordan0/AI4Devs-finalproject/issues/33) | Groups, memberships, and access | E-02 | US-07, US-01, US-04 | Backend | 2 | D2 | M | T-03 | `feat/t-07-groups-api` |
-| T-08 | [#34](https://github.com/ojordan0/AI4Devs-finalproject/issues/34) | Invitations | E-02 | US-04 | Full stack | 2 | D3 | L | T-07, T-05, T-20 | `feat/t-08-invitations` |
+| T-08 | [#34](https://github.com/ojordan0/AI4Devs-finalproject/issues/34) | Invitations | E-02 | US-04 | Full stack | 2 | D2 | L | T-07, T-05, T-20 | `feat/t-08-invitations` |
 | T-09 | [#35](https://github.com/ojordan0/AI4Devs-finalproject/issues/35) | Lists and items API | E-04 | US-10, US-07, US-11, US-12, US-13 | Backend | 3 | D2 | M | T-07 | `feat/t-09-lists-items-api` |
 | T-10 | [#36](https://github.com/ojordan0/AI4Devs-finalproject/issues/36) | Lists screen, item form, and item page | E-04 | US-10, US-07 | Frontend | 3 | D2 | L | T-09, T-05 | `feat/t-10-lists-screens` |
 | T-11 | [#37](https://github.com/ojordan0/AI4Devs-finalproject/issues/37) | Status changes: reserve, release, purchase | E-05 | US-15, US-14, US-16 | Backend | 4 | D2 | M | T-09 | `feat/t-11-status-changes-api` |
@@ -83,7 +83,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-15 | [#41](https://github.com/ojordan0/AI4Devs-finalproject/issues/41) | Delivery addresses | E-06 | US-18 | Full stack | 5 | D3 | M | T-08 | `feat/t-15-delivery-addresses` |
 | T-16 | [#42](https://github.com/ojordan0/AI4Devs-finalproject/issues/42) | Marking items as shipped | E-06 | US-19, US-21 | Full stack | 5 | D3 | L | T-12, T-15 | `feat/t-16-shipments` |
 | T-17 | [#43](https://github.com/ojordan0/AI4Devs-finalproject/issues/43) | End-to-end test of the core cycle and test suite completion | E-08 | None | QA | All | D3 | M | T-16 | `chore/t-17-e2e-core-cycle` |
-| T-18 | [#44](https://github.com/ojordan0/AI4Devs-finalproject/issues/44) | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-32, T-33, T-34, T-35 | `docs/t-18-final-documentation` |
+| T-18 | [#44](https://github.com/ojordan0/AI4Devs-finalproject/issues/44) | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-32, T-33, T-34, T-35, T-36, T-37 | `docs/t-18-final-documentation` |
 | T-19 | [#62](https://github.com/ojordan0/AI4Devs-finalproject/issues/62) | Tests that survive a restyle | E-08 | None | Design | All | D2 | S | None | `chore/t-19-restyle-safe-tests` |
 | T-20 | [#63](https://github.com/ojordan0/AI4Devs-finalproject/issues/63) | Design tokens and base components | E-08 | None | Design | All | D2 | M | T-19, T-05 | `feat/t-20-design-foundation` |
 | T-21 | [#64](https://github.com/ojordan0/AI4Devs-finalproject/issues/64) | Welcome design | E-08 | None | Design | 1 | D2 | S | T-20, T-04 | `feat/t-21-design-welcome` |
@@ -101,6 +101,8 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 | T-33 | [#76](https://github.com/ojordan0/AI4Devs-finalproject/issues/76) | Design for screens and states without a Stitch screen | E-08 | None | Design | 5 | D3 | M | T-20, T-14 | `feat/t-33-design-unstitched-states` |
 | T-34 | [#83](https://github.com/ojordan0/AI4Devs-finalproject/issues/83) | Bottom bar height | E-08 | None | Design | All | D2 | S | T-20 | `fix/t-34-bottom-bar-height` |
 | T-35 | [#86](https://github.com/ojordan0/AI4Devs-finalproject/issues/86) | Custom text sizes in cn() | E-08 | None | Design | All | D2 | S | T-20 | `fix/t-35-text-size-classes` |
+| T-36 | [#92](https://github.com/ojordan0/AI4Devs-finalproject/issues/92) | Phone field hydration | E-01 | None | Frontend | 1 | D2 | S | T-04 | `fix/t-36-phone-field-hydration` |
+| T-37 | [#93](https://github.com/ojordan0/AI4Devs-finalproject/issues/93) | Notifications label | E-08 | None | Frontend | 2 | D2 | S | T-08 | `fix/t-37-notifications-label` |
 
 ## 4. Tickets
 
@@ -228,7 +230,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-08 Invitations
 
-**Epic:** E-02 · **Stories:** US-04 · **Type:** Full stack · **Increment:** 2 · **Delivery:** D3 · **Size:** L · **Depends on:** T-07, T-05, T-20
+**Epic:** E-02 · **Stories:** US-04 · **Type:** Full stack · **Increment:** 2 · **Delivery:** D2 · **Size:** L · **Depends on:** T-07, T-05, T-20
 
 **Goal:** a member invites a member or a buyer with a link sent on WhatsApp, and the invitee joins.
 
@@ -370,7 +372,7 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 
 ### T-18 Deployment evidence and final documentation
 
-**Epic:** E-08 · **Stories:** None · **Type:** Documentation · **Increment:** all of milestone 1 · **Delivery:** D3 · **Size:** S · **Depends on:** T-17 and the design tickets, T-21 to T-35
+**Epic:** E-08 · **Stories:** None · **Type:** Documentation · **Increment:** all of milestone 1 · **Delivery:** D3 · **Size:** S · **Depends on:** T-17, the design tickets T-21 to T-35, T-36, and T-37
 
 **Goal:** everything the final course delivery requires, besides the code.
 
@@ -592,3 +594,25 @@ Issue descriptions contain the goal, the related stories, and the acceptance cri
 - **Spacing:** it doesn't recognize the spacing classes (`px-margin`, `gap-gutter-desktop`, and the other spacing tokens), so a later spacing class next to one doesn't replace it.
 
 **Done when:** `cn()` keeps both the custom text sizes and the colors, and a later class replaces an earlier one of the same kind for the theme's text sizes, spacing, and shadows; every place where a merge gives a different result is listed in the pull request; the dashed "choose an item" slot has no shadow; the tab bar's workaround is removed; a unit test covers the merge and fails if a text size, spacing, or shadow in `src/app/globals.css` isn't registered in `cn()`; Lists, the tab bar, and the New list sheet are checked at 360 px and 1280 px, and the item page's left column at 1280 px; and all tests pass.
+
+### T-36 Phone field hydration
+
+**Epic:** E-01 · **Stories:** None · **Type:** Frontend · **Increment:** 1 · **Delivery:** D2 · **Size:** S · **Depends on:** T-04
+
+**Goal:** One last step and Profile render without a hydration error.
+
+**Problem:** the phone field's country names come from `Intl.DisplayNames`, whose data differs between Node and each browser (for example, Hong Kong in Spanish and the Falkland Islands in English), so the country list the server renders differs from the browser's in its text and its order. React then renders the page again in the browser on every load. Found in T-22; it has been there since T-04.
+
+**Approach:** the server renders only the placeholder and the selected country, and the browser builds the full list after the page loads, so the names stay the browser's ([DESIGN.md, Content Constraints](../DESIGN.md#content-constraints): no hard-coded country names).
+
+**Done when:** One last step and Profile show no hydration error in Spanish and English, in Chromium and WebKit; a browser test on each screen fails on a hydration error; and all tests pass.
+
+### T-37 Notifications label
+
+**Epic:** E-08 · **Stories:** None · **Type:** Frontend · **Increment:** 2 · **Delivery:** D2 · **Size:** S · **Depends on:** T-08
+
+**Goal:** every screen loads without a translation formatting error.
+
+**Problem:** the toast provider in `src/components/ui/toast.tsx`, which the app shell mounts, passes the string `common.notifications` ("Notificaciones ({hotkey})" in Spanish, "Notifications ({hotkey})" in English) to the `label` of Radix's `Toast.Provider` without a value for `hotkey`. Every screen inside the app shell (Lists, the item form, the item page, People, Group, To buy, My purchases, and Profile) logs a `FORMATTING_ERROR` when it renders, in the browser and on the server, in both languages; Welcome, One last step, and Invitation don't. The provider's label is read before each toast, so screen readers hear the message key before the toast's message, for example "common.notifications Invitación cancelada". The viewport gets no label, so the notifications region keeps Radix's English name, "Notifications (F8)", in Spanish too; the Group browser test accepts either word in that name, so it doesn't catch it. Found in T-22; it came with T-08.
+
+**Done when:** no screen logs a formatting error in Spanish or English; the notifications region's accessible name is the translated text; a test fails if a string is formatted without its variables; and all tests pass.

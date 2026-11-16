@@ -1,7 +1,12 @@
 "use client";
 
 import type { CountryCode } from "libphonenumber-js";
-import { ArrowRightIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  ChevronDownIcon,
+  LoaderCircleIcon,
+  MessageCircleIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
@@ -125,29 +130,42 @@ export function OnboardingForm({
       ref={formRef}
       onSubmit={submit}
       noValidate
-      className="flex flex-col gap-6"
+      className="gap-space-lg flex flex-col"
     >
       {alert && <FormAlert>{alert}</FormAlert>}
 
-      <div className="border-border bg-card shadow-card flex flex-col gap-6 rounded-xl border-[1.5px] p-4 md:p-6">
+      <div className="border-border bg-card shadow-card gap-space-lg p-space-md md:p-space-lg flex flex-col rounded-xl border-[1.5px]">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${id}-language`}>{tCommon("language")}</Label>
-          <select
-            id={`${id}-language`}
-            className={cn(fieldClassName, "appearance-auto")}
-            value={language}
-            disabled={pending}
-            onChange={(event) => chooseLanguage(event.target.value as Language)}
-          >
-            {LANGUAGES.map((option) => (
-              <option key={option} value={option} lang={option}>
-                {tCommon(`languageNames.${option}`)}
-              </option>
-            ))}
-          </select>
+          {/* Native select, so the phone's own picker opens; only the arrow
+              is drawn, in the same place on every browser. */}
+          <div className="relative">
+            <select
+              id={`${id}-language`}
+              className={cn(
+                fieldClassName,
+                "cursor-pointer appearance-none pr-12",
+              )}
+              value={language}
+              disabled={pending}
+              onChange={(event) =>
+                chooseLanguage(event.target.value as Language)
+              }
+            >
+              {LANGUAGES.map((option) => (
+                <option key={option} value={option} lang={option}>
+                  {tCommon(`languageNames.${option}`)}
+                </option>
+              ))}
+            </select>
+            <ChevronDownIcon
+              className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2"
+              aria-hidden
+            />
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <PhoneField
             defaultCountry={defaultCountry}
             onChange={(value) => {
@@ -157,13 +175,20 @@ export function OnboardingForm({
             error={errors.whatsappNumber}
             disabled={pending}
           />
-          <p className="text-body-md text-muted-foreground">
-            {t("whatsappHelp")}
-          </p>
+          {/* Help text in a callout, not a live region: it never changes. */}
+          <div className="bg-accent text-accent-foreground flex items-start gap-3 rounded-md px-4 py-3">
+            <MessageCircleIcon className="mt-0.5 size-5 shrink-0" aria-hidden />
+            <p className="text-body-md">{t("whatsappHelp")}</p>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <div className="bg-muted flex min-h-12 items-start gap-3 rounded-lg p-4">
+          {/* The whole tile is the checkbox's label, so a tap anywhere on it
+              toggles the box (DESIGN.md, Checkboxes & Radio Controls). */}
+          <Label
+            htmlFor={`${id}-terms`}
+            className="bg-muted text-body-lg relative min-h-12 cursor-pointer items-start gap-3 rounded-md p-4 font-normal"
+          >
             <Checkbox
               id={`${id}-terms`}
               checked={acceptsTerms}
@@ -177,15 +202,10 @@ export function OnboardingForm({
                 setAcceptsTerms(checked === true);
                 setServerErrors({});
               }}
-              className="mt-0.5"
+              className="mt-px"
             />
-            <Label
-              htmlFor={`${id}-terms`}
-              className="text-body-lg cursor-pointer font-normal"
-            >
-              {t("acceptsTerms")}
-            </Label>
-          </div>
+            <span>{t("acceptsTerms")}</span>
+          </Label>
           {errors.acceptsTerms && (
             <FieldError id={`${id}-terms-error`}>
               {errors.acceptsTerms}
@@ -195,6 +215,9 @@ export function OnboardingForm({
       </div>
 
       <Button type="submit" className="w-full" disabled={pending}>
+        {pending && (
+          <LoaderCircleIcon className="motion-safe:animate-spin" aria-hidden />
+        )}
         {pending ? tCommon("saving") : tCommon("continue")}
         {!pending && <ArrowRightIcon aria-hidden />}
       </Button>
