@@ -1,7 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { getCountries } from "libphonenumber-js";
+
 import {
   chooseLanguage,
+  collectHydrationErrors,
   expectNoAccessibilityViolations,
   type Language,
   messages,
@@ -10,6 +13,7 @@ import {
   signInAs,
   signInAsSeedUser,
   signUpOnboarded,
+  waitUntilHydrated,
 } from "./support";
 
 // One last step (docs/02-UX-DESIGN.md, section 2.3, screen 2; FR-02, FR-03)
@@ -223,6 +227,79 @@ for (const language of ["en", "es"] as const) {
     await expectNoAccessibilityViolations(page);
   });
 }
+
+test("T-36 One last step loads without a hydration error in Spanish and English", async ({
+  page,
+}) => {
+  const hydrationErrors = collectHydrationErrors(page);
+  const spain = { es: "España (+34)", en: "Spain (+34)" };
+
+  for (const language of ["es", "en"] as const) {
+    await chooseLanguage(page, language);
+    await signInAs(page);
+
+    await page.goto("/onboarding");
+
+    const { country } = form(page, language);
+    await waitUntilHydrated(country);
+    // Every country, after the "choose a country" placeholder, named in the
+    // page's language by the browser. The full list is built only once
+    // hydration has finished, so React has reported any hydration error by
+    // then; the select can be hydrated before the rest of the page is.
+    await expect(country.locator("option")).toHaveCount(
+      getCountries().length + 1,
+    );
+    await expect(
+      country.getByRole("option", { name: spain[language] }),
+    ).toBeAttached();
+    expect(hydrationErrors, language).toEqual([]);
+  }
+});
+
+test.describe("One last step in a Spanish browser", () => {
+  // The country selector starts on the browser's region, Spain.
+  test.use({ locale: "es-ES" });
+
+  test("T-36 a country chosen on One last step is saved", async ({ page }) => {
+    const cases = [
+      {
+        language: "es",
+        country: "MX",
+        typed: "5512345678",
+        saved: "+525512345678",
+      },
+      {
+        language: "en",
+        country: "GB",
+        typed: "7400123456",
+        saved: "+447400123456",
+      },
+    ] as const;
+
+    for (const { language, country, typed, saved } of cases) {
+      await chooseLanguage(page, language);
+      await signInAs(page);
+      await page.goto("/onboarding");
+
+      const fields = form(page, language);
+      await waitUntilHydrated(fields.country);
+      await expect(fields.country.locator("option")).toHaveCount(
+        getCountries().length + 1,
+      );
+      await expect(fields.country).toHaveValue("ES");
+      await fields.country.selectOption(country);
+      await fields.number.pressSequentially(typed);
+      await fields.terms.check();
+      await fields.submit.click();
+
+      await expect(page).toHaveURL("/lists");
+      expect(await readMe(page), language).toMatchObject({
+        whatsappNumber: saved,
+        onboarded: true,
+      });
+    }
+  });
+});
 
 test.describe("One last step after choosing English in a Spanish browser", () => {
   test.use({ locale: "es-ES" });
