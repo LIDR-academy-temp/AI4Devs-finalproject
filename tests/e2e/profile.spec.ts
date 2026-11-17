@@ -56,10 +56,13 @@ test("AC-04 Profile doesn't let the user remove their WhatsApp number", async ({
 
 test("T-36 Profile loads without a hydration error in Spanish and English", async ({
   page,
+  browserName,
 }) => {
   const hydrationErrors = collectHydrationErrors(page);
-  // Hong Kong's name differs between Node, which renders the server's HTML,
-  // and the browsers, so its selected option is where a mismatch would show.
+  // Hong Kong's Spanish name in Node, which renders the server's HTML, differs
+  // from Chromium's, which ships its own ICU data, so its selected option is
+  // where a mismatch would show. WebKit uses the platform's data, which on
+  // Linux names it as Node does.
   const cases = [
     { language: "es", whatsappNumber: "+12025550123", country: "US" },
     { language: "en", whatsappNumber: "+12025550123", country: "US" },
@@ -79,22 +82,29 @@ test("T-36 Profile loads without a hydration error in Spanish and English", asyn
       getCountries().length + 1,
     );
     await expect(selector).toHaveValue(country);
-    const browserName = await page.evaluate(
+    const shownName = await page.evaluate(
       ([language, country]) =>
         new Intl.DisplayNames([language], { type: "region" }).of(country),
       [language, country] as const,
     );
     await expect(selector.locator("option:checked")).toHaveText(
-      `${browserName} (+${getCountryCallingCode(country)})`,
+      `${shownName} (+${getCountryCallingCode(country)})`,
     );
     if (country === "HK") {
       const nodeName = new Intl.DisplayNames([language], {
         type: "region",
       }).of(country);
-      expect(
-        browserName,
-        "the names differ, so the case is meaningful",
-      ).not.toBe(nodeName);
+      if (browserName === "chromium") {
+        expect(
+          shownName,
+          "the names differ, so the case is meaningful",
+        ).not.toBe(nodeName);
+      } else {
+        test.info().annotations.push({
+          type: "T-36",
+          description: `Hong Kong in Spanish: ${shownName === nodeName ? "same name" : "different names"} in Node and ${browserName}`,
+        });
+      }
     }
     expect(hydrationErrors, `${language} ${country}`).toEqual([]);
   }

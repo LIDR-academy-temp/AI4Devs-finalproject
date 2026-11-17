@@ -6,7 +6,7 @@ Profile SHALL render the same in the server's HTML as in the browser's first ren
 
 #### Scenario: T-36 Profile loads without a hydration error in Spanish and English
 
-- **GIVEN** a user who has completed onboarding, with Spanish and then English as their language, and also a user in Spanish whose saved number is from Hong Kong, a country whose name differs between the server and the browser (docs/08-WORK-TICKETS.md, T-36)
+- **GIVEN** a user who has completed onboarding, with Spanish and then English as their language, and also a user in Spanish whose saved number is from Hong Kong, a country whose name can differ between the server and the browser (docs/08-WORK-TICKETS.md, T-36)
 - **WHEN** they open Profile, in Chromium and in WebKit
 - **THEN** the page reports no hydration error, the country selector shows the saved number's country with the browser's name for it, and it offers every country with its name in that language
 - Verified by a browser test with the scenario's name, which fails when the page reports a hydration error.
