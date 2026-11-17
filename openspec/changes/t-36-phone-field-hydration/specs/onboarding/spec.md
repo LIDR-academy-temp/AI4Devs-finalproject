@@ -10,3 +10,10 @@ One last step SHALL render the same in the server's HTML as in the browser's fir
 - **WHEN** they open One last step, in Chromium and in WebKit
 - **THEN** the page reports no hydration error, and the country selector offers every country with its name in that language
 - Verified by a browser test with the scenario's name, which fails when the page reports a hydration error.
+
+#### Scenario: T-36 a country chosen on One last step is saved
+
+- **GIVEN** a new user on One last step, in Spanish and in English, whose country selector starts on the browser's region (docs/08-WORK-TICKETS.md, T-36)
+- **WHEN** once the page has loaded, they choose a different country, enter a number from that country, accept the terms, and continue
+- **THEN** they land on Lists, and the number is saved in international format with that country's calling code (BR-04)
+- Verified by a browser test with the scenario's name.

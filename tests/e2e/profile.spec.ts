@@ -100,6 +100,48 @@ test("T-36 Profile loads without a hydration error in Spanish and English", asyn
   }
 });
 
+test("T-36 a country chosen in Profile is saved and stays selected", async ({
+  page,
+}) => {
+  const cases = [
+    {
+      language: "es",
+      country: "MX",
+      typed: "5512345678",
+      saved: "+525512345678",
+    },
+    {
+      language: "en",
+      country: "GB",
+      typed: "7400123456",
+      saved: "+447400123456",
+    },
+  ] as const;
+
+  for (const { language, country, typed, saved } of cases) {
+    await signUpOnboarded(page, { language, whatsappNumber: "+12025550123" });
+    await openProfile(page);
+
+    const screen = profile(page, language);
+    await waitUntilHydrated(screen.country);
+    await expect(screen.country.locator("option")).toHaveCount(
+      getCountries().length + 1,
+    );
+    await expect(screen.country).toHaveValue("US");
+    await screen.country.selectOption(country);
+    await screen.number.fill("");
+    await screen.number.pressSequentially(typed);
+    await screen.save.click();
+
+    await expect(page.getByRole("status")).toContainText(
+      messages[language].common.saved,
+    );
+    expect((await readMe(page)).whatsappNumber, language).toBe(saved);
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(screen.country).toHaveValue(country);
+  }
+});
+
 test("AC-99 Profile in English", async ({ page }) => {
   await signUpOnboarded(page, { language: "en" });
 

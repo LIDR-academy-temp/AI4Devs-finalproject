@@ -8,6 +8,7 @@
 
 - The server HTML and the browser's first render of the phone field are identical, whatever ICU data each side has.
 - The country list's names and order are still the browser's, in the page's language, as soon as the page has hydrated.
+- Choosing a country from the full list and saving works as before on both screens.
 - A browser test fails whenever One last step or Profile reports a hydration error, in a production build.
 
 **Non-Goals:**

@@ -1,6 +1,6 @@
 # Tasks
 
-T-36 has no acceptance criterion IDs. Its scenarios are named after the ticket, as [Security and testing §2.6](../../../docs/07-SECURITY-AND-TESTING.md#26-coverage-targets) describes: "T-36 One last step loads without a hydration error in Spanish and English" (task 1.2) and "T-36 Profile loads without a hydration error in Spanish and English" (task 1.3). The ticket's "Done when" conditions map to them as follows: no hydration error on either screen in Spanish and English, in Chromium and WebKit (tasks 1.2, 1.3, and 3.1); a browser test on each screen that fails on a hydration error (tasks 1.4 and 3.1); and all tests pass (group 3). Of the definition of done, item 3 applies (group 3; no endpoint changes, so the OpenAPI document is unchanged). Items 4 and 5 don't: no interface text is added, and no behavior a document owns changes (proposal.md, What Changes).
+T-36 has no acceptance criterion IDs. Its scenarios are named after the ticket, as [Security and testing §2.6](../../../docs/07-SECURITY-AND-TESTING.md#26-coverage-targets) describes: "T-36 One last step loads without a hydration error in Spanish and English" (task 1.2), "T-36 Profile loads without a hydration error in Spanish and English" (task 1.3), "T-36 a country chosen on One last step is saved" (task 4.1), and "T-36 a country chosen in Profile is saved and stays selected" (task 4.2). The ticket's "Done when" conditions map to them as follows: no hydration error on either screen in Spanish and English, in Chromium and WebKit (tasks 1.2, 1.3, and 3.1); a browser test on each screen that fails on a hydration error (tasks 1.4 and 3.1); and all tests pass (group 3). Of the definition of done, item 3 applies (group 3; no endpoint changes, so the OpenAPI document is unchanged). Items 4 and 5 don't: no interface text is added, and no behavior a document owns changes (proposal.md, What Changes).
 
 ## 1. Tests first
 
@@ -19,3 +19,9 @@ T-36 has no acceptance criterion IDs. Its scenarios are named after the ticket, 
 
 - [x] 3.1 Run the whole browser suite (`npm run test:e2e`), confirming the existing One last step and Profile tests (AC-98, AC-99, AC-02, AC-03, AC-04, FR-04, and the accessibility checks) still pass in Chromium and WebKit.
 - [x] 3.2 Run `npm run lint`, `npx tsc --noEmit`, and `npm test`, and confirm they pass.
+
+## 4. Choosing a country and saving
+
+- [x] 4.1 In `tests/e2e/onboarding.spec.ts`, add "T-36 a country chosen on One last step is saved": in a Spanish browser, so the selector starts on Spain, for Spanish and then English, a new user waits for the full country list, chooses Mexico (Spanish) or the United Kingdom (English), types a number from that country, accepts the terms, and continues; the test checks that they land on Lists and that `GET /me` returns the number in international format.
+- [x] 4.2 In `tests/e2e/profile.spec.ts`, add "T-36 a country chosen in Profile is saved and stays selected": for Spanish and then English, an onboarded user with a US number waits for the full country list, chooses Mexico or the United Kingdom, replaces the number, and saves; the test checks the saved message, the number from `GET /me`, and, after a reload, that the selector shows the chosen country.
+- [x] 4.3 Run `npm run test:e2e -- --grep T-36` in Chromium and WebKit and confirm all four T-36 tests pass; then run `npm run lint`, `npx tsc --noEmit`, and `npm test`.

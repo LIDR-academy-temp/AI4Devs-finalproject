@@ -10,3 +10,10 @@ Profile SHALL render the same in the server's HTML as in the browser's first ren
 - **WHEN** they open Profile, in Chromium and in WebKit
 - **THEN** the page reports no hydration error, the country selector shows the saved number's country with the browser's name for it, and it offers every country with its name in that language
 - Verified by a browser test with the scenario's name, which fails when the page reports a hydration error.
+
+#### Scenario: T-36 a country chosen in Profile is saved and stays selected
+
+- **GIVEN** a user in Profile, in Spanish and in English, whose saved number is from another country (docs/08-WORK-TICKETS.md, T-36)
+- **WHEN** once the page has loaded, they choose a different country, enter a number from that country, and save
+- **THEN** they see that it was saved, the number is saved in international format with that country's calling code (BR-04), and after a reload the country selector shows the chosen country
+- Verified by a browser test with the scenario's name.
