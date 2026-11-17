@@ -41,5 +41,7 @@ The pre-hydration option for the selected country is keyed apart from the full l
 ## Risks / Trade-offs
 
 - [Before hydration, the select offers only the placeholder and the selected country] → On a slow connection, someone who opens the select before the JavaScript runs sees a short list. Hydration on these screens takes well under a second, and the existing tests already wait for it before typing (`waitUntilHydrated`). Playwright's `selectOption` waits until the option it picks exists.
+- [Without JavaScript, the country list never fills in] → Accepted. One last step and Profile are client forms that submit through JavaScript, so neither could be completed without it before this change either.
+- [Only the Profile test loads a country whose name differs between Node and the browser (Hong Kong)] → Accepted. One last step uses the same `PhoneField` and the same pre-hydration option, so the Profile case covers it.
 - [React's production error codes for hydration might change in a React update] → The helper matches both the error codes and the word "hydrat", and the new tests fail first against the current field, which confirms the match before the fix.
 - [The extra render after hydration] → It builds about 245 options once per mount, the same work as today, which runs in the browser on every load anyway.
