@@ -28,4 +28,4 @@ T-36 has no acceptance criterion IDs. Its scenarios are named after the ticket, 
 
 ## 5. CI fix
 
-- [ ] 5.1 In "T-36 Profile loads without a hydration error in Spanish and English" (`tests/e2e/profile.spec.ts`), require the browser's name for Hong Kong to differ from Node's only in Chromium, and in other browsers record whether it differed as a test annotation (design decision 3); CI's Linux WebKit names it as Node does. Verify that the T-36 tests pass locally in Chromium and WebKit and that the `e2e` check passes on the pull request.
+- [x] 5.1 In "T-36 Profile loads without a hydration error in Spanish and English" (`tests/e2e/profile.spec.ts`), require the browser's name for Hong Kong to differ from Node's only in Chromium, and in other browsers record whether it differed as a test annotation (design decision 3); CI's Linux WebKit names it as Node does. Verify that the T-36 tests pass locally in Chromium and WebKit and that the `e2e` check passes on the pull request.
