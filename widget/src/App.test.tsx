@@ -16,6 +16,7 @@ function signatureRequest(overrides: Partial<SignatureRequest> = {}): SignatureR
     id: REQUEST_ID,
     status: 'pending',
     provider: 'local',
+    certificate: null,
     created_at: '2026-11-16T10:00:00Z',
     signed_at: null,
     document: {
@@ -125,25 +126,62 @@ describe('datos y vista previa del documento', () => {
 })
 
 describe('métodos de firma', () => {
-  test('«Firma propia» se ve con su aviso legal y el botón deshabilitado', async () => {
-    mockApi(json(200, signatureRequest()), pdfBytes())
+  test('«Firma propia» habilitada y completa el flujo local', async () => {
+    const signed = signatureRequest({
+      status: 'signed',
+      signed_at: '2026-11-16T11:00:00Z',
+      certificate: { subject: 'CN=Demo', serial_number: 'abc' },
+      document: {
+        ...signatureRequest().document,
+        version_number: 2,
+        signing_status: 'signed',
+        signature_level: 'B-B',
+        download_url: 'http://localhost:8000/api/v1/documents/d1/versions/2/download',
+      },
+    })
+    const postMessage = vi.fn()
+    vi.stubGlobal('parent', { postMessage })
+    const fetchMock = mockApi(
+      json(200, signatureRequest()),
+      pdfBytes(),
+      json(200, { challenges: [{ challenge_id: 'c1', document_name: 'resolucion.pdf', hash_algorithm: 'SHA-256', hash_to_sign: 'ab==' }], expires_at: '2026-11-16T12:00:00Z' }),
+      json(200, signed),
+    )
 
     render(<App />)
 
     expect(await screen.findByRole('heading', { name: 'Firma propia' })).toBeInTheDocument()
-    expect(screen.getByText(/sin la presunción legal de la firma digital/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Firmar' })).toBeDisabled()
-    expect(screen.getByText('Disponible próximamente')).toBeInTheDocument()
+    const button = screen.getByRole('button', { name: 'Firmar' })
+    expect(button).toBeEnabled()
+    await userEvent.click(button)
+    expect(await screen.findByText(/Documento firmado \(v2\)/)).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(`/signature-requests/${REQUEST_ID}/prepare`),
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'firmadoc:signed', document: expect.objectContaining({ version_number: 2 }) }),
+      '*',
+    )
   })
 
-  test('una solicitud firmada no ofrece métodos de firma', async () => {
+  test('proveedor distinto de local deja el botón deshabilitado', async () => {
+    mockApi(json(200, signatureRequest({ provider: 'token' })), pdfBytes())
+
+    render(<App />)
+
+    await screen.findByRole('heading', { name: 'Firma propia' })
+    expect(screen.getByRole('button', { name: 'Firmar' })).toBeDisabled()
+  })
+
+  test('una solicitud firmada muestra descarga y deshabilita Firmar', async () => {
     mockApi(json(200, signatureRequest({ status: 'signed', signed_at: '2026-11-16T11:00:00Z' })), pdfBytes())
 
     render(<App />)
 
-    expect(await screen.findByText('Documento firmado')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Firma propia' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Firmar' })).not.toBeInTheDocument()
+    expect(await screen.findByText(/Documento firmado \(v1\)/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Firmar' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Descargar firmado' })).toBeInTheDocument()
   })
 })
 

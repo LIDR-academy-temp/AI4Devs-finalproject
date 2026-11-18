@@ -53,6 +53,31 @@ describe('Firmar documento', () => {
 
   afterEach(() => backend.verify());
 
+  it('muestra éxito al recibir firmadoc:signed del widget', async () => {
+    const comp = fixture.componentInstance;
+    comp['result'].set({
+      request: {
+        id: 'req',
+        document_id: 'doc',
+        status: 'pending',
+        signing_url: 'http://localhost:5173/sign/req#t=token',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      fileName: 'resolucion.pdf',
+      signerName: 'Demo',
+      signerIdentifier: '20123456786',
+      widgetSrc: null,
+    });
+    fixture.detectChanges();
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: 'firmadoc:signed', document: { version_number: 2 } },
+      }),
+    );
+    fixture.detectChanges();
+    expect(text()).toContain('Documento firmado correctamente (versión 2)');
+  });
+
   describe('formulario', () => {
     it('«Cargar» empieza deshabilitado', () => {
       expect(button('Cargar')!.disabled).toBe(true);

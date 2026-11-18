@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal, viewChild } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
@@ -47,7 +47,7 @@ const UNAVAILABLE = 'No pudimos conectar con Firmadoc. Intentá de nuevo en unos
   templateUrl: './sign-document.html',
   styleUrl: './sign-document.scss',
 })
-export class SignDocument {
+export class SignDocument implements OnInit, OnDestroy {
   private readonly uploads = inject(SigningUploadService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly fileUpload = viewChild(FileUpload);
@@ -58,6 +58,21 @@ export class SignDocument {
   protected readonly uploadError = signal<string | null>(null);
   protected readonly downloadError = signal<string | null>(null);
   protected readonly result = signal<UploadResult | null>(null);
+  protected readonly signedVersion = signal<number | null>(null);
+
+  private readonly onWidgetMessage = (event: MessageEvent): void => {
+    const data = event.data as { type?: string; document?: { version_number?: number } } | null;
+    if (!data || data.type !== 'firmadoc:signed' || typeof data.document?.version_number !== 'number') return;
+    this.signedVersion.set(data.document.version_number);
+  };
+
+  ngOnInit(): void {
+    window.addEventListener('message', this.onWidgetMessage);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('message', this.onWidgetMessage);
+  }
 
   protected readonly form = new FormGroup({
     fullName: new FormControl('', { nonNullable: true, validators: [Validators.required, notBlank, Validators.maxLength(200)] }),
@@ -126,6 +141,7 @@ export class SignDocument {
   }
 
   protected uploadAnother(): void {
+    this.signedVersion.set(null);
     this.result.set(null);
     this.uploadError.set(null);
     this.downloadError.set(null);

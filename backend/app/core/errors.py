@@ -33,6 +33,10 @@ def validation_error(message: str, details: dict[str, Any] | None = None) -> App
     return AppError(422, "validation_error", message, details)
 
 
+def conflict(message: str, code: str = "conflict") -> AppError:
+    return AppError(409, code, message)
+
+
 def error_response(status_code: int, code: str, message: str, details: dict[str, Any] | None = None) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,

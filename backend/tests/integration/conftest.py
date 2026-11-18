@@ -21,6 +21,16 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 PDF_BYTES = b"%PDF-1.4\n%test\n"
 ADMIN_TOKEN = "admin-token-de-prueba"
 SIGNING_LINK_SECRET = "secreto-de-enlaces-de-prueba-de-32-caracteres"
+LOCAL_KEYSTORE_PASSPHRASE = "passphrase-de-prueba-local"
+
+
+@pytest.fixture(scope="session")
+def local_keystore_path(tmp_path_factory) -> Path:
+    path = tmp_path_factory.mktemp("keys") / "local-signer.p12"
+    from app.services.demo_pki import generate_local_keystore, save_local_keystore
+
+    save_local_keystore(generate_local_keystore(), path, LOCAL_KEYSTORE_PASSPHRASE)
+    return path
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
@@ -68,7 +78,7 @@ def session(engine: Engine) -> Iterator[Session]:
 
 
 @pytest.fixture
-def settings() -> Settings:
+def settings(local_keystore_path: Path) -> Settings:
     return Settings(
         FIRMADOC_PUBLIC_BASE_URL="http://firmadoc.test",
         FIRMADOC_ADMIN_TOKEN=ADMIN_TOKEN,
@@ -76,6 +86,8 @@ def settings() -> Settings:
         FIRMADOC_MAX_UPLOAD_MB=1,
         FIRMADOC_REQUIRE_CUIL_MATCH=False,
         FIRMADOC_CORS_ORIGINS="http://localhost:4200, http://localhost:5173",
+        FIRMADOC_LOCAL_KEYSTORE_PATH=str(local_keystore_path),
+        FIRMADOC_LOCAL_KEYSTORE_PASSPHRASE=LOCAL_KEYSTORE_PASSPHRASE,
     )
 
 

@@ -10,7 +10,7 @@ Servicio de firma digital institucional: un backend con proveedores de firma int
 
 ## Alcance actual
 
-- **Hito 1 (MVP):** carga de PDF desde el panel o por API → firma con el proveedor `local` vía `prepare` / `complete` → versión v2 vigente y descargable. Auditoría y webhook con un único intento.
+- **Hito 1 (MVP):** carga de PDF desde el panel o por API → firma con el proveedor `local` vía `prepare` / `complete` (Ticket 1b implementado: backend PAdES B-B + widget «Firma propia» + `postMessage` al panel) → versión v2 vigente y descargable. Auditoría y webhook con un único intento (Ticket 1d pendiente).
 - **Hito 2:** proveedor `token` con Firmadoc Agent y SoftHSM, y validación de confianza.
 - **Fuera de alcance:** firma en lote, mock de FirmAR, TSA / B-LT, Web Component, OAuth2, reintentos de webhooks. No los implementes aunque aparezcan en el readme.
 

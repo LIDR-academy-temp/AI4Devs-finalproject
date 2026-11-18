@@ -52,11 +52,40 @@ class DocumentResult(BaseModel):
     download_url: str
 
 
+class CertificateSummary(BaseModel):
+    subject: str
+    serial_number: str
+
+
+class PrepareRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    certificate_pem: str | None = None
+
+
+class ChallengeOut(BaseModel):
+    challenge_id: uuid.UUID
+    document_name: str
+    hash_algorithm: str = "SHA-256"
+    hash_to_sign: str
+
+
+class PrepareResponse(BaseModel):
+    challenges: list[ChallengeOut]
+    expires_at: datetime
+
+
+class CompleteRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    signatures: list[dict[str, str]] | None = None
+
+
 class SignatureRequestOut(BaseModel):
     id: uuid.UUID
     status: SignatureRequestStatus
     provider: Provider
-    certificate: None = None
+    certificate: CertificateSummary | None = None
     document: DocumentResult
     created_at: datetime
     signed_at: datetime | None

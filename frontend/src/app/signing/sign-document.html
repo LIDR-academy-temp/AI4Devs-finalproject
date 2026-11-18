@@ -19,6 +19,10 @@
       }
     </p-card>
 
+    @if (signedVersion(); as version) {
+      <p-message severity="success" [text]="'Documento firmado correctamente (versión ' + version + ').'" />
+    }
+
     @if (done.widgetSrc; as src) {
       <iframe class="widget" [src]="src" title="Widget de firma de Firmadoc" allow="clipboard-write"></iframe>
     } @else {

@@ -98,7 +98,7 @@ El panel Angular del MVP es una página mínima («Firmar documento» y listado 
 1. En el panel, el funcionario ingresa con el token de administración.
 2. En «Firmar documento» completa nombre y CUIL del firmante y elige el PDF. El panel valida los datos antes de enviarlos.
 3. Al cargar, la API crea la v1 y la solicitud, y el panel muestra el widget embebido con la `signing_url`.
-4. El widget muestra el nombre, las páginas, el tamaño, el estado y una vista previa de la primera página. Presenta la «Firma propia», todavía deshabilitada hasta el Ticket 1b.
+4. El widget muestra el nombre, las páginas, el tamaño, el estado y una vista previa de la primera página. La tarjeta «Firma propia» (proveedor `local`) llama a `prepare` / `complete` y deja el documento en versión v2 descargable; el panel recibe un `postMessage` `firmadoc:signed`.
 5. «Descargar original» baja la v1 con su nombre, byte por byte igual a la subida.
 
 ![Panel «Firmar documento» con el widget embebido mostrando el PDF cargado](docs/screenshots/panel-firmar.png)
