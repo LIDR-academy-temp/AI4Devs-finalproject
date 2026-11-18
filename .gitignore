@@ -1,0 +1,16 @@
+# Secretos: ningún .env entra al repositorio, salvo la plantilla sin valores.
+# Con cualquier combinación de mayúsculas (.ENV, .Env.local): en Linux y en la
+# CI los nombres distinguen mayúsculas.
+.[eE][nN][vV]
+.[eE][nN][vV].*
+!.env.example
+
+# Ruta local de la lista privada de nombres reales (la lista vive fuera de git).
+.datos-que-no-salen.ruta
+
+# Configuración de Claude Code propia de cada máquina.
+.claude/settings.local.json
+
+# Dependencias y ficheros del sistema.
+node_modules/
+.DS_Store
