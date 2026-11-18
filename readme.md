@@ -24,6 +24,10 @@ In this delivery, To buy and My purchases are still placeholder screens; a buyer
 2. **A member invites a new member or buyer.** In Group, tap **Invite a member** or **Invite a buyer**, optionally type the person's name, tap **Create link**, then **Copy link**. Open the link in a private window, sign in with **Development sign-in** using a new email (for example `newbuyer@example.com`), complete One last step, and tap **Accept**. The new person now appears in Group, and the invitation leaves the pending list. A seeded pending invitation for Carlos, as a buyer, is also ready at `http://localhost:3000/invitations/seed-pending-000000000000000000000000000000`.
 3. **A buyer or member reserves an item.** As a member, open a pending item and copy its address from the browser. Open it as a buyer (`juan@example.com` or the buyer you just invited) and tap **I'll buy it**. The member now sees the item as "Reserved by Juan" (or the new buyer's name). A member can also tap **I'll buy it** on any pending item.
 
+---
+
+## About this documentation
+
 **Documentation:** this README answers each section of the project documentation template and links to the full detail in [`docs/`](docs/). Every rule and requirement lives in one place: the [PRD](docs/01-PRD.md) for the product, and the technical documents for how it is built.
 
 | Document | Contents |
