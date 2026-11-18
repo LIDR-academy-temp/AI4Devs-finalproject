@@ -7,7 +7,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 |---|---|---|
 | Claude Code | Sonnet 5 y Sonnet 5.5 | Definición de la idea, investigación técnica (documentación de FirmAR/SIU, antecedentes académicos), decisiones de arquitectura y stack, redacción y verificación de la documentación de la Entrega 1 |
 | Claude Code (flujo de diseño) | Sonnet 5 | Mockup interactivo de referencia visual, usado para detectar requisitos (no forma parte del repositorio) |
-| Jira (vía MCP de Atlassian) | — | Carga y seguimiento del backlog en el proyecto `FIRDOC` |
+| Jira (vía MCP de Atlassian) | — | Carga y seguimiento del backlog en el proyecto `SCRUM` (ver [readme §8](readme.md#8-seguimiento-en-jira) y [docs/jira-backlog.md](docs/jira-backlog.md)) |
 | Cursor (agente) | Claude Opus 5.5 | Análisis de la devolución de la Entrega 1, cierre de contradicciones del readme, contrato `docs/openapi.yaml` y `CLAUDE.md` |
 | Redocly CLI | — | Lint del contrato OpenAPI generado por la IA |
 | OpenSpec 2.0 | — | Desarrollo guiado por especificaciones: propuesta, specs, diseño y tareas por cambio (Ticket 1a en adelante) |
@@ -34,7 +34,8 @@ En la Entrega 1 no se usaron subagentes ni comandos personalizados; el trabajo f
 5. [Historias de usuario](#5-historias-de-usuario)
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
-8. [Ajustes humanos sobre el output de la IA](#8-ajustes-humanos-sobre-el-output-de-la-ia)
+8. [Seguimiento en Jira](#8-seguimiento-en-jira)
+9. [Ajustes humanos sobre el output de la IA](#9-ajustes-humanos-sobre-el-output-de-la-ia)
 
 ---
 
@@ -181,7 +182,18 @@ Pendiente: se completará con los Pull Requests de la Entrega 2 y la Entrega fin
 
 ---
 
-## 8. Ajustes humanos sobre el output de la IA
+## 8. Seguimiento en Jira
+
+**Prompt 6 (backlog SCRUM):**
+> Este es mi espacio de trabajo [backlog SCRUM] y necesito registrar todas las HU con tickets allí estén o no terminados de este proyecto.
+
+Con el MCP de Atlassian (proyecto team-managed `SCRUM`) se creó la épica **SCRUM-1**, las doce historias alineadas con el readme §5 (`SCRUM-2`–`SCRUM-13`, incluida HU1b en **SCRUM-4**), los tickets §6 (**SCRUM-14**–**SCRUM-22**) y se inició **SCRUM Sprint 1** con las 22 claves. El autor confirmó con «ok» el refinamiento: subtareas **1a–1d** bajo **SCRUM-14**, story points iguales a las horas del readme y estados según el avance del repo.
+
+**Salida documentada:** [readme.md §8](readme.md#8-seguimiento-en-jira), [docs/jira-backlog.md](docs/jira-backlog.md) y la ficha §0.6 del readme.
+
+---
+
+## 9. Ajustes humanos sobre el output de la IA
 
 - La **idea de negocio y el dominio del problema** (firma digital embebible para organismos públicos) los aportó íntegramente la usuaria, a partir de un dolor real de su trabajo; la IA lo analizó y estructuró.
 - La usuaria **corrigió el alcance del embebido**: Claude había asumido React como única pieza de frontend; al informar que su organismo usa Angular, se separó la "implementación interna del widget" de la "superficie de embebido" (iframe / Web Component).

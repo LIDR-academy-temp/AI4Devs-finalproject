@@ -10,6 +10,7 @@
 5. [Historias de usuario](#5-historias-de-usuario)
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
+8. [Seguimiento en Jira](#8-seguimiento-en-jira)
 
 ---
 
@@ -29,6 +30,16 @@ _Pendiente — se completará cuando exista un despliegue (Entrega 3)._
 
 ### 0.5. URL o archivo comprimido del repositorio
 https://github.com/bv3rgara/AI4Devs-finalproject (fork de `LIDR-academy/AI4Devs-finalproject`). Ramas: `feature/entrega-1-bbmv` (documentación), `feature/entrega-2-bbmv` (código funcional) y `final-project-bbmv` (entrega final, que también se integra en `main`).
+
+### **0.6. Tablero y backlog en Jira**
+- **Sitio:** https://vergara-bruno.atlassian.net
+- **Proyecto:** `SCRUM` — *Mi espacio de scrum*
+- **Tablero Scrum:** [board 1](https://vergara-bruno.atlassian.net/jira/software/projects/SCRUM/boards/1)
+- **Backlog:** [backlog del tablero](https://vergara-bruno.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog)
+- **Épica del producto:** [SCRUM-1](https://vergara-bruno.atlassian.net/browse/SCRUM-1) — *[Firmadoc] MVP — Firma digital institucional*
+- **Detalle de claves HU/tickets:** [docs/jira-backlog.md](docs/jira-backlog.md)
+
+La **fuente de verdad funcional** de historias y criterios sigue siendo las secciones [5](#5-historias-de-usuario) y [6](#6-tickets-de-trabajo) de este readme; Jira refleja el mismo alcance para seguimiento, estimación y sprint.
 
 ---
 
@@ -818,3 +829,78 @@ Los tres tickets de la plantilla (backend, frontend y base de datos) se detallan
 ## 7. Pull Requests
 
 _Pendiente — se completará con los Pull Requests de la Entrega 2 y la Entrega final._
+
+---
+
+## 8. Seguimiento en Jira
+
+Este apartado documenta cómo quedó registrado en Jira el backlog de Firmadoc (noviembre 2026). Si el estado del código avanza, conviene actualizar Jira y sincronizar [docs/jira-backlog.md](docs/jira-backlog.md).
+
+### 8.1. Accesos
+
+| Recurso | URL |
+|---|---|
+| Tablero activo | https://vergara-bruno.atlassian.net/jira/software/projects/SCRUM/boards/1 |
+| Backlog | https://vergara-bruno.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog |
+| Épica contenedora | https://vergara-bruno.atlassian.net/browse/SCRUM-1 |
+
+### 8.2. Convenciones
+
+- **Etiqueta común:** `firmadoc` en todas las incidencias.
+- **Tipos:** `Epic` (contenedor), `Historia` (HU), `Tarea` (tickets de implementación del readme §6), `Subtask` (sub-tickets 1a–1d bajo Ticket 1).
+- **Story Points:** en este proyecto se cargaron con el mismo valor que las **horas estimadas** del readme §6 (campo *Story point estimate* en Jira).
+- **Prioridad en Jira:** las HUs *must-have* llevan etiqueta `must-have`; las *should-have* (HU6–HU11), `should-have`. Los hitos llevan `hito-1` o `hito-2` cuando aplica.
+
+### 8.3. Sprint activo (al registrar el backlog)
+
+| Campo | Valor |
+|---|---|
+| Nombre | **SCRUM Sprint 1** |
+| Meta | Firmadoc MVP hito 1: backlog registrado; cierre 1d y avance hito 2 (agente/token) |
+| Inicio | 18-nov-2026 |
+| Fin | 02-dic-2026 |
+| Ámbito | Las 22 incidencias (`SCRUM-1` … `SCRUM-22`) |
+
+### 8.4. Trazabilidad: Historias de usuario (readme §5 → Jira)
+
+| HU (readme) | Clave Jira | Resumen | Estado en Jira (nov 2026) |
+|---|---|---|---|
+| HU1 | [SCRUM-2](https://vergara-bruno.atlassian.net/browse/SCRUM-2) | Cargar PDF y firmar en el panel | Finalizada |
+| HU1b | [SCRUM-4](https://vergara-bruno.atlassian.net/browse/SCRUM-4) | Integrador: PDF + `signing_url` | Finalizada |
+| HU2 | [SCRUM-3](https://vergara-bruno.atlassian.net/browse/SCRUM-3) | Firmar con token USB | Por hacer |
+| HU3 | [SCRUM-6](https://vergara-bruno.atlassian.net/browse/SCRUM-6) | Webhook al firmar o fallar | Por hacer |
+| HU4 | [SCRUM-5](https://vergara-bruno.atlassian.net/browse/SCRUM-5) | Historial auditable | Por hacer |
+| HU5 | [SCRUM-7](https://vergara-bruno.atlassian.net/browse/SCRUM-7) | Firma electrónica / motor propio | Finalizada |
+| HU6 | [SCRUM-11](https://vergara-bruno.atlassian.net/browse/SCRUM-11) | Firma en lote | Por hacer (should-have) |
+| HU7 | [SCRUM-10](https://vergara-bruno.atlassian.net/browse/SCRUM-10) | Firma remota (FirmAR) | Por hacer (should-have) |
+| HU8 | [SCRUM-9](https://vergara-bruno.atlassian.net/browse/SCRUM-9) | Firmantes en PDF multipersona | Por hacer (should-have) |
+| HU9 | [SCRUM-8](https://vergara-bruno.atlassian.net/browse/SCRUM-8) | Pendientes y listado | Por hacer (should-have) |
+| HU10 | [SCRUM-12](https://vergara-bruno.atlassian.net/browse/SCRUM-12) | Verificar PDF firmado (API) | Por hacer (should-have) |
+| HU11 | [SCRUM-13](https://vergara-bruno.atlassian.net/browse/SCRUM-13) | Anclas de confianza y rotación | Por hacer (should-have) |
+
+Todas las historias cuelgan de la épica **SCRUM-1** (campo *parent* en un proyecto team-managed).
+
+### 8.5. Trazabilidad: Tickets de trabajo (readme §6 → Jira)
+
+| Ticket (readme) | Clave Jira | Puntos (= h) | Estado en Jira (nov 2026) |
+|---|---|---:|---|
+| Ticket 1 (épica backend) | [SCRUM-14](https://vergara-bruno.atlassian.net/browse/SCRUM-14) | 34 | En curso |
+| → 1a Carga y versionado | [SCRUM-15](https://vergara-bruno.atlassian.net/browse/SCRUM-15) *subtask* | 7 | Finalizada |
+| → 1b PAdES / `local` | [SCRUM-16](https://vergara-bruno.atlassian.net/browse/SCRUM-16) *subtask* | 12 | Finalizada |
+| → 1c Validación de confianza | [SCRUM-22](https://vergara-bruno.atlassian.net/browse/SCRUM-22) *subtask* | 9 | Por hacer |
+| → 1d Auditoría y webhook | [SCRUM-21](https://vergara-bruno.atlassian.net/browse/SCRUM-21) *subtask* | 6 | Por hacer |
+| Ticket 2 — Widget React | [SCRUM-20](https://vergara-bruno.atlassian.net/browse/SCRUM-20) | 12 | En curso (hito 1 listo; agente pendiente) |
+| Ticket 3 — Base de datos | [SCRUM-17](https://vergara-bruno.atlassian.net/browse/SCRUM-17) | 7 | Finalizada |
+| Ticket 4 — Firmadoc Agent | [SCRUM-19](https://vergara-bruno.atlassian.net/browse/SCRUM-19) | 14 | En curso (scaffold) |
+| Ticket 5 — Panel Angular | [SCRUM-18](https://vergara-bruno.atlassian.net/browse/SCRUM-18) | 8 | Finalizada |
+
+### 8.6. Relación HU ↔ tickets (referencia rápida)
+
+| Tickets principales | Historias que cubren |
+|---|---|
+| 1a, 5, 2 (visor), 1b | HU1, HU1b, HU5 |
+| 1c, 4, 2 (token) | HU2 |
+| 1d | HU3, HU4 |
+| Backlog v2 | HU6–HU11 |
+
+Al cerrar un ticket en el repositorio (OpenSpec / merge), conviene mover la incidencia en Jira y anotar el commit o PR en la descripción o en un comentario de la clave correspondiente.
