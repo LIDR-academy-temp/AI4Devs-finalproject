@@ -84,6 +84,14 @@ END $$;
 -- Ejemplo: índice
 DO $$
 BEGIN
+  -- B.0 El nombre de un índice es único en el esquema. Si ya lo usa OTRA tabla,
+  --     recrearlo borraría un índice ajeno: es anomalía y se detiene.
+  IF EXISTS (SELECT 1 FROM pg_indexes
+             WHERE schemaname = 'public' AND indexname = '<idx_nombre>'
+               AND tablename <> '<tabla>') THEN
+    RAISE EXCEPTION 'ABORTA: el índice <idx_nombre> ya existe sobre otra tabla. Anomalía — no se elimina un índice ajeno.';
+  END IF;
+
   BEGIN
     -- B.1 Si existe -> se elimina.
     DROP INDEX IF EXISTS public.<idx_nombre>;
@@ -96,7 +104,8 @@ BEGIN
 
   -- B.3 POST-CHECK.
   IF EXISTS (SELECT 1 FROM pg_indexes
-             WHERE schemaname = 'public' AND indexname = '<idx_nombre>') THEN
+             WHERE schemaname = 'public' AND indexname = '<idx_nombre>'
+               AND tablename = '<tabla>') THEN
     RAISE NOTICE 'OK: índice <idx_nombre> creado exitosamente.';
   ELSE
     RAISE EXCEPTION 'ERROR: la creación del índice <idx_nombre> no dio error, pero el índice no existe.';

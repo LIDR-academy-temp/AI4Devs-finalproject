@@ -99,6 +99,8 @@ https://github.com/jgcarsonalbaez/AI4Devs-finalproject — fork del repositorio 
 | *Guardarraíl:* leer el texto comprimido o en otra codificación dentro de una imagen | Solo entran imágenes; de ellas se revisan las cadenas legibles. PDF, hojas de cálculo y comprimidos no entran |
 | *Guardarraíl:* detectar un correo cuyo dominio no lleva punto | La lista privada, que detiene el nombre de la empresa donde aparezca |
 | *Migraciones:* mensaje propio también cuando el error es de sintaxis del fichero | Aparece al aplicar la migración en local, antes de la base compartida |
+| *Guardarraíl:* hook `pre-push` que revise todo lo que va a salir, incluido lo que llega por `merge`, `pull` o `cherry-pick`, que no pasa por el `pre-commit` | Un solo autor y ninguna rama ajena; la regla de `CLAUDE.md` de revisar a mano antes de traer trabajo de otra rama |
+| *Guardarraíl:* detectar un secreto o un nombre armado por partes en el código | La revisión adversarial de cada pull request; el guardarraíl protege contra el descuido, no contra quien quiera rodearlo |
 
 **Fuera de alcance del MVP, explícito:** notificación en tiempo real y escalamiento · conectores de lectura y escritura con las herramientas del cliente · evidencia desde repositorios · aprobación del cliente dentro del sistema · multi-empresa y cobro del servicio · migración del histórico · indicadores y tableros · geolocalización · motor de facturación.
 

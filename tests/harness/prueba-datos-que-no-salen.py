@@ -24,6 +24,7 @@ from pathlib import Path
 HOOK = Path(__file__).resolve().parents[2] / ".claude" / "hooks" / "datos-que-no-salen.py"
 
 ARROBA = "@"
+MARCA = "# guardarrail: datos-que-no-salen"     # la misma del instalador y del hook
 SECRETO = "sk-" + "a1B2c3D4e5" * 3
 # Una muestra por cada categoría de SECRETOS del hook, en el mismo orden.
 MUESTRAS_DE_SECRETO = [
@@ -50,7 +51,21 @@ def sh(repo, *args):
     subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
 
 
-def nuevo_repo(base, con_lista=True, autor=AUTOR_PERMITIDO, lista_declara_autor=True):
+def poner_hooks_de_git(repo, nombres=("pre-commit", "commit-msg")):
+    """Deja en .git/hooks los hooks con la marca del guardarraíl.
+
+    Aquí el hook se ejecuta a mano, no desde git; pero cada modo de git exige
+    que el otro hook esté instalado, y sin esto todos los casos quedarían ciegos.
+    """
+    for nombre in nombres:
+        f = repo / ".git" / "hooks" / nombre
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("#!/bin/sh\n" + MARCA + "\nexit 0\n", encoding="utf-8")
+        f.chmod(0o755)
+
+
+def nuevo_repo(base, con_lista=True, autor=AUTOR_PERMITIDO, lista_declara_autor=True,
+               lista_extra=""):
     """Repo desechable. `autor` es el correo configurado como identidad del commit."""
     repo = Path(tempfile.mkdtemp(dir=base))
     sh(repo, "init", "-q")
@@ -59,9 +74,11 @@ def nuevo_repo(base, con_lista=True, autor=AUTOR_PERMITIDO, lista_declara_autor=
     destino = repo / ".claude" / "hooks"
     destino.mkdir(parents=True)
     shutil.copy(HOOK, destino / HOOK.name)
+    poner_hooks_de_git(repo)
     if con_lista:
         lista = repo.parent / (repo.name + "-lista.txt")
         lista.write_text("# lista de prueba\n" + TERMINO_PRIVADO + "\n" + TERMINO_CORTO + "\n"
+                         + lista_extra
                          + ("autor: " + AUTOR_PERMITIDO + "\n" if lista_declara_autor else ""),
                          encoding="utf-8")
         (repo / ".datos-que-no-salen.ruta").write_text(str(lista), encoding="utf-8")
@@ -146,6 +163,14 @@ def main():
         r = nuevo_repo(base)
         preparar(r, "config.ts", "sk-corto, AKIA123, eyJ.x, ghp_abc, re_abc, TOKEN=abc\n")
         caso("valores cortos con prefijo de secreto pasan", 0, correr(r))
+        r = nuevo_repo(base)
+        preparar(r, "c.json", '{"API' + '_KEY":"abcdefghij' + 'klmnopqrst"}\n')
+        caso("secreto asignado en JSON bloquea", 1, correr(r))
+        r = nuevo_repo(base)
+        preparar(r, "c.js", "const API" + "_KEY = `abcdefghij" + "klmnopqrst`;\n")
+        caso("secreto asignado entre comillas invertidas bloquea", 1, correr(r))
+        r = nuevo_repo(base); preparar(r, "c.json", '{"API' + '_KEY":""}\n')
+        caso("clave de JSON con valor vacío pasa", 0, correr(r))
 
         # --- Lectura del diff -------------------------------------------------
         r = nuevo_repo(base); preparar(r, "a.txt", "++ comentario\n%s\n" % SECRETO)
@@ -198,6 +223,18 @@ def main():
         r = nuevo_repo(base)
         preparar(r, "logo.png", CABECERA_PNG + b"\x00tEXtAutor: " + TERMINO_PRIVADO.encode() + b"\x00")
         caso("imagen con un término privado dentro bloquea", 1, correr(r))
+        r = nuevo_repo(base); preparar(r, "datos.png", b"PK\x03\x04\x00\x00\x00\x00 comprimido \x00\x00")
+        caso("comprimido renombrado a .png bloquea", 1, correr(r))
+        caso("  y el registro lo dice", True, "no es la imagen que dice" in registro(r))
+        r = nuevo_repo(base); preparar(r, "foto.jpg", b"\xff\xd8\xff\xe0\x00\x10JFIF\x00" + b"\x00" * 20)
+        caso("imagen .jpg con su firma pasa", 0, correr(r))
+        # Un .gitattributes puede hacer que git trate un binario como texto.
+        r = nuevo_repo(base)
+        preparar(r, ".gitattributes", "*.pdf diff\n")
+        preparar(r, "doc.pdf", b"%PDF-1.4\n\x00\x01\x02 binario opaco \x00\n")
+        caso("PDF que .gitattributes hace pasar por texto bloquea", 1, correr(r))
+        r = nuevo_repo(base); preparar(r, ".gitattributes", "*.md text\n")
+        caso("un .gitattributes sin binarios pasa", 0, correr(r))
 
         # --- Lista privada ----------------------------------------------------
         r = nuevo_repo(base); preparar(r, "doc.md", "Reunión con %s.\n" % TERMINO_PRIVADO)
@@ -217,6 +254,17 @@ def main():
         r = nuevo_repo(base); preparar(r, "doc.md", "Palabra a%sb y %sés.\n" % (TERMINO_CORTO, TERMINO_CORTO))
         caso("término corto dentro de otra palabra pasa", 0, correr(r))
 
+        # Entradas «re:» de la lista: expresión regular, sin distinguir mayúsculas.
+        r = nuevo_repo(base, lista_extra="re: contrato-\\d{4}\n")
+        preparar(r, "doc.md", "Según el CONTRATO-2025.\n")
+        caso("expresión regular de la lista bloquea", 1, correr(r))
+        r = nuevo_repo(base, lista_extra="re: contrato-\\d{4}\n")
+        preparar(r, "doc.md", "Según el contrato-marco.\n")
+        caso("texto que no cumple la expresión regular pasa", 0, correr(r))
+        r = nuevo_repo(base, lista_extra="re: contrato-(\\d{4}\n"); preparar(r, "doc.md", "Texto limpio.\n")
+        caso("lista con una expresión regular inválida bloquea (ciego)", 1, correr(r))
+        caso("  y el registro declara que quedó ciego", True, "QUEDÉ CIEGO" in registro(r))
+
         # --- Correos ----------------------------------------------------------
         r = nuevo_repo(base); preparar(r, "seed.sql", "insert ... '%s';\n" % CORREO_REAL)
         caso("correo de dominio real bloquea", 1, correr(r))
@@ -225,7 +273,11 @@ def main():
         r = nuevo_repo(base); preparar(r, "a.md", "empleado" + ARROBA + "anthropic.com\n")
         caso("correo cualquiera de anthropic.com bloquea", 1, correr(r))
         r = nuevo_repo(base); preparar(r, "a.md", "noreply" + ARROBA + "anthropic.com\n")
-        caso("la dirección exacta permitida pasa", 0, correr(r))
+        caso("la dirección del pie de coautoría, en un fichero, bloquea", 1, correr(r))
+        r = nuevo_repo(base); preparar(r, "a.md", "josé" + ARROBA + "dominio-inventado.io\n")
+        caso("correo con tilde antes de la arroba bloquea", 1, correr(r))
+        r = nuevo_repo(base); preparar(r, "a.md", "josé" + ARROBA + "example.com\n")
+        caso("correo con tilde y dominio de ejemplo pasa", 0, correr(r))
         r = nuevo_repo(base); preparar(r, "a.md", "123+alguien" + ARROBA + "users.noreply.github.com\n")
         caso("correo de users.noreply.github.com bloquea", 1, correr(r))
         r = nuevo_repo(base); preparar(r, "a.md", "persona" + ARROBA + "ejemplo.com\n")
@@ -310,6 +362,18 @@ def main():
         r = nuevo_repo(base, con_lista=False); preparar(r, "nota.md", "Texto limpio.\n")
         caso("mensaje sin lista privada bloquea (ciego)", 1, correr(r, mensaje="Nota\n"))
 
+        # --- Los dos hooks de git se necesitan --------------------------------
+        r = limpio(); (r / ".git" / "hooks" / "commit-msg").unlink()
+        caso("pre-commit sin el hook commit-msg instalado bloquea (ciego)", 1, correr(r))
+        caso("  y el registro declara que quedó ciego", True, "QUEDÉ CIEGO" in registro(r))
+        r = limpio(); (r / ".git" / "hooks" / "pre-commit").unlink()
+        caso("commit-msg sin el hook pre-commit instalado bloquea (ciego)", 1,
+             correr(r, mensaje="Nota\n"))
+        r = limpio(); (r / ".git" / "hooks" / "commit-msg").write_text("#!/bin/sh\nexit 0\n")
+        caso("pre-commit con un commit-msg ajeno bloquea (ciego)", 1, correr(r))
+        r = limpio(); (r / ".git" / "hooks" / "commit-msg").chmod(0o644)
+        caso("pre-commit con un commit-msg no ejecutable bloquea (ciego)", 1, correr(r))
+
         # =====================================================================
         # Modo Claude Code: pasa = 0, bloquea = 2
         # =====================================================================
@@ -320,14 +384,23 @@ def main():
         caso("Claude: commit con secreto preparado bloquea", 2, correr(r, bash('git commit -m "x"')))
         caso("Claude: commit con -C a este repositorio y secreto bloquea", 2,
              correr(r, bash('git -C %s commit -m "x"' % r)))
-        # Con -C se revisa el repositorio que recibe el commit, no el del hook.
+        # Con -C se revisa el árbol que recibe el commit, si es de este repositorio.
         otro_limpio = limpio()
-        caso("Claude: commit con -C a otro repositorio limpio pasa", 0,
+        caso("Claude: commit con -C a otro repositorio bloquea, aunque esté limpio", 2,
              correr(r, bash('git -C %s commit -m "x"' % otro_limpio)))
-        caso("Claude: commit con -C a otro repositorio con secreto bloquea", 2,
-             correr(otro_limpio, bash('git -C %s commit -m "x"' % r)))
+        caso("  y deja registro", True, "otro repositorio" in registro(r))
         caso("Claude: commit con -C a una ruta que no existe bloquea", 2,
              correr(otro_limpio, bash('git -C /ruta/que/no/existe commit -m "x"')))
+        # Un árbol de trabajo del mismo repositorio: se revisa SU índice.
+        principal = limpio(); sh(principal, "commit", "-q", "--no-verify", "-m", "previo")
+        arbol = Path(str(principal) + "-arbol")
+        sh(principal, "worktree", "add", "-q", str(arbol), "-b", "otra")
+        (arbol / "limpio.md").write_text("Texto limpio.\n"); sh(arbol, "add", "limpio.md")
+        caso("Claude: commit con -C a un árbol de trabajo limpio pasa", 0,
+             correr(principal, bash('git -C %s commit -m "x"' % arbol)))
+        (arbol / "config.ts").write_text(SECRETO + "\n"); sh(arbol, "add", "config.ts")
+        caso("Claude: commit con -C a un árbol de trabajo con secreto bloquea", 2,
+             correr(principal, bash('git -C %s commit -m "x"' % arbol)))
         # Órdenes que nombran «git commit» sin hacerlo: pasan aunque haya un secreto preparado.
         caso("Claude: echo que nombra git commit pasa", 0, correr(r, bash('echo "git commit"')))
         caso("Claude: grep que busca git commit pasa", 0,
@@ -384,6 +457,11 @@ def main():
             ("commit con comillas $'…'", "git commit -m $'nota'"),
             ("commit con heredoc sin comillas y una variable", "git commit -F - <<EOF\nnota $MSG\nEOF"),
             ("commit con --template", "git commit --template plantilla.txt"),
+            ("commit con -c core.hooksPath", 'git -c core.hooksPath=/dev/null commit -m "x"'),
+            ("commit con -c de cualquier clave", 'git -c core.editor=true commit -m "x"'),
+            ("commit escondido en un alias definido con -c",
+             'git -c alias.publicar=commit publicar -m "x"'),
+            ("alias con -c y sin hooks", 'git -c alias.p=commit -c core.hooksPath=/dev/null p -m "x"'),
         ]:
             r = limpio()
             caso("Claude: %s bloquea" % descripcion, 2, correr(r, bash(comando)))
@@ -421,6 +499,20 @@ def main():
         caso("Claude: fichero de -F limpio pasa", 0, correr(r, bash("git commit -F mensaje.txt")))
         r = limpio()
         caso("Claude: -F - sin heredoc bloquea", 2, correr(r, bash("git commit -F -")))
+        r = limpio()
+        caso("Claude: término privado en un heredoc leído con -F /dev/stdin bloquea", 2,
+             correr(r, bash("git commit -F /dev/stdin <<'EOF'\nPara %s\nEOF" % TERMINO_PRIVADO)))
+        r = limpio()
+        caso("Claude: heredoc limpio leído con -F /dev/stdin pasa", 0,
+             correr(r, bash("git commit -F /dev/stdin <<'EOF'\nNota limpia\nEOF")))
+        r = nuevo_repo(base); commit_previo(r, AUTOR_PERMITIDO, "Para %s" % TERMINO_PRIVADO)
+        preparar(r, "nota.md", "Texto limpio.\n")
+        caso("Claude: --fixup=amend: de un commit con término privado bloquea", 2,
+             correr(r, bash("git commit --fixup=amend:HEAD")))
+        r = nuevo_repo(base); commit_previo(r, AUTOR_PERMITIDO, "Nota limpia")
+        preparar(r, "nota.md", "Texto limpio.\n")
+        caso("Claude: --fixup de un commit con mensaje limpio pasa", 0,
+             correr(r, bash("git commit --fixup=HEAD")))
 
         # --- Identidad --------------------------------------------------------
         r = nuevo_repo(base, autor=AUTOR_AJENO); preparar(r, "nota.md", "Texto limpio.\n")

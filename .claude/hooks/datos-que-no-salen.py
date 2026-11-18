@@ -58,17 +58,37 @@ Modo Claude Code: revisa ANTES de que el comando corra. Por eso exige que el
   - sin sustituciones (`$(...)` o comillas invertidas), variables (`$MSG`),
     comodines sin comillas (`*`, `?`, `[`, `{`) ni envoltorios (`bash -c`,
     `env`, `eval`): lo que el shell expande después no es lo que se revisó;
-  - sin `--git-dir` ni `--work-tree`. Con `-C <ruta>` se revisa el repositorio
-    de esa ruta, que es el que recibe el commit.
-El mensaje se revisa donde venga: `-m`, `-F <fichero>`, un heredoc o `--trailer`.
+  - sin `--git-dir` ni `--work-tree`, y sin `-c` (cualquier configuración al
+    vuelo: `core.hooksPath` apagaría los hooks de git y `alias.*` escondería
+    el commit). Con `-C <ruta>` se revisa el árbol de esa ruta, que debe ser
+    este repositorio o un árbol de trabajo suyo; un commit hacia otro
+    repositorio se detiene, porque su lista privada no es esta.
+El mensaje se revisa donde venga: `-m`, `-F <fichero>`, un heredoc, `--trailer`
+o el commit al que apuntan `--fixup` y `--squash`.
 El nombre del autor y el de quien hace el commit pasan por la lista privada.
+
+Contra qué protege, y contra qué no. Este hook protege contra el DESCUIDO: el
+dato real que se cuela sin querer en un fichero, una ruta, un mensaje o la
+identidad. No protege contra quien quiera rodearlo a propósito: quien tiene la
+terminal puede borrar los hooks, cambiar la configuración de git o trocear un
+secreto. Eso lo cubre la regla de CLAUDE.md («un bloqueo no se rodea») y la
+revisión de cada pull request, no este fichero.
 
 Límites conocidos (riesgos aceptados):
   - el modo Claude Code solo ve un commit escrito como `git commit` en el
-    comando. Un alias, un script o `make` que hagan el commit por dentro no los
-    ve: esos los detiene el pre-commit de git, que debe estar instalado;
-  - de un binario permitido solo se leen las cadenas ASCII de 8 caracteres o
-    más. Texto comprimido o en otra codificación dentro de una imagen no se ve;
+    comando. Un alias ya configurado, un script o `make` que hagan el commit por
+    dentro no los ve: esos los detiene el pre-commit de git, que debe estar
+    instalado;
+  - `git merge`, `pull`, `cherry-pick` y `rebase` traen commits ya hechos y no
+    ejecutan el pre-commit. Lo que entra por ahí no se revisa. Queda para una
+    versión futura un hook pre-push que revise todo lo que va a salir;
+  - la revisión busca el dato escrito de corrido. Un secreto o un nombre armado
+    por partes en el código (`"sk-" + "resto"`) no se detecta;
+  - de un correo se reconoce la forma habitual. Una parte local entre comillas
+    no se detecta;
+  - de una imagen se comprueba la firma del formato y se leen las cadenas ASCII
+    de 8 caracteres o más. Texto comprimido o en otra codificación dentro de
+    una imagen no se ve;
   - `--no-verify` escrito a mano en la terminal salta los hooks de git. Está
     prohibido en CLAUDE.md; el modo Claude Code lo detiene, pero a una persona
     en su terminal el hook no puede impedírselo;
@@ -81,7 +101,8 @@ Si la lista no se puede leer, o algo falla al revisar, el hook NO deja pasar:
 declara que quedó ciego y bloquea. Un control que calla cuando no puede medir
 aparenta más de lo que hace.
 
-Cada bloqueo deja una línea fechada en docs/seguridad/registro-de-bloqueos.md.
+Cada bloqueo deja una línea fechada POR HALLAZGO en
+docs/seguridad/registro-de-bloqueos.md: un mismo intento puede dejar varias.
 La línea dice la categoría, el fichero y el número de línea; NUNCA el texto
 encontrado, porque el registro también es público. Si el hallazgo está en la
 ruta, la ruta tampoco se escribe. Si el registro no se puede escribir, se
@@ -101,10 +122,22 @@ REGISTRO = RAIZ / "docs" / "seguridad" / "registro-de-bloqueos.md"
 FICHERO_RUTA = RAIZ / ".datos-que-no-salen.ruta"
 
 DOMINIOS_DE_EJEMPLO = {"example.com", "example.org", "example.net"}
-# Direcciones exactas, no dominios: la del pie «Co-Authored-By» de Claude Code.
+# Dirección exacta, no dominio: la del pie «Co-Authored-By» de Claude Code. Solo
+# se admite en el MENSAJE del commit, no en ficheros ni rutas.
 # Va armada por partes para que este fichero no contenga ningún correo real.
-CORREOS_PERMITIDOS = {"noreply" + "@" + "anthropic.com"}
-EXTENSIONES_BINARIAS_PERMITIDAS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico"}
+CORREOS_PERMITIDOS_EN_EL_MENSAJE = {"noreply" + "@" + "anthropic.com"}
+# Extensión -> comprobación de que los primeros bytes son de ese formato. La
+# extensión sola no basta: un ZIP renombrado a .png no es una imagen.
+FIRMAS_DE_IMAGEN = {
+    ".png": lambda d: d.startswith(b"\x89PNG\r\n\x1a\n"),
+    ".jpg": lambda d: d.startswith(b"\xff\xd8\xff"),
+    ".jpeg": lambda d: d.startswith(b"\xff\xd8\xff"),
+    ".gif": lambda d: d.startswith((b"GIF87a", b"GIF89a")),
+    ".webp": lambda d: d.startswith(b"RIFF") and d[8:12] == b"WEBP",
+    ".ico": lambda d: d.startswith(b"\x00\x00\x01\x00"),
+}
+# Debe coincidir con MARCA en scripts/instalar-guardarrailes.sh.
+MARCA_DE_LOS_HOOKS = "# guardarrail: datos-que-no-salen"
 LARGO_PARA_BUSCAR_EN_CUALQUIER_PARTE = 6
 
 SECRETOS = [
@@ -116,11 +149,12 @@ SECRETOS = [
     ("clave con prefijo re_", re.compile(r"\bre_[A-Za-z0-9]{20,}\b")),
     ("valor asignado a una variable secreta", re.compile(
         r"(?i)\b[A-Z0-9_]*(SECRET|PASSWORD|SERVICE_ROLE_KEY|API_KEY|TOKEN)[A-Z0-9_]*"
-        r"\s*[=:]\s*[\"']?[A-Za-z0-9_\-./+]{16,}")),
+        r"[\"'`]?\s*[=:]\s*[\"'`]?[A-Za-z0-9_\-./+]{16,}")),     # también JSON y `…`
 ]
 # El dominio debe terminar en letras: así `paquete@1.2.3` no se toma por un correo.
+# La parte local admite letras de cualquier alfabeto (\w), no solo ASCII.
 CORREO = re.compile(
-    r"[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,})(?![A-Za-z0-9-])")
+    r"[\w.%+-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,})(?![A-Za-z0-9-])")
 LINEA_DE_ENV_EXAMPLE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 CADENA_LEGIBLE = re.compile(rb"[\x20-\x7e]{8,}")
 ES_COMMIT = re.compile(r"\bgit\b[^|;&]*\bcommit\b")
@@ -174,6 +208,27 @@ def git(*args):
     return git_bytes(*args).decode("utf-8", "surrogateescape")
 
 
+def directorio_comun(directorio):
+    """El directorio .git que comparten un repositorio y sus árboles de trabajo."""
+    r = subprocess.run(["git", "-C", str(directorio), "rev-parse", "--path-format=absolute",
+                        "--git-common-dir"], capture_output=True)
+    if r.returncode != 0:
+        raise Ciego("%s no es un repositorio git" % Path(str(directorio)).name)
+    return os.path.realpath(r.stdout.decode("utf-8", "surrogateescape").strip())
+
+
+def exigir_el_otro_hook(nombre):
+    """Los dos hooks de git se necesitan: si falta el otro, queda media revisión sin hacer."""
+    otro = Path(git("rev-parse", "--path-format=absolute", "--git-path", "hooks").strip()) / nombre
+    try:
+        instalado = MARCA_DE_LOS_HOOKS in otro.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        instalado = False
+    if not instalado or not os.access(str(otro), os.X_OK):
+        raise Ciego("falta el hook %s de git, o no es de este guardarraíl; "
+                    "corre scripts/instalar-guardarrailes.sh" % nombre)
+
+
 # --- lista privada -----------------------------------------------------------
 
 def leer_lista_privada():
@@ -225,8 +280,7 @@ def revisar_texto(texto, patrones, correos_admitidos=frozenset()):
         if m:
             yield categoria, m.group(0)[:6] + "…"
     for m in CORREO.finditer(texto):
-        if (m.group(0).lower() not in CORREOS_PERMITIDOS
-                and m.group(0).lower() not in correos_admitidos
+        if (m.group(0).lower() not in correos_admitidos
                 and m.group(1).lower() not in DOMINIOS_DE_EJEMPLO):
             yield "correo de dominio real", "@" + m.group(1)
     for patron in patrones:
@@ -303,12 +357,19 @@ def revisar_preparado(patrones):
         if (minuscula == ".env" or minuscula.startswith(".env.")) and base != ".env.example":
             hallazgos.append(("fichero .env", ruta, 0, base))
 
-        if es_binario:
-            if extension not in EXTENSIONES_BINARIAS_PERMITIDAS:
+        # Si es binario se decide leyendo el contenido, además de lo que diga git:
+        # un .gitattributes puede hacer que git lo trate como texto.
+        datos = git_bytes("cat-file", "blob", ":0:" + ruta)
+        if es_binario or b"\x00" in datos[:8000]:
+            if extension not in FIRMAS_DE_IMAGEN:
                 hallazgos.append(("binario que no se puede revisar", ruta, 0,
                                   "extensión %s" % (extension or "(ninguna)")))
                 continue
-            for cadena in CADENA_LEGIBLE.findall(git_bytes("cat-file", "blob", ":0:" + ruta)):
+            if not FIRMAS_DE_IMAGEN[extension](datos):
+                hallazgos.append(("binario que no es la imagen que dice su extensión", ruta, 0,
+                                  "extensión %s" % extension))
+                continue
+            for cadena in CADENA_LEGIBLE.findall(datos):
                 for categoria, pista in revisar_texto(cadena.decode("ascii"), patrones):
                     hallazgos.append((categoria + ", dentro de un binario", ruta, 0, pista))
             continue
@@ -333,8 +394,9 @@ def revisar_mensaje(texto, patrones, autores):
     los metadatos y git los escribe en la plantilla al enmendar.
     """
     hallazgos = []
+    admitidos = set(autores) | CORREOS_PERMITIDOS_EN_EL_MENSAJE
     for numero, linea in enumerate(texto.split("\n"), 1):
-        for categoria, pista in revisar_texto(linea, patrones, autores):
+        for categoria, pista in revisar_texto(linea, patrones, admitidos):
             hallazgos.append((categoria, MENSAJE, numero, pista))
     return hallazgos
 
@@ -479,7 +541,8 @@ def clasificar(orden):
     datos = {"con_variables": con_variables, "directorios": [], "problemas": [],
              "mensajes": [], "ficheros_de_mensaje": [], "amend": False,
              "reset_author": False, "heredoc": orden["heredoc"],
-             "expansion": orden["expansion"]}
+             "expansion": orden["expansion"], "commits_de_mensaje": []}
+    con_alias_o_sin_hooks = False
     i = 1
     while i < len(palabras):
         p = palabras[i]
@@ -490,6 +553,11 @@ def clasificar(orden):
                 datos["directorios"].append(valor)
             if nombre in GIT_GLOBAL_QUE_CAMBIA_EL_REPOSITORIO:
                 datos["problemas"].append("otro_repositorio")
+            if nombre in ("-c", "--config-env"):
+                datos["problemas"].append("configuracion")
+                clave = valor.lower()
+                if clave.startswith("alias.") or clave.startswith("core.hookspath"):
+                    con_alias_o_sin_hooks = True
             if nombre in ("-c", "--config-env") and valor.lower().startswith("user.email"):
                 datos["problemas"].append("identidad")
             i += 1 if "=" in p else 2
@@ -498,7 +566,9 @@ def clasificar(orden):
         else:
             break
     if i >= len(palabras) or palabras[i] != "commit":
-        return "otra", None
+        # Una orden de git que define un alias o cambia la ruta de los hooks en el
+        # propio comando puede estar haciendo un commit con otro nombre.
+        return ("indirecto", None) if con_alias_o_sin_hooks else ("otra", None)
     leer_opciones_del_commit(palabras[i + 1:], datos)
     return "commit", datos
 
@@ -552,6 +622,9 @@ def leer_opciones_del_commit(args, datos):
                     datos["problemas"].append("identidad")
                 elif nombre in COMMIT_LARGAS_QUE_REUTILIZAN or nombre == "template":
                     datos["problemas"].append("reutiliza")
+                elif nombre in ("fixup", "squash"):
+                    # `--fixup=amend:<commit>` y `reword:` copian el mensaje de ese commit.
+                    datos["commits_de_mensaje"].append(valor.rpartition(":")[2])
             k += 1
             continue
         if a.startswith("-") and len(a) > 1:
@@ -616,6 +689,14 @@ MOTIVOS = {
     "otro_repositorio": ("commit con --git-dir, --work-tree o --namespace",
                          "Esas opciones cambian el repositorio o el árbol del commit y no puedo "
                          "saber cuál revisar. Usa `git -C <ruta> commit`."),
+    "configuracion": ("commit con configuración al vuelo (-c)",
+                      "`git -c clave=valor commit` cambia la configuración solo para ese commit: "
+                      "puede apagar los hooks de git o cambiar la identidad. Haz el commit sin "
+                      "`-c`, con la configuración del repositorio."),
+    "repositorio_ajeno": ("commit hacia otro repositorio",
+                          "El commit va a un repositorio que no es este, y su lista privada no es "
+                          "la mía: no puedo revisarlo. Hazlo desde una sesión abierta en ese "
+                          "repositorio."),
     "mensaje": ("mensaje del commit que no se puede leer",
                 "No pude leer el fichero del mensaje (-F). Usa -m, un heredoc "
                 "(`-F - <<'EOF'`) o un fichero que exista."),
@@ -643,7 +724,8 @@ def analizar_comando(entrada):
         return "variables", None
     if datos["expansion"]:
         return "expansion", None
-    for motivo in ("sin_hooks", "otro_repositorio", "prepara", "identidad", "reutiliza"):
+    for motivo in ("sin_hooks", "otro_repositorio", "prepara", "identidad", "configuracion",
+                   "reutiliza"):
         if motivo in datos["problemas"]:
             return motivo, None
     return None, datos
@@ -654,8 +736,10 @@ def mensajes_del_comando(entrada, datos):
     textos = list(datos["mensajes"])
     base = Path(DONDE["directorio"])
     cuerpos = list(datos["heredoc"])
+    for commit in datos["commits_de_mensaje"]:
+        textos.append(git("log", "-1", "--format=%B", "--end-of-options", commit))
     for fichero in datos["ficheros_de_mensaje"]:
-        if fichero == "-":
+        if fichero in ("-", "/dev/stdin", "/dev/fd/0", "/proc/self/fd/0"):
             if not cuerpos:
                 raise KeyError("mensaje")
             textos.append(cuerpos.pop(0))
@@ -678,7 +762,8 @@ def registrar(origen, hallazgos):
     if not REGISTRO.exists():
         REGISTRO.write_text(
             "# Registro de bloqueos — datos-que-no-salen\n\n"
-            "Cada fila es un commit que el hook detuvo. No se guarda el texto encontrado.\n\n"
+            "Cada fila es un hallazgo de un commit que el hook detuvo; un mismo intento puede "
+            "dejar varias filas. No se guarda el texto encontrado.\n\n"
             "| Fecha y hora | Origen | Categoría | Fichero | Línea |\n|---|---|---|---|---|\n",
             encoding="utf-8")
     ahora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
@@ -743,6 +828,9 @@ def main():
             destino = Path(entrada.get("cwd") or RAIZ)
             for directorio in datos["directorios"]:
                 destino = destino / os.path.expanduser(directorio)
+            if directorio_comun(destino) != directorio_comun(RAIZ):
+                categoria, explicacion = MOTIVOS["repositorio_ajeno"]
+                bloquear(origen, [(categoria, "-", 0, "")], codigo, explicacion)
             DONDE["directorio"] = str(destino)
             try:
                 textos = mensajes_del_comando(entrada, datos)
@@ -756,10 +844,12 @@ def main():
             for texto in textos:
                 hallazgos += revisar_mensaje(texto, patrones, autores)
         elif modo == "pre-commit":
+            exigir_el_otro_hook("commit-msg")
             patrones, autores = leer_lista_privada()
             hallazgos += revisar_identidad(patrones, autores, False)
             hallazgos += revisar_preparado(patrones)
         else:
+            exigir_el_otro_hook("pre-commit")
             posicion = sys.argv.index("--commit-msg") + 1
             if posicion >= len(sys.argv):
                 raise Ciego("falta el fichero del mensaje")

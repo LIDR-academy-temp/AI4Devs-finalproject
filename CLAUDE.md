@@ -16,7 +16,9 @@ Nunca inventar un dato, una regla de negocio ni el resultado de un comando. Si f
 - Los correos de ejemplo usan `example.com` (valen también `example.org` y `example.net`). Ningún otro dominio.
 - Ningún secreto entra al repositorio. Las variables viven en `.env.local`, que git ignora; `.env.example` lleva solo los nombres, sin valores (`NOMBRE=`).
 - Lo anterior vale igual para el **nombre y la ruta** de un fichero y para el **mensaje del commit**, no solo para el contenido.
-- **Binarios:** solo entran imágenes (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.ico`). Un PDF, un Excel o un ZIP no entran: su contenido no se puede revisar.
+- **Binarios:** solo entran imágenes (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.ico`), y deben serlo de verdad: se comprueba la firma del formato. Un PDF, un Excel o un ZIP no entran: su contenido no se puede revisar.
+- **Lo que llega por `merge`, `pull`, `cherry-pick` o `rebase` no pasa por el hook:** son commits ya hechos. Antes de traer trabajo de otra rama o de otro repositorio se revisa a mano que no traiga nada de lo anterior.
+- El commit se hace con la configuración del repositorio: sin `git -c clave=valor`.
 - **Los metadatos del commit también son públicos.** El correo del autor debe ser uno de los permitidos en la lista privada; un correo corporativo revela la empresa aunque el contenido esté anonimizado. La identidad se configura una vez en el clon (`git config user.email`); no se cambia en el comando del commit (`--author`, `-c user.email`).
 - El hook `.claude/hooks/datos-que-no-salen.py` revisa cada commit y lo detiene si encuentra algo de lo anterior. Deja una línea en `docs/seguridad/registro-de-bloqueos.md`. Lo que revisa, y lo que no alcanza a ver, está en su cabecera.
 - **Un bloqueo del hook no se rodea.** Se corrige el contenido. No se usa `--no-verify` ni se edita el hook para que pase. Única excepción: las pruebas de `tests/harness/` lo usan dentro de sus repositorios desechables, para fabricar el estado previo que el propio hook impediría crear; nunca en este repositorio.

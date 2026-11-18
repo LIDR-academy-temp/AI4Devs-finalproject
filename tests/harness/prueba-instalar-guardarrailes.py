@@ -178,6 +178,31 @@ def main():
         caso("si el hook de revisión desaparece, el commit-msg tampoco deja entrar", 1,
              commit(r, "nota.md", "Texto limpio.\n"))
 
+        # --- Si desaparece UNO solo de los dos hooks, el otro lo delata -------
+        r = nuevo_repo(base); instalar(r)
+        (r / ".git" / "hooks" / "pre-commit").unlink()
+        caso("sin el pre-commit, un commit con secreto no entra", 1,
+             commit(r, "config.ts", 'const k = "%s";\n' % SECRETO))
+        r = nuevo_repo(base); instalar(r)
+        (r / ".git" / "hooks" / "commit-msg").unlink()
+        caso("sin el commit-msg, un commit con secreto en el mensaje no entra", 1,
+             commit(r, "nota.md", "Texto limpio.\n", mensaje="Clave %s" % SECRETO))
+        codigo, _ = instalar(r)
+        caso("reinstalar repone el hook que faltaba", 0, codigo)
+        caso("y el commit limpio vuelve a entrar", 0, commit(r, "nota.md", "Texto limpio.\n"))
+
+        # --- Con core.hooksPath configurado, se instala donde git los busca ---
+        r = nuevo_repo(base)
+        otro_dir = Path(tempfile.mkdtemp(dir=base))
+        git(r, "config", "core.hooksPath", str(otro_dir))
+        codigo, _ = instalar(r)
+        caso("con core.hooksPath: instala con 0", 0, codigo)
+        caso("con core.hooksPath: instala en ese directorio", True, (otro_dir / "pre-commit").is_file())
+        caso("con core.hooksPath: el commit limpio entra", 0,
+             commit(r, "nota.md", "Texto limpio.\n"))
+        caso("con core.hooksPath: el commit con secreto no entra", 1,
+             commit(r, "config.ts", 'const k = "%s";\n' % SECRETO))
+
         # --- Metadatos: el correo del autor, con la identidad definitiva -----
         r = nuevo_repo(base); instalar(r)
         caso("commit con correo de autor no permitido no entra", 1,
