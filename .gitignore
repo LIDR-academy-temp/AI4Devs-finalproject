@@ -14,3 +14,15 @@
 # Dependencias y ficheros del sistema.
 node_modules/
 .DS_Store
+
+# Lo que generan Next.js, TypeScript y las pruebas.
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Estado local de la base y del despliegue.
+supabase/.temp/
+supabase/.branches/
+.vercel

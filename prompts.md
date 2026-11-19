@@ -225,4 +225,23 @@ con mensaje propio, nunca el del motor, y cierra con una validación 1 a 1 de so
 
 ---
 
+### 8. Construcción, ticket por ticket
+
+Desde aquí el prompt de cada pieza es su ticket: el agente recibe el ticket, las reglas de `CLAUDE.md` y la especificación de la capacidad. Se anota lo que el agente decidió por su cuenta y lo que ajustó la Dirección.
+
+**H-2 · Integración continua (18/11/2026)**
+
+```text
+Ticket H-2: integración continua —estilo, tipos y pruebas— en verde en el repositorio.
+Origen: restricción R-4 del PRD. No hay código de aplicación todavía.
+```
+
+*Decisiones del agente:* base de Next.js 15 generada con la herramienta oficial y recortada (sin fuentes descargadas de la red, para que compilar no dependa de un tercero; sin las imágenes de ejemplo) · dos trabajos separados, uno para las pruebas de los guardarraíles y otro para la aplicación · las dependencias se instalan tal como dice el fichero de bloqueo · de los scripts de instalación de terceros solo se autoriza uno, el del compilador que usan las pruebas.
+
+*Límite declarado:* todavía no hay pruebas de la aplicación, así que ese paso termina en verde sin correr ninguna. Las primeras llegan con el primer ticket que tenga reglas. Se comprobó a mano que el paso de estilo sí rechaza código incorrecto.
+
+*Ajuste humano:* ninguno todavía; «en verde» se confirma cuando la Dirección autorice subir el cambio.
+
+---
+
 > **El prompt que no funcionó (se registra a propósito).** El 17/10/2026 el agente intentó obtener tres decisiones de la Dirección con un cuadro de opciones (stack, visibilidad del repositorio, resultado de la reunión del 16/09). El cuadro se cerró dos veces sin respuesta porque llegaron mensajes del usuario mientras estaba abierto. Se procedió con las recomendaciones del agente como **supuestos declarados** en el README, revisables sección por sección. Lección: con el reloj puesto, preguntar en texto plano y seguir; no bloquear el trabajo en un diálogo.

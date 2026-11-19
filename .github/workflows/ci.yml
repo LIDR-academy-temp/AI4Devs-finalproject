@@ -1,0 +1,46 @@
+# Integración continua (ticket H-2, restricción R-4 del PRD).
+# Corre en cada cambio. Una tarea termina cuando esto está en verde en el fork.
+name: Integración continua
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  guardarrailes:
+    name: Guardarraíles (pruebas del harness)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # La versión con la que se probaron en local.
+          python-version: "3.9"
+      - name: El hook bloquea lo que debe y deja pasar lo que debe
+        run: python3 tests/harness/prueba-datos-que-no-salen.py
+      - name: El instalador instala lo que debe
+        run: python3 tests/harness/prueba-instalar-guardarrailes.py
+
+  aplicacion:
+    name: Aplicación (estilo, tipos, pruebas y compilación)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Dependencias, tal como dice el fichero de bloqueo
+        run: pnpm install --frozen-lockfile
+      - name: Estilo
+        run: pnpm lint
+      - name: Tipos
+        run: pnpm typecheck
+      - name: Pruebas
+        run: pnpm test
+      - name: Compilación
+        run: pnpm build
