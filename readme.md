@@ -41,7 +41,9 @@ Framework de línea de comandos, inspirado en Specification-Driven Development, 
 
 ### **0.4. URL del proyecto:**
 
-No hay despliegue público. TALOS se ejecuta en local o en Docker (`global/environment.yaml` declara `vps.available: false`).
+Dashboard desplegado: <https://2.29.196.188.sslip.io>
+
+El acceso está protegido con usuario y contraseña. Las credenciales se enviarán al evaluador a través del formulario de entrega.
 
 ### 0.5. URL o archivo comprimido del repositorio
 
@@ -304,6 +306,104 @@ Los artefactos se guardan en `./data/artifacts/` y los datos de Freqtrade en `./
 
 *Nota: los pasos de la opción A se derivan de `Dockerfile`, `docker-compose.yml`, `.env.example`, `scripts/dc` y `docs/quickstart.md`; no se han ejecutado para este documento.*
 
+#### Guía para el evaluador: crear una estrategia desde el dashboard
+
+Esta guía explica cómo crear una estrategia desde el dashboard y propone dos ejemplos de datos listos para copiar en el formulario.
+
+##### 1. Qué es una estrategia en TALOS
+
+En TALOS una **estrategia** es una *hipótesis* de investigación: qué comportamiento del mercado se cree explotable y cómo sabremos si funciona. No contiene código. El código (una clase `IStrategy` de Freqtrade) se añade después en una **versión** de la estrategia.
+
+```text
+Strategy (hipótesis) → Version (implementación) → Validation Plan → Run
+```
+
+Al crearla, la estrategia nace en estado `PROPOSED`, con el rol `TRADER`, y se guarda en `artifacts/strategies/STR-XXXX/strategy.yaml`. El identificador (`STR-0001`, `STR-0002`...) se asigna solo.
+
+##### 2. Requisitos previos
+
+- Los servicios están levantados con Docker Compose (Opción A, arriba) y `docker compose ps` muestra `dashboard` en `Up`.
+- El dashboard es accesible en <http://127.0.0.1:8501>.
+
+##### 3. Pasos para crear la estrategia en el dashboard
+
+1. Abre <http://127.0.0.1:8501>.
+2. En la barra lateral, pulsa **Create strategy**. Aparece un cuadro con el título `New strategy STR-XXXX`, que indica el id que se va a crear.
+3. Rellena los **8 campos obligatorios** (tabla de la sección 4). Todos son obligatorios; si falta alguno, no se escribe nada y el dashboard muestra una lista con los campos que hay que corregir.
+4. Pulsa **Confirm**. Si todo es válido, aparece el mensaje `STR-XXXX created` y la estrategia se puede seleccionar en el desplegable **Strategy** de la barra lateral.
+5. Pulsa **Cancel** si quieres cerrar el formulario sin crear nada.
+
+Alternativa por terminal: `talos strategy new --from-template` lanza un asistente que pregunta los mismos datos y pide confirmación antes de escribir el fichero.
+
+##### 4. Campos del formulario
+
+| Campo | Tipo | Qué escribir |
+|---|---|---|
+| **Name** | Una línea | Nombre corto y descriptivo de la estrategia. |
+| **Research motivation** | Texto libre | Por qué merece la pena investigarla: evidencia, literatura u observación que la motiva. |
+| **Hypothesis** | Texto libre | Una afirmación concreta y refutable sobre el mercado. |
+| **Expected market behavior** | Texto libre | Qué mecanismo explica la hipótesis y cómo debería comportarse el precio. |
+| **Assumptions (one per line)** | Varias líneas | Un supuesto por línea. Las líneas vacías se ignoran. |
+| **Known risks (one per line)** | Varias líneas | Un riesgo conocido por línea. Las líneas vacías se ignoran. |
+| **Success criteria** | Texto libre | Cómo se decidirá que la estrategia funciona (métricas y umbrales). |
+| **Families** | Selección múltiple | Una o más de: `trend_following`, `mean_reversion`, `breakout`, `momentum`, `market_making`, `statistical_arbitrage`, `arbitrage`, `volatility`, `event_driven`, `carry`. |
+
+Los demás datos del `strategy.yaml` (id, estado `PROPOSED`, fecha, autor, rol `TRADER`) los rellena TALOS. Las técnicas, las etiquetas y las notas no están en el formulario del dashboard; se pueden indicar con el asistente de terminal.
+
+###### Consejos para escribir buenos datos
+
+- La **hipótesis** debe poder demostrarse falsa. "El mercado sube" no sirve; "tras un retroceso moderado dentro de una tendencia alcista, el precio tiende a retomar la tendencia" sí.
+- Los **supuestos** son lo que debe ser cierto para que la hipótesis tenga sentido. Si un supuesto falla, la estrategia deja de ser válida.
+- Los **riesgos** son las condiciones de mercado en las que se espera que la estrategia pierda.
+- El **criterio de éxito** debe ser medible, por ejemplo con un Sharpe mínimo, un drawdown máximo y el número de activos o regímenes donde se cumple.
+
+##### 5. Ejemplo 1: cruce de medias móviles (seguimiento de tendencia)
+
+| Campo | Valor a introducir |
+|---|---|
+| **Name** | `EMA Crossover Trend Following` |
+| **Research motivation** | `Los sistemas de seguimiento de tendencia con cruce de medias móviles son de los más estudiados y usados en criptomonedas y futuros. Interesa comprobar si, con comisiones realistas, mantienen una ventaja en pares líquidos como BTC/USDT y ETH/USDT.` |
+| **Hypothesis** | `Cuando la media móvil exponencial rápida (EMA 20) cruza al alza a la lenta (EMA 50) en velas de 4 horas, el precio tiende a seguir subiendo durante las siguientes sesiones lo bastante como para compensar las señales falsas y las comisiones.` |
+| **Expected market behavior** | `Las tendencias tienen inercia: los grandes participantes entran de forma gradual y las noticias se incorporan al precio con retraso. El cruce de medias confirma que la tendencia ya está establecida y se espera que continúe durante varias velas.` |
+| **Assumptions** | `Los pares elegidos tienen liquidez suficiente para entrar y salir sin deslizamiento relevante`<br>`Las comisiones del exchange no superan el 0,1 % por operación`<br>`Las tendencias persisten lo suficiente como para cubrir el retraso propio de las medias móviles` |
+| **Known risks** | `Mercados laterales que generan muchas señales falsas (whipsaws)`<br>`Picos de volatilidad por noticias que activan el stop antes de que la tendencia continúe`<br>`Entradas tardías: el cruce llega cuando parte del movimiento ya ha ocurrido` |
+| **Success criteria** | `Sharpe superior a 1,0 y drawdown máximo inferior al 25 % en la evaluación fuera de muestra, con resultados positivos al menos en 2 de los 3 pares probados y en más de un régimen de mercado.` |
+| **Families** | `trend_following` |
+
+En los campos de varias líneas, escribe cada supuesto o riesgo en su propia línea (pulsa Intro entre uno y otro).
+
+##### 6. Ejemplo 2: reversión a la media con RSI y bandas de Bollinger
+
+| Campo | Valor a introducir |
+|---|---|
+| **Name** | `RSI Bollinger Mean Reversion` |
+| **Research motivation** | `En mercados sin tendencia clara, los movimientos extremos de corto plazo suelen revertir hacia el precio medio. Se quiere comprobar si combinar RSI en sobreventa con un cierre bajo la banda inferior de Bollinger filtra bien las caídas excesivas.` |
+| **Hypothesis** | `Cuando el RSI(14) cae por debajo de 30 y el precio cierra por debajo de la banda inferior de Bollinger (20, 2) en velas de 1 hora, el precio recupera la media móvil de 20 periodos en las siguientes 24 horas con una frecuencia mayor que el azar.` |
+| **Expected market behavior** | `Las caídas bruscas suelen estar amplificadas por liquidaciones forzadas y ventas por pánico. Cuando esa presión se agota, los compradores vuelven al mercado y el precio rebota hacia su media reciente.` |
+| **Assumptions** | `El mercado está en un régimen lateral o de tendencia débil durante el periodo analizado`<br>`Las caídas extremas son sobre todo reacciones de corto plazo y no un cambio de tendencia`<br>`El rebote es lo bastante amplio como para cubrir comisiones y deslizamiento` |
+| **Known risks** | `Tendencias bajistas fuertes en las que el precio sigue cayendo tras tocar la banda inferior`<br>`Eventos de noticias o crisis de liquidez que rompen el comportamiento habitual`<br>`Sobreajuste de los umbrales de RSI y de Bollinger a un periodo concreto` |
+| **Success criteria** | `Tasa de acierto superior al 55 %, factor de beneficio superior a 1,3 y drawdown máximo inferior al 20 % en la evaluación fuera de muestra, manteniendo resultados positivos en al menos 3 pares distintos.` |
+| **Families** | `mean_reversion` |
+
+##### 7. Qué comprobar tras crearla
+
+- El mensaje **`STR-XXXX created`** aparece en verde.
+- La estrategia está en el desplegable **Strategy** con estado `PROPOSED`.
+- Al abrirla, los 8 campos coinciden con los datos introducidos.
+- (Opcional) Por terminal: `talos strategy list` la muestra con el estado `PROPOSED`, y `talos store validate artifacts/strategies` responde `all artifacts valid.`
+
+##### 8. Errores habituales
+
+| Situación | Resultado |
+|---|---|
+| Algún campo obligatorio vacío | No se escribe nada y se muestra la lista de campos a corregir. |
+| Ninguna familia seleccionada | Igual que el caso anterior: el campo `families` es obligatorio. |
+| Dos usuarios crean estrategia a la vez | Si el id ya existe, TALOS no escribe nada y propone el siguiente id; hay que pulsar **Confirm** de nuevo. |
+
+##### 9. Siguiente paso del flujo
+
+Una estrategia en `PROPOSED` aún no se puede investigar. El Trader la aprueba con `talos strategy transition STR-XXXX --to RESEARCH`, fija su reserva de datos con `talos strategy reserve` y crea una versión con `talos version new`. El flujo completo está en la sección del Trader del `readme.md`.
+
 #### Opción B — Desarrollo local sin Docker (tests, dashboard y comandos que no ejecutan Freqtrade)
 
 Requisitos: [uv](https://docs.astral.sh/uv/) y Python 3.11–3.13 (el desarrollo se fija a 3.11, `backend/.python-version`, para que coincida con mypy y con CI).
@@ -555,7 +655,7 @@ flowchart LR
 
 No hay más servicios (ADR-054, ADR-059): Freqtrade corre dentro de `talos` y de `worker` como subproceso.
 
-**Despliegue.** Actualmente es manual y local: `docker compose up -d --build`. No hay VPS ni despliegue continuo (el roadmap sitúa el pipeline completo de CI/CD en la Fase 3); `docs/quickstart.md` explica cómo instalarlo en un servidor Linux.
+**Despliegue.** Actualmente es manual: `docker compose up -d --build`, en local o en un VPS, donde el dashboard está publicado en <https://2.29.196.188.sslip.io> con acceso protegido por credenciales. No hay despliegue continuo (el roadmap sitúa el pipeline completo de CI/CD en la Fase 3); `docs/quickstart.md` explica cómo instalarlo en un servidor Linux.
 
 **Integración continua** (GitHub Actions):
 
@@ -1562,4 +1662,4 @@ Paper trading con Freqtrade, reglas de asignación de capital y gestión de cart
 
 **6. Despliegue y operación continua**
 
-Despliegue en un VPS con CI/CD completo (hoy el despliegue es manual y local), y activación del índice SQLite, que existe pero ni el CLI ni el dashboard usan. También una demo en vídeo grabada del dashboard con datos de demostración, una vez cerrada la épica del bucle de investigación (TALOS-198, que sigue *In Progress* en Plane; su último ticket, la comprobación real del bucle en Docker, TALOS-215, está *Cancelled*, de modo que esa evidencia documentada no existe todavía).
+Despliegue en un VPS con CI/CD completo (hoy el despliegue en el VPS es manual), y activación del índice SQLite, que existe pero ni el CLI ni el dashboard usan. También una demo en vídeo grabada del dashboard con datos de demostración, una vez cerrada la épica del bucle de investigación (TALOS-198, que sigue *In Progress* en Plane; su último ticket, la comprobación real del bucle en Docker, TALOS-215, está *Cancelled*, de modo que esa evidencia documentada no existe todavía).
