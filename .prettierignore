@@ -1,0 +1,21 @@
+# Documents, mockups, and tooling that keep their own formatting
+*.md
+.claude/
+.claude-auth/
+.impeccable/
+design/
+docs/
+openspec/
+
+# Generated
+.next/
+coverage/
+docs/openapi.yaml
+next-env.d.ts
+package-lock.json
+playwright-report/
+src/server/db/migrations/
+test-results/
+
+# Rewritten by next build, in a format of its own
+tsconfig.json

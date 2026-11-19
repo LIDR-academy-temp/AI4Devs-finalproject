@@ -1,0 +1,35 @@
+# Operating system
+.DS_Store
+
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+.envrc
+
+# Python
+__pycache__/
+
+# Claude Code and design tooling, local to each machine
+.claude-auth/
+.claude/settings.local.json
+.claude/skills/impeccable/scripts/bin/
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/hook.pending.json
+
+# GitHub issue setup output
+issue-map.json

@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#f8f9ff;}body{overscroll-behavior:none;font-family:'Plus Jakarta Sans',sans-serif;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface":"#f8f9ff","surface-dim":"#cbdbf5","status-unavailable-border":"#FCA5A5","border-subtle":"#CBD5E1","status-shipped-bg":"#ECFDF5","primary-container":"#0d5f4d","on-tertiary-fixed-variant":"#832600","status-reserved-border":"#FDBA74","status-pending-border":"#94A3B8","on-error-container":"#93000a","surface-variant":"#d3e4fe","secondary-fixed-dim":"#b6c4ff","on-background":"#0b1c30","error-container":"#ffdad6","status-pending-bg":"#F8FAFC","on-tertiary-fixed":"#390c00","outline-variant":"#bec9c3","status-purchased-bg":"#EFF6FF","text-primary":"#0F172A","surface-card":"#FFFFFF","status-shipped-text":"#065F46","surface-bright":"#f8f9ff","surface-container":"#e5eeff","primary":"#004637","primary-fixed-dim":"#8dd4be","status-shipped-border":"#6EE7B7","on-secondary-fixed-variant":"#264191","on-surface-variant":"#3f4945","on-primary-fixed":"#002018","on-error":"#ffffff","inverse-on-surface":"#eaf1ff","surface-subtle":"#F1F5F9","text-muted":"#334155","on-secondary-container":"#1d3989","secondary":"#4059aa","secondary-container":"#8fa7fe","surface-container-highest":"#d3e4fe","status-reserved-text":"#9A3412","border-strong":"#94A3B8","whatsapp-green":"#16A34A","surface-canvas":"#F8FAFC","tertiary-fixed-dim":"#ffb59d","on-primary":"#ffffff","primary-fixed":"#a8f1d9","surface-tint":"#1e6a57","status-unavailable-text":"#991B1B","tertiary":"#722000","secondary-fixed":"#dce1ff","surface-container-low":"#eff4ff","on-primary-container":"#8fd6bf","status-purchased-text":"#1E40AF","error":"#ba1a1a","on-primary-fixed-variant":"#005141","on-tertiary-container":"#ffb8a1","tertiary-container":"#9a2e00","status-pending-text":"#334155","inverse-surface":"#213145","on-tertiary":"#ffffff","status-reserved-bg":"#FFF7ED","on-surface":"#0b1c30","on-secondary-fixed":"#00164e","status-unavailable-bg":"#FEF2F2","outline":"#6f7975","on-secondary":"#ffffff","tertiary-fixed":"#ffdbd0","whatsapp-green-hover":"#15803D","surface-container-high":"#dce9ff","inverse-primary":"#8dd4be","surface-container-lowest":"#ffffff","status-purchased-border":"#93C5FD","background":"#f8f9ff"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-xl":"2rem","space-xs":"0.25rem","gutter-desktop":"1.5rem","space-lg":"1.5rem","margin":"1rem","space-2xl":"3rem","space-md":"1rem","space-sm":"0.5rem","gutter":"1rem","margin-desktop":"2rem"},"fontFamily":{"label-md":["Plus Jakarta Sans"],"headline-xl":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-xl":["Plus Jakarta Sans"],"caption":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-xl-mobile":["Plus Jakarta Sans"]},"fontSize":{"label-md":["15px",{"lineHeight":"20px","fontWeight":"600"}],"headline-xl":["32px",{"lineHeight":"40px","fontWeight":"700"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-lg":["16px",{"lineHeight":"22px","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"700"}],"label-sm":["14px",{"lineHeight":"18px","fontWeight":"600"}],"headline-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"body-xl":["18px",{"lineHeight":"28px","fontWeight":"500"}],"caption":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-lg":["17px",{"lineHeight":"26px","fontWeight":"400"}],"headline-xl-mobile":["26px",{"lineHeight":"34px","fontWeight":"700"}]}}}};</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style></head><body class="bg-surface text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><button aria-label="Cambiar grupo familiar" class="h-12 px-space-sm rounded-xl flex items-center gap-space-xs text-on-surface hover:bg-surface-container active:bg-surface-variant transition-colors group"><span class="material-symbols-outlined text-primary text-[22px]">diversity_3</span><span class="font-headline-md text-headline-md font-bold tracking-tight text-on-surface truncate max-w-[170px]" id="headerGroupTitle">Familia García</span><span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary text-[20px] transition-transform group-hover:translate-y-0.5">arrow_drop_down</span></button><div class="flex items-center gap-space-xs"><button aria-label="Actualizar contenido" class="w-12 h-12 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container active:bg-surface-variant transition-colors" onclick="showToast('Grupo actualizado')"><span class="material-symbols-outlined text-[22px]">refresh</span></button><button aria-label="Perfil de usuario" class="w-12 h-12 flex items-center justify-center"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></button></div></div></header><main class="flex flex-col relative w-full px-margin pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full pb-10 space-y-5">
+<!-- Toast Notification -->
+<div class="fixed top-20 left-4 right-4 z-50 transform -translate-y-12 opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-on-surface text-surface shadow-xl" id="toastNotification">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-sm text-label-sm" id="toastMessage">Operación realizada con éxito</span>
+</div>
+<button class="p-1 rounded-lg text-surface/80 hover:text-surface" onclick="dismissToast()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Grupo Overview & Header Card -->
+<section class="rounded-2xl p-5 bg-surface-container-low shadow-sm flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[28px]" style="font-variation-settings: 'FILL' 1;">family_restroom</span>
+<h1 class="font-headline-xl-mobile text-headline-xl-mobile text-on-surface tracking-tight" id="displayGroupName">Grupo: Familia García</h1>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+          Espacio compartido de compras familiares · Creado por Ana
+        </p>
+</div>
+<button aria-label="Cambiar nombre del grupo" class="min-h-[48px] min-w-[48px] px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high active:bg-surface-variant text-primary flex items-center justify-center gap-1.5 transition-colors" onclick="openModal('editGroupNameModal')">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+<span class="font-label-sm text-label-sm font-semibold">Editar</span>
+</button>
+</div>
+</section>
+<!-- SECCIÓN 1: INVITACIONES Y ACCESOS RÁPIDOS -->
+<section class="rounded-2xl p-5 bg-surface-card shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed-dim/30 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">person_add</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-text-primary">Invitar al grupo</h2>
+</div>
+</div>
+<!-- Botones de Invitación: "Invitar a un miembro" y "Invitar a un comprador" -->
+<div class="grid grid-cols-1 gap-2.5">
+<button class="min-h-[52px] w-full px-5 py-3 rounded-xl bg-surface-subtle hover:bg-surface-container active:bg-surface-variant text-text-primary flex items-center justify-between transition-colors border border-border-subtle/40" onclick="triggerInviteModal('miembro')">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">group_add</span>
+</div>
+<div class="flex flex-col text-left">
+<span class="font-label-md text-label-md text-text-primary">Invitar a un miembro</span>
+<span class="font-caption text-caption text-text-muted">Para integrantes que piden y gestionan listas</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[22px]">chevron_right</span>
+</button>
+<button class="min-h-[52px] w-full px-5 py-3.5 rounded-xl bg-primary-container hover:bg-primary text-on-primary flex items-center justify-between shadow-sm active:scale-[0.99] transition-all" onclick="triggerInviteModal('comprador')">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-whatsapp-green flex items-center justify-center text-on-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</div>
+<div class="flex flex-col text-left">
+<span class="font-label-md text-label-md text-on-primary">Invitar a un comprador</span>
+<span class="font-caption text-caption text-on-primary-container">Para quien compra y envía pedidos</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-primary text-[22px]">arrow_forward</span>
+</button>
+</div>
+<!-- Invitaciones pendientes (BR-08) -->
+<div class="flex flex-col gap-2 pt-1 border-t border-border-subtle/30">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider font-semibold">Invitaciones activas (1)</span>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-surface-subtle gap-3" id="pendingInviteRow">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-highest flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">send_time_extension</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-label-md text-label-md text-text-primary font-bold">Carlos M.</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-status-reserved-bg text-status-reserved-text font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">schedule</span> Expira en 5 días
+</span>
+</div>
+<span class="font-caption text-caption text-text-muted">Invitado como Comprador</span>
+</div>
+</div>
+<button class="min-h-[48px] px-4 py-2 rounded-xl bg-status-unavailable-bg hover:bg-error-container text-status-unavailable-text font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1 self-end sm:self-center transition-colors" onclick="cancelInvite('pendingInviteRow')">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+<span>Cancelar invitación</span>
+</button>
+</div>
+</div>
+</section>
+<!-- SECCIÓN 2: INTEGRANTES DEL GRUPO (FR-07, BR-12) -->
+<section class="rounded-2xl p-5 bg-surface-card shadow-sm flex flex-col gap-5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">diversity_1</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-text-primary">Integrantes del grupo</h2>
+</div>
+<span class="font-label-sm text-label-sm text-text-muted font-medium">4 personas en total</span>
+</div>
+<!-- Subsección: Miembros -->
+<div class="flex flex-col gap-2.5">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-primary">assignment_ind</span>
+<span class="font-label-md text-label-md text-text-primary font-bold">Miembros de la familia (2)</span>
+</div>
+</div>
+<!-- Miembro 1: Ana García (Propietaria con badge limpio y visible) -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-sm border border-border-subtle/30">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-on-primary font-headline-md text-headline-md font-bold shrink-0">
+A
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-text-primary font-bold">Ana García</span>
+<span class="font-caption text-caption text-text-muted">ana.garcia@email.com</span>
+</div>
+</div>
+<!-- Badge Propietaria con espacio y formato completo -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-label-sm font-semibold tracking-normal shrink-0 shadow-xs">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span>Propietaria</span>
+</div>
+</div>
+<!-- Miembro 2: Rosa Martínez (con menú tres puntos visible para dueña) -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-sm border border-border-subtle/30 relative">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-headline-md text-headline-md font-bold shrink-0">
+R
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-text-primary font-bold">Rosa Martínez</span>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-subtle text-text-muted font-label-sm text-label-sm">Miembro</span>
+</div>
+<span class="font-caption text-caption text-text-muted">rosa.martinez@email.com</span>
+</div>
+</div>
+<div class="relative">
+<button aria-label="Opciones de Rosa Martínez" class="min-h-[48px] min-w-[48px] flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-subtle rounded-xl transition-colors" onclick="toggleMenu('memberMenuRosa')">
+<span class="material-symbols-outlined text-[22px]">more_vert</span>
+</button>
+<!-- Dropdown Menú Miembro -->
+<div class="hidden absolute right-0 top-12 z-20 w-48 rounded-xl bg-surface-card p-1.5 shadow-xl border border-border-subtle flex flex-col" id="memberMenuRosa">
+<button class="w-full min-h-[44px] px-3 rounded-lg text-left text-text-primary hover:bg-surface-container text-label-sm font-medium flex items-center gap-2" onclick="makeOwner('Rosa Martínez')">
+<span class="material-symbols-outlined text-[18px] text-primary">stars</span>
+<span>Hacer propietario</span>
+</button>
+<button class="w-full min-h-[44px] px-3 rounded-lg text-left text-status-unavailable-text hover:bg-status-unavailable-bg text-label-sm font-medium flex items-center gap-2" onclick="removeMember('Rosa Martínez')">
+<span class="material-symbols-outlined text-[18px]">person_remove</span>
+<span>Quitar</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Subsección: Compradores Invitados (Sin ubicaciones ni notas de horario) -->
+<div class="flex flex-col gap-2.5 pt-2">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-whatsapp-green" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+<span class="font-label-md text-label-md text-text-primary font-bold">Compradores invitados (2)</span>
+</div>
+</div>
+<!-- Comprador 1: Juan P. (Cualquier miembro puede quitar, BR-10) -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-sm border border-border-subtle/30 gap-3" id="buyerRowJuan">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-headline-md text-headline-md font-bold shrink-0">
+J
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-text-primary font-bold">Juan P.</span>
+<div class="flex items-center gap-1.5 text-text-muted font-caption text-caption mt-0.5">
+<span class="material-symbols-outlined text-[15px] text-whatsapp-green">phone</span>
+<span>+1 786-554-0192</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<button class="min-h-[48px] px-3.5 py-2 rounded-xl text-status-unavailable-text hover:bg-status-unavailable-bg font-label-sm text-label-sm font-semibold flex items-center gap-1 transition-colors" onclick="removeBuyer('Juan P.', 'buyerRowJuan')">
+<span class="material-symbols-outlined text-[18px]">person_remove</span>
+<span>Quitar</span>
+</button>
+</div>
+</div>
+<!-- Comprador 2: Luis G. -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-sm border border-border-subtle/30 gap-3" id="buyerRowLuis">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant font-headline-md text-headline-md font-bold shrink-0">
+L
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-text-primary font-bold">Luis G.</span>
+<div class="flex items-center gap-1.5 text-text-muted font-caption text-caption mt-0.5">
+<span class="material-symbols-outlined text-[15px] text-whatsapp-green">phone</span>
+<span>+1 305-891-4420</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<button class="min-h-[48px] px-3.5 py-2 rounded-xl text-status-unavailable-text hover:bg-status-unavailable-bg font-label-sm text-label-sm font-semibold flex items-center gap-1 transition-colors" onclick="removeBuyer('Luis G.', 'buyerRowLuis')">
+<span class="material-symbols-outlined text-[18px]">person_remove</span>
+<span>Quitar</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- SECCIÓN 3: DIRECCIONES DE ENTREGA EN DESTINO (FR-27, BR-27) -->
+<section class="rounded-2xl p-5 bg-surface-card shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between flex-wrap gap-2">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">home_pin</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-text-primary">Direcciones de entrega</h2>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<!-- Botón simulador de Estado Vacío para revisión -->
+<button class="min-h-[40px] px-2.5 py-1 rounded-lg text-text-muted hover:bg-surface-subtle font-caption text-caption border border-border-subtle transition-colors" onclick="toggleEmptyState()" title="Alternar visualización de estado vacío">
+<span id="emptyStateToggleText">Simular vacío</span>
+</button>
+<button class="min-h-[48px] px-4 py-2 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm" onclick="openModal('addAddressModal')">
+<span class="material-symbols-outlined text-[18px]">add_location_alt</span>
+<span>+ Agregar dirección</span>
+</button>
+</div>
+</div>
+<!-- CONTENEDOR DE TARJETAS DE DIRECCIONES -->
+<div class="flex flex-col gap-3.5" id="addressesList">
+<!-- TARJETA DIRECCIÓN 1: PREDETERMINADA -->
+<div class="relative p-4 rounded-xl bg-surface-container-low shadow-sm flex flex-col gap-3 border border-primary/20" id="cardAddr1">
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-md text-headline-md text-text-primary font-bold">Casa de la abuela</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-status-shipped-bg text-status-shipped-text font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+Predeterminada
+</span>
+</div>
+<p class="font-label-md text-label-md text-primary mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">person</span>
+Destinataria: María Pérez
+</p>
+</div>
+<!-- Menú 3 puntos -->
+<div class="relative">
+<button aria-label="Más opciones para Casa de la abuela" class="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-container transition-colors" onclick="toggleMenu('menuAddr1')">
+<span class="material-symbols-outlined text-[22px]">more_vert</span>
+</button>
+<div class="hidden absolute right-0 top-12 z-20 w-56 rounded-xl bg-surface-card p-1.5 shadow-xl border border-border-subtle flex flex-col" id="menuAddr1">
+<button class="w-full min-h-[44px] px-3 rounded-lg text-left text-text-primary hover:bg-surface-container text-label-sm font-medium flex items-center gap-2" onclick="editAddress('Casa de la abuela', 'María Pérez', '+53 5 123 4567', 'Calle Central #456 entre 1ra y 3ra, Apto 4, Sector Residencial', 'Cuba', true)">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+<span>Editar</span>
+</button>
+<!-- BR-27: No se puede eliminar la predeterminada -->
+<div class="w-full px-3 py-2 text-text-muted/70 text-caption font-medium flex items-center gap-2 cursor-not-allowed border-t border-border-subtle/30" title="Primero elige otra dirección predeterminada">
+<span class="material-symbols-outlined text-[18px]">block</span>
+<span class="leading-tight">No se puede eliminar (Predeterminada)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-card flex flex-col gap-1.5 border border-border-subtle/30">
+<div class="flex items-center gap-2 font-caption text-caption text-text-muted">
+<span class="material-symbols-outlined text-[16px] text-whatsapp-green">phone_iphone</span>
+<span class="font-semibold text-text-primary">+53 5 123 4567</span>
+</div>
+<div class="flex items-start gap-2 text-text-primary font-body-md text-body-md mt-0.5">
+<span class="material-symbols-outlined text-[18px] text-primary shrink-0 mt-0.5">location_on</span>
+<span class="select-all leading-snug">Calle Central #456 entre 1ra y 3ra, Apto 4, Sector Residencial</span>
+</div>
+<div class="flex items-center gap-1 font-caption text-caption text-text-muted pl-6">
+<span class="material-symbols-outlined text-[14px]">public</span>
+<span>Cuba</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-2 pt-0.5">
+<button class="min-h-[48px] px-4 py-2 rounded-xl bg-surface-card hover:bg-surface-subtle text-text-primary font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-colors border border-border-subtle/40" onclick="editAddress('Casa de la abuela', 'María Pérez', '+53 5 123 4567', 'Calle Central #456 entre 1ra y 3ra, Apto 4, Sector Residencial', 'Cuba', true)">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+<span>Editar</span>
+</button>
+</div>
+</div>
+<!-- TARJETA DIRECCIÓN 2: SECUNDARIA -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-3 border border-border-subtle/40" id="cardAddr2">
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-text-primary font-bold">Casa de Mamá (Reparto Playa)</span>
+<p class="font-label-md text-label-md text-secondary mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">person</span>
+Destinataria: Rosa Martínez
+</p>
+</div>
+<!-- Menú 3 puntos -->
+<div class="relative">
+<button aria-label="Más opciones para Casa de Mamá" class="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-container transition-colors" onclick="toggleMenu('menuAddr2')">
+<span class="material-symbols-outlined text-[22px]">more_vert</span>
+</button>
+<div class="hidden absolute right-0 top-12 z-20 w-52 rounded-xl bg-surface-card p-1.5 shadow-xl border border-border-subtle flex flex-col" id="menuAddr2">
+<button class="w-full min-h-[44px] px-3 rounded-lg text-left text-text-primary hover:bg-surface-container text-label-sm font-medium flex items-center gap-2" onclick="editAddress('Casa de Mamá (Reparto Playa)', 'Rosa Martínez', '+53 5 987 6543', 'Avenida 42 #1902 entre 19 y 21, Reparto Norte', 'Cuba', false)">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+<span>Editar</span>
+</button>
+<button class="w-full min-h-[44px] px-3 rounded-lg text-left text-primary hover:bg-surface-container text-label-sm font-medium flex items-center gap-2" onclick="setDefaultAddress('Casa de Mamá (Reparto Playa)')">
+<span class="material-symbols-outlined text-[18px]">star</span>
+<span>Hacer predeterminada</span>
+</button>
+<button class="w-full min-h-[44px] px-3 rounded-lg text-left text-status-unavailable-text hover:bg-status-unavailable-bg text-label-sm font-medium flex items-center gap-2 border-t border-border-subtle/30" onclick="deleteAddress('Casa de Mamá (Reparto Playa)', 'cardAddr2')">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+<span>Eliminar</span>
+</button>
+</div>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-subtle flex flex-col gap-1.5 border border-border-subtle/20">
+<div class="flex items-center gap-2 font-caption text-caption text-text-muted">
+<span class="material-symbols-outlined text-[16px] text-whatsapp-green">phone_iphone</span>
+<span class="font-semibold text-text-primary">+53 5 987 6543</span>
+</div>
+<div class="flex items-start gap-2 text-text-primary font-body-md text-body-md mt-0.5">
+<span class="material-symbols-outlined text-[18px] text-text-muted shrink-0 mt-0.5">location_on</span>
+<span class="select-all leading-snug">Avenida 42 #1902 entre 19 y 21, Reparto Norte</span>
+</div>
+<div class="flex items-center gap-1 font-caption text-caption text-text-muted pl-6">
+<span class="material-symbols-outlined text-[14px]">public</span>
+<span>Cuba</span>
+</div>
+</div>
+<div class="flex items-center justify-between gap-2 pt-0.5 flex-wrap">
+<button class="min-h-[48px] px-3.5 py-2 rounded-xl text-primary hover:bg-surface-container font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-colors" onclick="setDefaultAddress('Casa de Mamá (Reparto Playa)')">
+<span class="material-symbols-outlined text-[18px]">star</span>
+<span>Hacer predeterminada</span>
+</button>
+<div class="flex items-center gap-1">
+<button class="min-h-[48px] px-3.5 py-2 rounded-xl bg-surface-card hover:bg-surface-subtle text-text-primary font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-colors border border-border-subtle/40" onclick="editAddress('Casa de Mamá (Reparto Playa)', 'Rosa Martínez', '+53 5 987 6543', 'Avenida 42 #1902 entre 19 y 21, Reparto Norte', 'Cuba', false)">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+<span>Editar</span>
+</button>
+<button class="min-h-[48px] px-3.5 py-2 rounded-xl text-status-unavailable-text hover:bg-status-unavailable-bg font-label-sm text-label-sm font-semibold flex items-center gap-1 transition-colors" onclick="deleteAddress('Casa de Mamá (Reparto Playa)', 'cardAddr2')">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+<span>Eliminar</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- EMPTY STATE (Simulable y dinámico) -->
+<div class="hidden flex-col items-center justify-center p-8 rounded-2xl bg-surface-subtle border-2 border-dashed border-border-subtle text-center gap-3 my-2" id="addressesEmptyState">
+<div class="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]">home_pin</span>
+</div>
+<div class="flex flex-col gap-1 max-w-xs">
+<h3 class="font-headline-md text-headline-md font-bold text-text-primary">Agrega a dónde enviar las cosas</h3>
+<p class="font-caption text-caption text-text-muted">No hay direcciones configuradas. Añade una para que los compradores sepan exactamente dónde entregar cada envío.</p>
+</div>
+<button class="min-h-[48px] px-5 py-2.5 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold flex items-center gap-2 transition-colors mt-2 shadow-sm" onclick="openModal('addAddressModal')">
+<span class="material-symbols-outlined text-[20px]">add_location_alt</span>
+<span>+ Agregar dirección</span>
+</button>
+</div>
+</section>
+<!-- SECCIÓN 4: GESTIÓN DE SEGURIDAD Y AJUSTES DEL GRUPO (Solo Transferir Propiedad) -->
+<section class="rounded-2xl p-4 bg-surface-subtle flex flex-col gap-2">
+<div class="px-2 py-1">
+<span class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider font-semibold">Ajustes avanzados del grupo</span>
+</div>
+<div class="flex flex-col">
+<button class="min-h-[50px] w-full px-4 py-3 rounded-xl bg-surface-card hover:bg-surface-container active:bg-surface-variant text-text-primary flex items-center justify-between transition-colors shadow-xs" onclick="openModal('transferOwnerModal')">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</div>
+<span class="font-label-md text-label-md text-text-primary font-semibold">Transferir propiedad del grupo</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[18px]">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- MODAL: INVITACIÓN GENERADA CON ENLACE Y WHATSAPP (BR-08) -->
+<div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4" id="inviteGeneratedModal">
+<div class="w-full max-w-md rounded-t-3xl sm:rounded-2xl bg-surface-card p-6 shadow-2xl flex flex-col gap-4">
+<div class="w-12 h-1.5 rounded-full bg-border-strong mx-auto sm:hidden mb-1"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-9 h-9 rounded-full bg-primary-fixed-dim/30 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">link</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-text-primary font-bold">Invitar al grupo</h3>
+</div>
+<button class="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-text-primary" onclick="closeModal('inviteGeneratedModal')">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex flex-col gap-3">
+<div class="p-3.5 rounded-xl bg-surface-subtle border border-border-subtle flex flex-col gap-1.5">
+<span class="font-label-sm text-label-sm font-semibold text-text-primary" id="inviteRoleTitle">Enlace generado listo para compartir</span>
+<p class="font-caption text-caption text-text-muted break-all" id="inviteLinkUrl">https://comproparati.app/inv/garcia-9f41a</p>
+</div>
+<!-- Dos acciones principales solicitadas -->
+<div class="flex flex-col gap-2.5 pt-1">
+<button class="min-h-[50px] w-full px-5 py-3 rounded-xl bg-whatsapp-green hover:bg-whatsapp-green-hover text-on-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-2 shadow-sm transition-all" onclick="shareInviteViaWhatsApp()">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+<span>Compartir por WhatsApp</span>
+</button>
+<button class="min-h-[50px] w-full px-5 py-3 rounded-xl bg-surface-subtle hover:bg-surface-container active:bg-surface-variant text-text-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-2 transition-colors border border-border-subtle" onclick="copyInviteLink()">
+<span class="material-symbols-outlined text-[20px] text-primary">content_copy</span>
+<span>Copiar enlace</span>
+</button>
+</div>
+<!-- Nota informativa: expira en 7 días (BR-08) -->
+<div class="flex items-start gap-2.5 p-3 rounded-xl bg-status-reserved-bg text-status-reserved-text mt-1">
+<span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">schedule</span>
+<p class="font-caption text-caption leading-relaxed">
+Este enlace es de un solo uso y <strong>expira en 7 días</strong>. Se activará en cuanto la persona invitada lo acepte.
+</p>
+</div>
+</div>
+<div class="flex justify-end pt-1">
+<button class="min-h-[48px] px-5 rounded-xl text-text-muted font-label-md text-label-md" onclick="closeModal('inviteGeneratedModal')">Cerrar</button>
+</div>
+</div>
+</div>
+<!-- MODAL: CAMBIAR NOMBRE DEL GRUPO -->
+<div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4" id="editGroupNameModal">
+<div class="w-full max-w-sm rounded-2xl bg-surface-card p-5 shadow-2xl flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-text-primary font-bold">Nombre del grupo</h3>
+<button class="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-text-primary" onclick="closeModal('editGroupNameModal')">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-text-primary font-semibold" for="groupNameInput">Nombre visible</label>
+<input class="min-h-[50px] px-4 rounded-xl bg-surface-subtle text-text-primary font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary border border-border-subtle" id="groupNameInput" type="text" value="Familia García"/>
+<span class="font-caption text-caption text-text-muted">Visible para todos los integrantes e invitados.</span>
+</div>
+<div class="flex gap-2 justify-end pt-2">
+<button class="min-h-[48px] px-4 rounded-xl text-text-muted font-label-md text-label-md" onclick="closeModal('editGroupNameModal')">Cancelar</button>
+<button class="min-h-[48px] px-5 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold" onclick="saveGroupName()">Guardar</button>
+</div>
+</div>
+</div>
+<!-- MODAL / SHEET: AGREGAR O EDITAR DIRECCIÓN DE ENTREGA -->
+<div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4" id="addAddressModal">
+<div class="w-full max-w-md rounded-t-3xl sm:rounded-2xl bg-surface-card p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+<div class="w-12 h-1.5 rounded-full bg-border-strong mx-auto sm:hidden mb-1"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[24px]">add_location</span>
+<h3 class="font-headline-md text-headline-md text-text-primary font-bold" id="addressModalTitle">Agregar dirección</h3>
+</div>
+<button class="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-text-primary" onclick="closeModal('addAddressModal')">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<form class="flex flex-col gap-3.5" id="addressForm" onsubmit="event.preventDefault(); saveAddressForm();">
+<div>
+<label class="font-label-md text-label-md text-text-primary font-semibold block mb-1">Nombre del lugar</label>
+<input class="w-full min-h-[50px] px-4 rounded-xl bg-surface-subtle text-text-primary font-body-md text-body-md focus:ring-2 focus:ring-primary focus:outline-none border border-border-subtle" id="addrFormPlace" placeholder="Ej. Casa de la abuela" required="" type="text"/>
+</div>
+<div>
+<label class="font-label-md text-label-md text-text-primary font-semibold block mb-1">Nombre de quien recibe</label>
+<input class="w-full min-h-[50px] px-4 rounded-xl bg-surface-subtle text-text-primary font-body-md text-body-md focus:ring-2 focus:ring-primary focus:outline-none border border-border-subtle" id="addrFormReceiver" placeholder="Ej. María Pérez" required="" type="text"/>
+</div>
+<div>
+<label class="font-label-md text-label-md text-text-primary font-semibold block mb-1">Teléfono</label>
+<input class="w-full min-h-[50px] px-4 rounded-xl bg-surface-subtle text-text-primary font-body-md text-body-md focus:ring-2 focus:ring-primary focus:outline-none border border-border-subtle" id="addrFormPhone" placeholder="+53 5 123 4567" required="" type="tel"/>
+</div>
+<div>
+<label class="font-label-md text-label-md text-text-primary font-semibold block mb-1">Dirección</label>
+<textarea class="w-full p-3.5 rounded-xl bg-surface-subtle text-text-primary font-body-md text-body-md focus:ring-2 focus:ring-primary focus:outline-none border border-border-subtle" id="addrFormText" placeholder="Calle Central #456 entre 1ra y 3ra, Apto 4, Sector Residencial" required="" rows="3"></textarea>
+</div>
+<div>
+<label class="font-label-md text-label-md text-text-primary font-semibold block mb-1">País</label>
+<div class="relative">
+<select class="w-full min-h-[50px] px-4 rounded-xl bg-surface-subtle text-text-primary font-body-md text-body-md focus:ring-2 focus:ring-primary focus:outline-none border border-border-subtle appearance-none pr-10" id="addrFormCountry">
+<option selected="" value="Cuba">Cuba</option>
+<option value="República Dominicana">República Dominicana</option>
+<option value="México">México</option>
+<option value="Colombia">Colombia</option>
+<option value="Venezuela">Venezuela</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-3.5 text-text-muted pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<label class="flex items-center gap-3 p-3.5 rounded-xl bg-surface-subtle border border-border-subtle cursor-pointer select-none">
+<input class="w-5 h-5 rounded text-primary focus:ring-primary border-border-strong cursor-pointer" id="addrFormDefault" type="checkbox"/>
+<span class="font-label-md text-label-md text-text-primary">Establecer como dirección predeterminada</span>
+</label>
+<div class="flex gap-2 justify-end pt-3">
+<button class="min-h-[50px] px-5 rounded-xl text-text-muted font-label-md text-label-md font-semibold" onclick="closeModal('addAddressModal')" type="button">Cancelar</button>
+<button class="min-h-[50px] px-6 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold shadow-sm" type="submit">Guardar dirección</button>
+</div>
+</form>
+</div>
+</div>
+<!-- MODAL: TRANSFERIR PROPIEDAD -->
+<div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4" id="transferOwnerModal">
+<div class="w-full max-w-sm rounded-2xl bg-surface-card p-5 shadow-2xl flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-text-primary font-bold">Transferir propiedad</h3>
+<button class="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-text-primary" onclick="closeModal('transferOwnerModal')">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<p class="font-caption text-caption text-text-muted">
+Selecciona a qué miembro de la familia deseas transferir la propiedad del grupo.
+</p>
+<div class="flex flex-col gap-2">
+<button class="min-h-[48px] p-3 rounded-xl bg-surface-subtle hover:bg-surface-container flex items-center justify-between transition-colors border border-border-subtle" onclick="confirmTransferTo('Rosa Martínez')">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container font-bold flex items-center justify-center text-caption">R</div>
+<span class="font-label-md text-label-md text-text-primary">Rosa Martínez</span>
+</div>
+<span class="material-symbols-outlined text-primary text-[20px]">check</span>
+</button>
+</div>
+<div class="flex justify-end pt-2">
+<button class="min-h-[48px] px-4 rounded-xl text-text-muted font-label-md text-label-md" onclick="closeModal('transferOwnerModal')">Cancelar</button>
+</div>
+</div>
+</div>
+<!-- SCRIPTS DE INTERACCIÓN -->
+<script>
+  let currentInviteRole = 'comprador';
+
+  function showToast(message) {
+    const toast = document.getElementById('toastNotification');
+    const msg = document.getElementById('toastMessage');
+    if (!toast || !msg) return;
+    msg.textContent = message;
+    toast.classList.remove('opacity-0', '-translate-y-12', 'pointer-events-none');
+    toast.classList.add('opacity-100', 'translate-y-0');
+    clearTimeout(window._toastTimeout);
+    window._toastTimeout = setTimeout(dismissToast, 4000);
+  }
+
+  function dismissToast() {
+    const toast = document.getElementById('toastNotification');
+    if (toast) {
+      toast.classList.add('opacity-0', '-translate-y-12', 'pointer-events-none');
+      toast.classList.remove('opacity-100', 'translate-y-0');
+    }
+  }
+
+  function openModal(id) {
+    const m = document.getElementById(id);
+    if (m) m.classList.remove('hidden');
+  }
+
+  function closeModal(id) {
+    const m = document.getElementById(id);
+    if (m) m.classList.add('hidden');
+  }
+
+  function toggleMenu(id) {
+    const menu = document.getElementById(id);
+    if (menu) {
+      const isHidden = menu.classList.contains('hidden');
+      document.querySelectorAll('[id^="memberMenu"], [id^="menuAddr"]').forEach(el => el.classList.add('hidden'));
+      if (isHidden) {
+        menu.classList.remove('hidden');
+      }
+    }
+  }
+
+  // Cerrar menús flotantes al hacer clic afuera
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('[id^="memberMenu"], [id^="menuAddr"], button[aria-label]')) {
+      document.querySelectorAll('[id^="memberMenu"], [id^="menuAddr"]').forEach(el => el.classList.add('hidden'));
+    }
+  });
+
+  // Disparar Modal de Invitación
+  function triggerInviteModal(role) {
+    currentInviteRole = role;
+    const title = document.getElementById('inviteRoleTitle');
+    const link = document.getElementById('inviteLinkUrl');
+    if (role === 'comprador') {
+      title.textContent = 'Enlace generado listo para compartir (Comprador)';
+      link.textContent = 'https://comproparati.app/inv/comprador-7x92k';
+    } else {
+      title.textContent = 'Enlace generado listo para compartir (Miembro)';
+      link.textContent = 'https://comproparati.app/inv/familiar-3m11b';
+    }
+    openModal('inviteGeneratedModal');
+  }
+
+  function shareInviteViaWhatsApp() {
+    const text = currentInviteRole === 'comprador'
+      ? encodeURIComponent('¡Hola! Te invito como comprador a nuestro grupo familiar en ComproParaTi: https://comproparati.app/inv/comprador-7x92k')
+      : encodeURIComponent('¡Hola! Te invito a unirte a nuestro grupo familiar en ComproParaTi: https://comproparati.app/inv/familiar-3m11b');
+    window.open('https://api.whatsapp.com/send?text=' + text, '_blank');
+    closeModal('inviteGeneratedModal');
+    showToast('Compartiendo enlace por WhatsApp...');
+  }
+
+  function copyInviteLink() {
+    const linkText = document.getElementById('inviteLinkUrl').textContent;
+    navigator.clipboard.writeText(linkText).then(() => {
+      showToast('Enlace copiado al portapapeles');
+    }).catch(() => {
+      showToast('Enlace copiado');
+    });
+    closeModal('inviteGeneratedModal');
+  }
+
+  function cancelInvite(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) {
+      row.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+      row.style.opacity = '0';
+      row.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        row.remove();
+        showToast('Invitación cancelada');
+      }, 260);
+    }
+  }
+
+  // Gestión de Miembros
+  function makeOwner(name) {
+    showToast(name + ' ahora es la propietaria del grupo');
+    document.querySelectorAll('[id^="memberMenu"]').forEach(el => el.classList.add('hidden'));
+  }
+
+  function removeMember(name) {
+    if (confirm('¿Quitar a ' + name + ' del grupo familiar?')) {
+      showToast(name + ' ha sido eliminada del grupo');
+      document.querySelectorAll('[id^="memberMenu"]').forEach(el => el.classList.add('hidden'));
+    }
+  }
+
+  function removeBuyer(name, rowId) {
+    if (confirm('¿Quitar a ' + name + ' como comprador del grupo?')) {
+      const row = document.getElementById(rowId);
+      if (row) {
+        row.remove();
+      }
+      showToast(name + ' quitado de compradores');
+    }
+  }
+
+  // Direcciones
+  function setDefaultAddress(name) {
+    showToast('"' + name + '" establecida como predeterminada');
+    document.querySelectorAll('[id^="menuAddr"]').forEach(el => el.classList.add('hidden'));
+  }
+
+  function deleteAddress(name, cardId) {
+    if (confirm('¿Deseas eliminar la dirección "' + name + '"?')) {
+      const card = document.getElementById(cardId);
+      if (card) {
+        card.remove();
+      }
+      showToast('Dirección eliminada');
+      checkAddressesEmptyState();
+    }
+  }
+
+  function editAddress(place, receiver, phone, address, country, isDefault) {
+    document.getElementById('addressModalTitle').textContent = 'Editar dirección';
+    document.getElementById('addrFormPlace').value = place;
+    document.getElementById('addrFormReceiver').value = receiver;
+    document.getElementById('addrFormPhone').value = phone;
+    document.getElementById('addrFormText').value = address;
+    document.getElementById('addrFormCountry').value = country;
+    document.getElementById('addrFormDefault').checked = isDefault;
+    openModal('addAddressModal');
+  }
+
+  function saveAddressForm() {
+    closeModal('addAddressModal');
+    showToast('Dirección de entrega guardada correctamente');
+    const empty = document.getElementById('addressesEmptyState');
+    const list = document.getElementById('addressesList');
+    if (empty && list) {
+      empty.classList.add('hidden');
+      list.classList.remove('hidden');
+      document.getElementById('emptyStateToggleText').textContent = 'Simular vacío';
+    }
+  }
+
+  function toggleEmptyState() {
+    const empty = document.getElementById('addressesEmptyState');
+    const list = document.getElementById('addressesList');
+    const btnText = document.getElementById('emptyStateToggleText');
+    if (!empty || !list) return;
+    if (empty.classList.contains('hidden')) {
+      empty.classList.remove('hidden');
+      list.classList.add('hidden');
+      btnText.textContent = 'Ver direcciones';
+    } else {
+      empty.classList.add('hidden');
+      list.classList.remove('hidden');
+      btnText.textContent = 'Simular vacío';
+    }
+  }
+
+  function checkAddressesEmptyState() {
+    const list = document.getElementById('addressesList');
+    const empty = document.getElementById('addressesEmptyState');
+    if (list && empty && list.children.length === 0) {
+      list.classList.add('hidden');
+      empty.classList.remove('hidden');
+    }
+  }
+
+  function saveGroupName() {
+    const val = document.getElementById('groupNameInput').value.trim();
+    if (val) {
+      document.getElementById('displayGroupName').textContent = 'Grupo: ' + val;
+      document.getElementById('headerGroupTitle').textContent = val;
+      showToast('Nombre actualizado: ' + val);
+    }
+    closeModal('editGroupNameModal');
+  }
+
+  function confirmTransferTo(name) {
+    closeModal('transferOwnerModal');
+    showToast('Propiedad del grupo transferida a ' + name);
+  }
+</script>
+</div></main>
+<!-- Bottom Nav Shell Mobile -->
+<nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(15,23,42,0.05)] border-t border-border-subtle/30" data-active-classes="text-primary font-label-md">
+<div class="flex justify-around items-center h-16 px-space-xs">
+<a class="flex flex-col items-center justify-center gap-0.5 min-w-[64px] h-12 px-space-xs rounded-xl text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors" data-path="listas" href="#">
+<span class="material-symbols-outlined text-[24px]">checklist</span>
+<span class="font-label-sm text-label-sm font-semibold">Listas</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-0.5 min-w-[64px] h-12 px-space-xs rounded-xl text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors" data-path="personas" href="#">
+<span class="material-symbols-outlined text-[24px]">group</span>
+<span class="font-label-sm text-label-sm font-semibold">Personas</span>
+</a>
+<!-- Pestaña Activa: Grupo -->
+<a class="flex flex-col items-center justify-center gap-0.5 min-w-[64px] h-12 px-space-xs rounded-xl text-primary active:bg-surface-container transition-colors" data-path="grupo" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">family_restroom</span>
+<span class="font-label-sm text-label-sm font-bold">Grupo</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-0.5 min-w-[64px] h-12 px-space-xs rounded-xl text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors" data-path="mis-compras" href="#">
+<span class="material-symbols-outlined text-[24px]">shopping_bag</span>
+<span class="font-label-sm text-label-sm font-semibold">Mis compras</span>
+</a>
+</div>
+</nav>
+</body></html>

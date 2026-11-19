@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+/* The design tokens from the front matter of DESIGN.md, which is their only
+   source. Names follow the shadcn/ui theme variables. */
+@theme {
+  --font-sans:
+    var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #0d5f4d;
+  --color-primary-hover: #094437;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #eff6ff;
+  --color-secondary-foreground: #1e3a8a;
+  --color-tertiary: #c2410c;
+  --color-tertiary-foreground: #ffffff;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #334155;
+  --color-accent: #ecfdf5;
+  --color-accent-foreground: #065f46;
+  --color-destructive: #991b1b;
+  --color-destructive-surface: #fef2f2;
+  --color-destructive-border: #fca5a5;
+  --color-border: #cbd5e1;
+  --color-input: #64748b;
+  --color-ring: #0d5f4d;
+  --color-whatsapp: #15803d;
+  --color-whatsapp-hover: #166534;
+  --color-whatsapp-foreground: #ffffff;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Spacing from the front matter: utilities such as px-margin,
+     md:px-margin-desktop, gap-gutter, and p-space-md. */
+  --spacing-gutter: 1rem;
+  --spacing-gutter-desktop: 1.5rem;
+  --spacing-margin: 1rem;
+  --spacing-margin-desktop: 2rem;
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2rem;
+  --spacing-space-2xl: 3rem;
+
+  /* Each text style carries its size, line height, and weight; a font-*
+     class next to it still wins. */
+  --text-headline-xl: 32px;
+  --text-headline-xl--line-height: 40px;
+  --text-headline-xl--font-weight: 700;
+  --text-headline-xl-mobile: 26px;
+  --text-headline-xl-mobile--line-height: 34px;
+  --text-headline-xl-mobile--font-weight: 700;
+  --text-headline-lg: 24px;
+  --text-headline-lg--line-height: 32px;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-md: 20px;
+  --text-headline-md--line-height: 28px;
+  --text-headline-md--font-weight: 600;
+  --text-body-xl: 18px;
+  --text-body-xl--line-height: 28px;
+  --text-body-xl--font-weight: 500;
+  --text-body-lg: 17px;
+  --text-body-lg--line-height: 26px;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-body-md--font-weight: 400;
+  --text-label-lg: 16px;
+  --text-label-lg--line-height: 22px;
+  --text-label-lg--font-weight: 600;
+
+  --shadow-card: 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-floating:
+    0 4px 12px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.06);
+  /* Level 3: sheets and dialogs (DESIGN.md, Elevation Levels). */
+  --shadow-dialog: 0 12px 32px rgba(15, 23, 42, 0.16);
+
+  /* DESIGN.md, Status Color Pairing Rules. */
+  --color-status-pending-bg: #f8fafc;
+  --color-status-pending-text: #334155;
+  --color-status-pending-border: #94a3b8;
+  --color-status-reserved-bg: #fff7ed;
+  --color-status-reserved-text: #9a3412;
+  --color-status-reserved-border: #fdba74;
+  --color-status-purchased-bg: #eff6ff;
+  --color-status-purchased-text: #1e40af;
+  --color-status-purchased-border: #93c5fd;
+  --color-status-shipped-bg: #ecfdf5;
+  --color-status-shipped-text: #065f46;
+  --color-status-shipped-border: #6ee7b7;
+  --color-status-unavailable-bg: #fef2f2;
+  --color-status-unavailable-text: #991b1b;
+  --color-status-unavailable-border: #fca5a5;
+
+  /* The bottom sheet's handle (DESIGN.md, Collapsible Groups & Sheets). */
+  --color-sheet-handle: #94a3b8;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-body-lg text-foreground font-sans antialiased;
+  }
+
+  /* The bottom bar's height before it measures itself (tab-nav.tsx): the
+     tallest bar its labels can produce, so + Agregar and the screen's end are
+     never covered. A 1.5px border, 8px padding above and below, a 24px icon,
+     a 4px gap, --tab-label-lines lines of 20px, and the safe area. */
+  [data-app-shell] {
+    --tab-bar-fallback: calc(
+      45.5px + var(--tab-label-lines, 2) * 20px + env(safe-area-inset-bottom)
+    );
+  }
+}

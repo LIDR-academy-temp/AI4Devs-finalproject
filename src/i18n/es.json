@@ -1,0 +1,204 @@
+{
+  "common": {
+    "appName": "ComproParaTi",
+    "language": "Idioma",
+    "languageNames": {
+      "es": "Español",
+      "en": "English"
+    },
+    "continue": "Continuar",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "couldNotSave": "No se pudo guardar. Revisa tu conexión e inténtalo de nuevo",
+    "tryAgain": "Intentar de nuevo",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "notifications": "Notificaciones ({hotkey})",
+    "membershipTypes": {
+      "member": "Miembro",
+      "buyer": "Comprador"
+    }
+  },
+  "shell": {
+    "navigation": "Navegación principal",
+    "skipToContent": "Saltar al contenido",
+    "refresh": "Actualizar",
+    "refreshing": "Actualizando…",
+    "chooseGroup": "Elegir grupo",
+    "profile": "Perfil"
+  },
+  "tabs": {
+    "lists": "Listas",
+    "people": "Personas",
+    "group": "Grupo",
+    "toBuy": "Por comprar",
+    "purchases": "Mis compras"
+  },
+  "states": {
+    "loading": "Cargando…",
+    "goToStart": "Ir al inicio",
+    "notInGroup": "Todavía no perteneces a ningún grupo.",
+    "askForInvitation": "Pide a alguien que te invite."
+  },
+  "placeholder": {
+    "comingSoon": "Esta pantalla llegará pronto."
+  },
+  "welcome": {
+    "title": "ComproParaTi",
+    "tagline": "Listas de compras que comparte tu familia.",
+    "continueWithGoogle": "Continuar con Google",
+    "signingIn": "Entrando…",
+    "signInError": "No pudimos iniciar tu sesión. Inténtalo de nuevo.",
+    "signInUnavailable": "El acceso no está disponible ahora. Inténtalo más tarde."
+  },
+  "devSignIn": {
+    "title": "Acceso de desarrollo",
+    "description": "Solo en este equipo. Escribe el correo de un usuario de prueba, o uno nuevo para registrarte.",
+    "email": "Correo",
+    "submit": "Entrar",
+    "invalidEmail": "Escribe un correo válido.",
+    "failed": "No se pudo entrar. Revisa tu conexión e inténtalo de nuevo"
+  },
+  "onboarding": {
+    "title": "Un último paso",
+    "intro": "Solo te tomará unos segundos.",
+    "acceptsTerms": "Tengo 18 años o más y acepto los términos",
+    "acceptsTermsRequired": "Marca esta casilla para continuar.",
+    "whatsappHelp": "Los miembros y compradores de tus grupos lo usan para escribirte por WhatsApp. Puedes cambiarlo después."
+  },
+  "phoneField": {
+    "label": "Número de WhatsApp",
+    "country": "País",
+    "chooseCountry": "Elige un país",
+    "number": "Número",
+    "required": "Escribe tu número de WhatsApp. Se puede cambiar, pero no eliminar.",
+    "invalid": "Escribe un número válido, con su país."
+  },
+  "profile": {
+    "title": "Perfil",
+    "contact": "Contacto",
+    "whatsappHelp": "Se puede cambiar, pero no eliminar. Solo lo ven los miembros y compradores de tus grupos.",
+    "preferences": "Preferencias",
+    "emails": "Correo diario con los cambios del grupo",
+    "emailsHelp": "Un correo al día con lo que se compró, se envió o no se pudo comprar.",
+    "account": "Cuenta",
+    "signOut": "Cerrar sesión",
+    "signingOut": "Cerrando sesión…",
+    "signOutFailed": "No se pudo cerrar la sesión. Revisa tu conexión e inténtalo de nuevo"
+  },
+  "lists": {
+    "title": "Listas",
+    "noLists": "Todavía no hay listas. Crea una.",
+    "noItems": "Todavía no hay artículos. Escribe arriba lo que quieres.",
+    "listMenu": "Lista",
+    "newList": "Nueva lista",
+    "listName": "Nombre de la lista",
+    "create": "Crear",
+    "quickAdd": "Escribe lo que quieres…",
+    "add": "Agregar",
+    "added": "Agregado: {name}",
+    "addItem": "Agregar artículo",
+    "byPerson": "Persona",
+    "byStatus": "Estado",
+    "all": "Todos",
+    "noPerson": "Sin persona",
+    "noMatches": "Ningún artículo coincide con estos filtros.",
+    "shipped": "Enviados ({count})",
+    "chooseItem": "Elige un artículo para verlo aquí."
+  },
+  "item": {
+    "back": "Volver",
+    "for": "Para: {name}",
+    "quantity": "Cantidad: {count}",
+    "reservedBy": "Reservado por {name}",
+    "reservedByYou": "Reservado por ti",
+    "purchasedBy": "Comprado por {name}",
+    "purchasedByYou": "Comprado por ti",
+    "notes": "Notas del artículo",
+    "openInStore": "Abrir en la tienda",
+    "opensInNewTab": "Se abre en una pestaña nueva",
+    "reserve": "Yo lo compro",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "moreActions": "Más acciones",
+    "deleteTitle": "¿Eliminar \"{name}\"?",
+    "deleteDescription": "Se quita de la lista para todos."
+  },
+  "itemForm": {
+    "addTitle": "Agregar artículo",
+    "editTitle": "Editar artículo",
+    "link": "Pega un enlace (opcional)",
+    "name": "Nombre",
+    "list": "Lista",
+    "quantity": "Cantidad",
+    "notes": "Notas",
+    "notesHelp": "Talla, color, marca, dosis o lo que el comprador deba saber."
+  },
+  "fieldMessages": {
+    "nameRequired": "Escribe un nombre.",
+    "tooLong": "Usa {max} caracteres o menos.",
+    "linkInvalid": "Escribe una dirección web que empiece con https:// o http://.",
+    "quantityInvalid": "Escribe una cantidad del 1 al 99.",
+    "characterCount": "{count} de {max} caracteres",
+    "limitReached": "Límite alcanzado"
+  },
+  "status": {
+    "pending": "Pendiente",
+    "reserved": "Reservado",
+    "purchased": "Comprado",
+    "shipped": "Enviado",
+    "unavailable": "No disponible"
+  },
+  "errors": {
+    "NOT_SIGNED_IN": "Inicia sesión para continuar.",
+    "FORBIDDEN": "No puedes hacer eso en este grupo.",
+    "NOT_AVAILABLE": "Esta página no está disponible.",
+    "ALREADY_RESERVED": "Otra persona ya lo reservó",
+    "ITEM_CHANGED": "Este artículo cambió. Mostrando lo más reciente.",
+    "RULE_VIOLATION": "Esto no se puede hacer ahora.",
+    "INVITATION_INVALID": "Esta invitación ya no es válida. Pide una nueva.",
+    "VALIDATION_FAILED": "Revisa los campos marcados.",
+    "RATE_LIMITED": "Vas un poco rápido. Espera un momento y vuelve a intentarlo.",
+    "INTERNAL_ERROR": "Algo salió mal. Inténtalo de nuevo."
+  },
+  "groups": {
+    "startingGroupName": "Grupo de {firstName}",
+    "startingListName": "Mi lista"
+  },
+  "people": {
+    "formerUser": "Antiguo usuario"
+  },
+  "invitation": {
+    "title": "Invitación",
+    "invitesYou": "{name} te invita",
+    "groupLabel": "Grupo al que te unes",
+    "invitedAs": "Te invitan como",
+    "signInToAccept": "Inicia sesión para aceptar la invitación.",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "noLongerValid": "Esta invitación ya no es válida. Pide una nueva.",
+    "alreadyInGroup": "Ya perteneces a este grupo."
+  },
+  "group": {
+    "managedBy": "Espacio compartido de compras familiares · A cargo de {name}",
+    "inviteMember": "Invitar a un miembro",
+    "inviteBuyer": "Invitar a un comprador",
+    "inviteeName": "¿A quién invitas? (opcional)",
+    "createLink": "Crear enlace",
+    "invitationLink": "Enlace de invitación",
+    "shareOnWhatsApp": "Compartir por WhatsApp",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
+    "expires": "{count, plural, =0 {Expira hoy} one {Expira en 1 día} other {Expira en # días}}",
+    "pendingInvitations": "Invitaciones pendientes ({count})",
+    "invitedAs": "Invitado como {type, select, member {miembro} other {comprador}}",
+    "cancelInvitation": "Cancelar invitación",
+    "invitationCancelled": "Invitación cancelada",
+    "owner": "Propietario",
+    "members": "Miembros",
+    "buyers": "Compradores",
+    "noBuyers": "Invita a quien va a comprar",
+    "invitationMessage": "{hasName, select, yes {Hola {name},} other {Hola,}} {inviter} te invitó a {group} en ComproParaTi como {type, select, member {miembro} other {comprador}}: {link}"
+  }
+}
