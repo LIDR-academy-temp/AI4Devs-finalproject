@@ -8,7 +8,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 | Claude Code | Sonnet 5 y Sonnet 5.5 | Definición de la idea, investigación técnica (documentación de FirmAR/SIU, antecedentes académicos), decisiones de arquitectura y stack, redacción y verificación de la documentación de la Entrega 1 |
 | Claude Code (flujo de diseño) | Sonnet 5 | Mockup interactivo de referencia visual, usado para detectar requisitos (no forma parte del repositorio) |
 | Jira (vía MCP de Atlassian) | — | Carga y seguimiento del backlog en el proyecto `SCRUM` (ver [readme §8](readme.md#8-seguimiento-en-jira) y [docs/jira-backlog.md](docs/jira-backlog.md)) |
-| Cursor (agente) | Claude Opus 5.5 | Análisis de la devolución de la Entrega 1, cierre de contradicciones del readme, contrato `docs/openapi.yaml` y `CLAUDE.md` |
+| Cursor (agente) | Claude (Composer / agente en IDE) | Implementación Entrega 2: OpenSpec apply, Ticket 1b, documentación C4/ADR, Jira, guía `ENTREGA-2.md` |
 | Redocly CLI | — | Lint del contrato OpenAPI generado por la IA |
 | OpenSpec 2.0 | — | Desarrollo guiado por especificaciones: propuesta, specs, diseño y tareas por cambio (Ticket 1a en adelante) |
 
@@ -174,17 +174,25 @@ Con el change `add-admin-signing-panel` la IA creó `frontend/` (Angular 21 + Pr
 
 **Prompt 5 (Entrega 2, scaffold del agente):** dentro del mismo «ok», la IA creó `agent/` con lo mínimo para que la pieza exista y esté conectada a la arquitectura, sin anticipar el Ticket 4. Incluye FastAPI con `create_app(settings)` igual que el backend, escucha fija en `127.0.0.1` y un middleware que rechaza con `403` los orígenes no permitidos (incluido `null`). También tiene `GET /health`, que se agregó al contrato del agente para que el widget pueda detectarlo, y 12 tests escritos antes del código. `GET /certificates`, `POST /sign` y PKCS#11 quedan para el Ticket 4.
 
+**Prompt 6 (Entrega 2, Ticket 1b — firma local end-to-end):**
+> Aplicar el change OpenSpec del Ticket 1b: motor PAdES con proveedor `local`, endpoints `prepare` / `complete`, habilitar «Firma propia» en el widget y `postMessage` `firmadoc:signed` al panel.
+
+Con el change `ticket-1b-local-signing` la IA implementó `LocalPAdESProvider`, desafíos de un solo uso, integración en el widget y listener en el panel. **Ajuste humano tras prueba en navegador:** `prepare` persistía con `flush` pero sin `commit`, así que `complete` veía la solicitud aún en `pending` y respondía **409**; se corrigió con `session.commit()` en los endpoints tras éxito (los tests de integración no lo revelaban porque reutilizan la misma sesión).
+
+**Prompt 7 (Entrega 2, preparación de evaluación):**
+> Registrar backlog en Jira, documentación C4/ADR, guía para evaluadores y cumplimiento de Entrega 2 (Typeform + rama, sin PR obligatorio).
+
 ---
 
 ### 7. Pull Requests
 
-Pendiente: se completará con los Pull Requests de la Entrega 2 y la Entrega final.
+La consigna de Entrega 2 **no exige Pull Request**: la entrega oficial es la rama indicada en el Typeform. Los cambios de código están en `feature/entrega-2-bbmv`. Esta sección se completará si más adelante se usan PRs para Entrega final o revisión interna.
 
 ---
 
 ## 8. Seguimiento en Jira
 
-**Prompt 6 (backlog SCRUM):**
+**Prompt 8 (backlog SCRUM):**
 > Este es mi espacio de trabajo [backlog SCRUM] y necesito registrar todas las HU con tickets allí estén o no terminados de este proyecto.
 
 Con el MCP de Atlassian (proyecto team-managed `SCRUM`) se creó la épica **SCRUM-1**, las doce historias alineadas con el readme §5 (`SCRUM-2`–`SCRUM-13`, incluida HU1b en **SCRUM-4**), los tickets §6 (**SCRUM-14**–**SCRUM-22**) y se inició **SCRUM Sprint 1** con las 22 claves. El autor confirmó con «ok» el refinamiento: subtareas **1a–1d** bajo **SCRUM-14**, story points iguales a las horas del readme y estados según el avance del repo.

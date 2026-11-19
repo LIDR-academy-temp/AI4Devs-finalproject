@@ -30,7 +30,7 @@ Firmadoc es un **servicio de firma digital institucional**: un único componente
 _Pendiente — se completará cuando exista un despliegue (Entrega 3)._
 
 ### 0.5. URL o archivo comprimido del repositorio
-https://github.com/bv3rgara/AI4Devs-finalproject (fork de `LIDR-academy/AI4Devs-finalproject`). Ramas: `feature/entrega-1-bbmv` (documentación), `feature/entrega-2-bbmv` (código funcional) y `final-project-bbmv` (entrega final, que también se integra en `main`).
+https://github.com/bv3rgara/AI4Devs-finalproject (fork de `LIDR-academy/AI4Devs-finalproject`). **Entrega 2 (evaluación):** rama `feature/entrega-2-bbmv` — ver [ENTREGA-2.md](ENTREGA-2.md). Otras ramas: `feature/entrega-1-bbmv` (documentación inicial), `final-project-bbmv` (entrega final).
 
 ### **0.6. Tablero y backlog en Jira**
 - **Sitio:** https://vergara-bruno.atlassian.net
@@ -131,6 +131,8 @@ A continuación se describe el flujo objetivo completo. La firma **parte, en gen
 6. **Panel de administración.** Documentos con su origen (individual o lote), versión y vencimiento; detalle como cadena de custodia con línea de tiempo, versiones descargables y datos técnicos; y gestión de sistemas integradores.
 
 ### **1.4. Instrucciones de instalación:**
+
+**Para evaluadores (Entrega 2):** guía resumida en [ENTREGA-2.md](ENTREGA-2.md) — rama `feature/entrega-2-bbmv`, flujo E2E en unos minutos.
 
 #### Puesta en marcha (estado actual: base de datos, API, widget de firma y panel)
 
