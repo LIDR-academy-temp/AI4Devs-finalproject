@@ -13,15 +13,17 @@ The app runs locally. Set it up with [Installation instructions](#14-installatio
 | `ana@example.com` | Member and group owner | English | Lists, People, and Group |
 | `rosa@example.com` | Member | Spanish | Lists, People, and Group |
 | `juan@example.com` | Buyer | Spanish | To buy and My purchases |
-| `luis@example.com` | Buyer in García Group, owner of Pérez Group | Spanish | All tabs |
+| `luis@example.com` | Buyer in García Group, owner of Pérez Group | Spanish | Lists, People, Group, To buy, and My purchases |
 | `pedro@example.com` | Former buyer with a purchased item | Spanish | My purchases |
 
-In this delivery, To buy and My purchases are still placeholder screens; a buyer acts on items from the item page (step 3 below).
+In this delivery, People, To buy, and My purchases are still placeholder screens; a buyer acts on items from the item page (step 3 below).
+
+The steps below quote the English labels. Users with Spanish see, for example, "Acceso de desarrollo", "Aceptar", and "Yo lo compro"; each user can switch the language in Profile, and a signed-out visitor can switch it on Welcome and on the invitation page.
 
 **Suggested flow:**
 
-1. **A member creates a list and adds products.** Sign in as `ana@example.com`. In Lists, tap **New list** and name it. Type a product in "Type what you want…" to add it by name, or tap **Add item** to add a link, quantity, recipient, and notes. Open an item to see its status, and edit or delete it from the **⋯** menu. The seeded lists, "Anthony's birthday" and "Medicine", already have items in every status.
-2. **A member invites a new member or buyer.** In Group, tap **Invite a member** or **Invite a buyer**, optionally type the person's name, tap **Create link**, then **Copy link**. Open the link in a private window, sign in with **Development sign-in** using a new email (for example `newbuyer@example.com`), complete One last step, and tap **Accept**. The new person now appears in Group, and the invitation leaves the pending list. A seeded pending invitation for Carlos, as a buyer, is also ready at `http://localhost:3000/invitations/seed-pending-000000000000000000000000000000`.
+1. **A member creates a list and adds products.** Sign in as `ana@example.com`. In Lists, tap **New list** and name it. Type a product in "Type what you want…" to add it by name, or tap **Add item** to add a link, quantity, recipient, and notes. Open an item to see its status, and edit or delete it from the **⋯** (More actions) menu. The seeded lists, "Anthony's birthday" and "Medicine", already have items in every status.
+2. **A member invites a new member or buyer.** In Group, tap **Invite a member** or **Invite a buyer**, optionally type the person's name, tap **Create link**, then **Copy link**. Open the link in a private window, sign in with **Development sign-in** using a new email (for example `newbuyer@example.com`), complete One last step, and tap **Accept**. The new person now appears in Group, and the invitation leaves the pending list. A seeded pending invitation for Carlos, as a buyer, is also ready at `http://localhost:3000/invitations/seed-pending-000000000000000000000000000000`; it can be accepted only once, and running the seed again doesn't restore it.
 3. **A buyer or member reserves an item.** As a member, open a pending item and copy its address from the browser. Open it as a buyer (`juan@example.com` or the buyer you just invited) and tap **I'll buy it**. The member now sees the item as "Reserved by Juan" (or the new buyer's name). A member can also tap **I'll buy it** on any pending item.
 
 ---
