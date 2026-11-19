@@ -1,3 +1,8 @@
+
+
+https://github.com/user-attachments/assets/6d77d46a-02cc-4fec-ac8b-b9c6119bde00
+
+
 ## Índice
 
 0. [Ficha del proyecto](#0-ficha-del-proyecto)
