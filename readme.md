@@ -2,6 +2,34 @@
 
 A web application where families keep shared lists of the products they need, and the relatives they invite reserve, buy, and ship those items.
 
+## How to test this delivery
+
+The app runs locally. Set it up with [Installation instructions](#14-installation-instructions), steps 1 to 4, then sign in on Welcome with **Development sign-in**: enter one of the emails below, or any new email to sign up as a new user. To act as two people at once, use a second browser or a private window; otherwise, sign out from Profile and sign in again with another email.
+
+**Seed users** (García Group; full detail in [Data model §3](docs/04-DATA-MODEL.md#3-seed-data)):
+
+| Email | Role | Language | What they see |
+| --- | --- | --- | --- |
+| `ana@example.com` | Member and group owner | English | Lists, People, and Group |
+| `rosa@example.com` | Member | Spanish | Lists, People, and Group |
+| `juan@example.com` | Buyer | Spanish | To buy and My purchases |
+| `luis@example.com` | Buyer in García Group, owner of Pérez Group | Spanish | Lists, People, Group, To buy, and My purchases |
+| `pedro@example.com` | Former buyer with a purchased item | Spanish | My purchases |
+
+In this delivery, People, To buy, and My purchases are still placeholder screens; a buyer acts on items from the item page (step 3 below).
+
+The steps below quote the English labels. Users with Spanish see, for example, "Acceso de desarrollo", "Aceptar", and "Yo lo compro"; each user can switch the language in Profile, and a signed-out visitor can switch it on Welcome and on the invitation page.
+
+**Suggested flow:**
+
+1. **A member creates a list and adds products.** Sign in as `ana@example.com`. In Lists, tap **New list** and name it. Type a product in "Type what you want…" to add it by name, or tap **Add item** to add a link, quantity, recipient, and notes. Open an item to see its status, and edit or delete it from the **⋯** (More actions) menu. The seeded lists, "Anthony's birthday" and "Medicine", already have items in every status.
+2. **A member invites a new member or buyer.** In Group, tap **Invite a member** or **Invite a buyer**, optionally type the person's name, tap **Create link**, then **Copy link**. Open the link in a private window, sign in with **Development sign-in** using a new email (for example `newbuyer@example.com`), complete One last step, and tap **Accept**. The new person now appears in Group, and the invitation leaves the pending list. A seeded pending invitation for Carlos, as a buyer, is also ready at `http://localhost:3000/invitations/seed-pending-000000000000000000000000000000`; it can be accepted only once, and running the seed again doesn't restore it.
+3. **A buyer or member reserves an item.** As a member, open a pending item and copy its address from the browser. Open it as a buyer (`juan@example.com` or the buyer you just invited) and tap **I'll buy it**. The member now sees the item as "Reserved by Juan" (or the new buyer's name). A member can also tap **I'll buy it** on any pending item.
+
+---
+
+## About this documentation
+
 **Documentation:** this README answers each section of the project documentation template and links to the full detail in [`docs/`](docs/). Every rule and requirement lives in one place: the [PRD](docs/01-PRD.md) for the product, and the technical documents for how it is built.
 
 | Document | Contents |
