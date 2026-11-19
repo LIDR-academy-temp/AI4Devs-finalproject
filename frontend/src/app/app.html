@@ -1,0 +1,9 @@
+<header class="topbar">
+  <span class="brand">Firmadoc <small>Panel de administración</small></span>
+  @if (auth.isLoggedIn()) {
+    <p-button label="Salir" severity="secondary" [text]="true" (onClick)="logout()" />
+  }
+</header>
+<main>
+  <router-outlet />
+</main>

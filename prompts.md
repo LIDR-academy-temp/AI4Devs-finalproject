@@ -1,6 +1,29 @@
 > Detalla en esta sección los prompts principales utilizados durante la creación del proyecto, que justifiquen el uso de asistentes de código en todas las fases del ciclo de vida del desarrollo. Esperamos un máximo de 3 por sección, principalmente los de creación inicial o  los de corrección o adición de funcionalidades que consideres más relevantes.
 Puedes añadir adicionalmente la conversación completa como link o archivo adjunto si así lo consideras
 
+## Herramientas y modelos usados
+
+| Herramienta | Modelo | Fase |
+|---|---|---|
+| Claude Code | Sonnet 5 y Sonnet 5.5 | Definición de la idea, investigación técnica (documentación de FirmAR/SIU, antecedentes académicos), decisiones de arquitectura y stack, redacción y verificación de la documentación de la Entrega 1 |
+| Claude Code (flujo de diseño) | Sonnet 5 | Mockup interactivo de referencia visual, usado para detectar requisitos (no forma parte del repositorio) |
+| Jira (vía MCP de Atlassian) | — | Carga y seguimiento del backlog en el proyecto `SCRUM` (ver [readme §8](readme.md#8-seguimiento-en-jira) y [docs/jira-backlog.md](docs/jira-backlog.md)) |
+| Cursor (agente) | Claude (Composer / agente en IDE) | Implementación Entrega 2: OpenSpec apply, Ticket 1b, documentación C4/ADR, Jira, guía `ENTREGA-2.md` |
+| Redocly CLI | — | Lint del contrato OpenAPI generado por la IA |
+| OpenSpec 2.0 | — | Desarrollo guiado por especificaciones: propuesta, specs, diseño y tareas por cambio (Ticket 1a en adelante) |
+
+En la Entrega 1 no se usaron subagentes ni comandos personalizados; el trabajo fue conversacional directo con Claude Code, más búsqueda y lectura web para la investigación de antecedentes y conectores MCP (GitHub, Atlassian). Desde la Entrega 2, el contexto de la IA se fija en `CLAUDE.md` (stack, fuentes de verdad, decisiones cerradas, comandos y la regla de un ticket por vez).
+
+## Uso de IA por fase del ciclo de vida
+
+| Fase | Uso de la IA | Control humano |
+|---|---|---|
+| Análisis | Investigación de FirmAR/SIU y antecedentes académicos; análisis de la devolución de la Entrega 1 | Elección del problema y de las decisiones de alcance |
+| Diseño | Arquitectura, modelo, tickets y contrato OpenAPI escrito antes del código | Decisiones cerradas en `CLAUDE.md`; lint del contrato con Redocly |
+| Implementación | Claude Code y Cursor, un ticket por vez, con `CLAUDE.md` y `docs/openapi.yaml` como contexto | Revisión de cada diff antes del commit |
+| Pruebas | La IA genera primero los tests a partir de los criterios Dado/Cuando/Entonces (empezando por los rechazos del motor de firma) | Revisión de los tests antes de implementar; verificación del PDF con `pdfsig` |
+| Despliegue | La IA redacta el `Dockerfile`, el `docker-compose.yml` y el workflow de GitHub Actions | Prueba local del compose y del pipeline |
+| Mantenimiento | Revisión asistida de cada PR (agente de revisión en Cursor) y actualización del readme y de `prompts.md` al cerrar cada ticket | Aprobación final del PR |
 
 ## Índice
 
@@ -11,16 +34,27 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 5. [Historias de usuario](#5-historias-de-usuario)
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
+8. [Seguimiento en Jira](#8-seguimiento-en-jira)
+9. [Ajustes humanos sobre el output de la IA](#9-ajustes-humanos-sobre-el-output-de-la-ia)
 
 ---
 
 ## 1. Descripción general del producto
 
 **Prompt 1:**
+> "se puede hacer un proyecto que se pueda integrar o embeber dentro de otro para que cualquier sistema [...] pueda tener su firmador [...] ¿qué te parece esta idea?"
+
+Claude investigó la documentación real de integración de FirmAR (página y PDF de especificación) para entender el flujo real (OAuth + envío de documento + callback) antes de opinar, en lugar de responder con suposiciones.
 
 **Prompt 2:**
+> "mi idea con esto es hacer el entregable del master, reutilizar en mi trabajo y si es un buen tema proponer de tesis de grado"
+
+Este dato subió el nivel de exigencia de la documentación (justificación de decisiones, consideraciones legales y de seguridad), más allá del mínimo del máster.
 
 **Prompt 3:**
+> "viendo el mockup la idea es poder agarrar un documento previamente adjuntado en mi BD, firmarlo [...] y luego poder descargar [...] o bien que el doc quede como vigente [...] versionado que no pise pero sí quede como la versión activa"
+
+Precisó el caso de uso real (documentos preexistentes, no archivos sueltos) y un requisito de versionado que el texto no había capturado.
 
 ---
 
@@ -29,97 +63,181 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 ### **2.1. Diagrama de arquitectura:**
 
 **Prompt 1:**
+> "¿se puede hacer un firmador propio, así como el Firmar, sin necesidad de conectar con ello? ¿o conviene adaptar eso y además hacer el firmador propio?"
+
+Claude propuso el patrón central del proyecto: un "hub de firma" con proveedores intercambiables (motor propio PAdES + adaptador simulado del contrato de FirmAR), en lugar de forzar una sola opción.
 
 **Prompt 2:**
+> "actualmente en mi organismo usamos de front Angular [...] ¿se va a poder embeber al proyecto?"
+
+Claude ajustó la decisión de frontend (React) sin descartarla, agregando una capa de compatibilidad (iframe / Web Component).
 
 **Prompt 3:**
+Pedido de investigar si existía un firmador comercial equivalente al de un proveedor de expedientes judiciales electrónicos ("hacer algo similar"), y posterior aporte de una investigación previa de un compañero de trabajo (conversación compartida con Claude) para **rearmar la propuesta** como servicio de firma digital institucional. Claude detectó que un token USB no es accesible desde un navegador ni desde un servidor y agregó un tercer proveedor (`token`) basado en un **agente local con PKCS#11**; de la investigación del compañero tomó la **firma diferida** (el servidor prepara el PDF y calcula el hash, el token firma solo el hash, el servidor incrusta la firma), que simplifica el agente y deja la validación en el servidor. No se reutilizó código de esa investigación. Claude verificó contra documentación pública las afirmaciones que sostienen el diseño (firma interrumpida de pyHanko, aviso de acceso a red local de Chrome 142 y su política empresarial) y marcó como **no verificado** el límite de documentos por operación del servicio remoto.
 
 ### **2.2. Descripción de componentes principales:**
 
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
+Sin prompt dedicado: derivada de la conversación de 2.1. La usuaria eligió el stack (Python + pyHanko, FastAPI, React para el widget) entre las alternativas propuestas por Claude. Después pidió que el panel de administración fuera una aplicación **Angular con PrimeNG**, para usarlo también como ejemplo de cómo se embebe el widget desde Angular; Claude verificó que PrimeNG 22 pasó a una licencia comercial y propuso quedarse en PrimeNG 21 (MIT) con Angular 21. Con el proveedor `token` se sumaron el motor PAdES (preparar/completar), la validación de confianza y el Firmadoc Agent.
 
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
 
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
+Sin prompt dedicado: derivada de la arquitectura de 2.1 (separación `backend/`, `widget/`, `frontend/` y `agent/`).
 
 ### **2.4. Infraestructura y despliegue**
 
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
+Sin prompt dedicado: propuesta redactada por Claude como parte de la documentación; la viabilidad del despliegue on-premise queda pendiente de validar con el área de Sistemas del organismo adoptante.
 
 ### **2.5. Seguridad**
 
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
+Sin prompt dedicado: redactada por Claude, incluyendo la nota de diseño sobre firma electrónica vs. firma digital bajo la Ley 25.506. Tras el cambio de propuesta, el proveedor `token` (certificado de una AC licenciada) produce firma digital y el proveedor `local` (autofirmado) queda como firma electrónica para demostraciones. Se sumaron validación de confianza, desafíos de un solo uso y controles de seguridad del agente local.
 
 ### **2.6. Tests**
 
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
+Sin prompt dedicado: estrategia de tests redactada por Claude. Con el agente local se sumaron pruebas con SoftHSM (PKCS#11 por software, ejecutable en CI), casos de rechazo de la validación y verificación independiente con una herramienta ajena a pyHanko. Los supuestos no verificables se documentaron en la sección 2.7.
 
 ---
 
 ### 3. Modelo de Datos
 
 **Prompt 1:**
+El prompt de versionado de la sección 1 (Prompt 3) derivó en las entidades `Document` y `DocumentVersion`: versiones inmutables, append-only, con un puntero `current_version_id` que se actualiza sin pisar nada.
 
 **Prompt 2:**
+Pedido de la usuaria de dejar plasmada la firma **en lote** (varios documentos, una sola confirmación). Claude la modeló como `SignatureBatch`, que agrupa `SignatureRequest` existentes sin cambiar el mecanismo de firma ni de versionado por documento.
 
-**Prompt 3:**
+**Prompt 3 (Entrega 2, implementación del Ticket 3):**
+> "ok" (aprobación del plan: empezar por el Ticket 3 — `docker-compose.yml` con PostgreSQL, `.env.example`, modelos SQLAlchemy, migración Alembic con triggers append-only y seed)
+
+Con `CLAUDE.md` y la sección 3 del readme como contexto, el agente de Cursor:
+- Escribió los modelos y una migración inicial a mano, sin autogenerar, para que quede congelada e incluya los triggers.
+- Escribió 17 tests de integración contra PostgreSQL real que cubren los criterios del ticket: rechazo de `UPDATE`, `DELETE` y `TRUNCATE` sobre `document_version` y `audit_event`; mover `current_version_id` sin tocar versiones; `downgrade base`; y seed idempotente.
+- Agregó invariantes que se desprenden del modelo: desafío de un solo uso, `origin = signed` solo con una solicitud de firma, formato del CUIL y `signed_at` solo en estado `signed`.
+
+Se verificó con `alembic check` que los modelos no difieren de la migración. Durante la implementación aparecieron dos huecos del modelo, que se resolvieron y documentaron en la sección 3.2:
+- **Documentos del panel sin integrador:** `integrating_system_id` es nulo en los documentos y solicitudes cargados desde el panel.
+- **Auditoría sin lotes:** `audit_event.signature_request_id` es `NOT NULL` hasta que exista `SignatureBatch`.
 
 ---
 
 ### 4. Especificación de la API
 
 **Prompt 1:**
+Tras el requisito de versionado, se ajustaron `POST /signature-requests`, `GET /signature-requests/{id}` y el webhook para incluir `document_id`, `external_document_id`, `version_number`, `is_active_version` y `download_url`. Con la firma diferida, el flujo principal pasó a `create` / `prepare` / `complete`; se agregaron `POST /signature-batches`, el cambio de estado del documento y la verificación como endpoints adicionales.
 
-**Prompt 2:**
+**Prompt 2 (Entrega 2, a partir de la devolución):**
+> "antes de empezar con el código, intenta analizar la devolución de la entrega 1 [...] de forma tal ver qué corregir o reforzar"
 
-**Prompt 3:**
+La revisión pedía el contrato en formato OpenAPI. La IA escribió `docs/openapi.yaml` (OpenAPI 3.1) con los endpoints del hito 1, el de carga del panel (`POST /admin/signing-uploads`, que antes solo figuraba en las historias), la descarga de versiones y el webhook como `callback`. También unificó `prepare` / `complete` para que `local` y `token` usen el mismo flujo (con `local` se omiten el certificado y las firmas). El contrato se validó con Redocly y se corrigieron los errores que marcó.
+
+**Prompt 3 (Entrega 2, Ticket 1a con desarrollo guiado por especificaciones):**
+> "me gustaría instalar primero OpenSpec y aplicar ese cambio del Ticket 1 con SDD" y luego `/openspec-apply-change`
+
+Se instaló OpenSpec (esquema `spec-driven`) y se acotó el change `add-document-upload` al sub-ticket 1a. La IA redactó `proposal.md`, tres specs con escenarios WHEN/THEN (`api-access`, `document-intake` y `document-versions`), un `design.md` con ocho decisiones y 21 tareas ordenadas con los tests primero. Después las implementó una por una con `openspec-apply-change`, comprobando antes de cada implementación que los tests fallaban:
+- `POST /api/v1/admin/signing-uploads` (panel, multipart), `POST /api/v1/signature-requests` (integrador, JSON con base64 o `document_id`) y `GET /api/v1/documents/{id}/versions/{n}/download`, sobre un único servicio de alta (`app/services/intake.py`).
+- Validación del PDF con pyHanko antes de abrir la transacción, credenciales como dependencias de FastAPI y token del enlace de firma con HMAC en el fragmento de la URL.
+- 120 tests (unitarios y de integración contra PostgreSQL), `alembic check` sin diferencias y `openspec validate --strict`. La verificación manual con `curl` confirmó que el SHA-256 del PDF descargado coincide con el cargado.
 
 ---
 
 ### 5. Historias de Usuario
 
 **Prompt 1:**
+Pedido de la usuaria de que la firma **parta, en general, de cargar un PDF desde el navegador** (uno o varios; con varios se firman en lote), manteniendo el camino por sistema integrador como variante (HU 1b). Se reescribió la historia 1 y sus criterios de aceptación.
 
 **Prompt 2:**
+Corrección de la usuaria: descarga y versionado no son alternativas ("y/o"), deben darse **siempre juntas** en toda firma completada. Se ajustaron los criterios de aceptación de las historias 1 a 4.
+
+La usuaria también precisó el lote: el resultado puede ser **parcial** («2 de 3 firmados»), con descarga de los firmados y reintento de los fallidos, y la firma remota no se admite por lote. Pidió además que el panel muestre el origen de cada documento (individual o lote) y su detalle como **cadena de custodia**, y que permita gestionar los sistemas integradores y sus claves.
 
 **Prompt 3:**
+La firma en lote se priorizó como *should-have*, no *must-have*, siguiendo la disciplina de alcance de MVP de la Lección 1. Tras el cambio de propuesta se reordenó el backlog: la firma con token y el motor propio (para recorrer los flujos sin hardware) son *must-have*; FirmAR pasó a *should-have*. Se incorporaron los estados de documento `borrador → pendiente de firma (con fecha límite) → firmado` y el listado de firmantes, a propuesta de Claude tras revisar el manual público de un sistema de expediente electrónico judicial; Claude dejó explícito que el comportamiento al vencer el plazo no está definido por la fuente y debe acordarse con cada integrador.
 
 ---
 
 ### 6. Tickets de Trabajo
 
 **Prompt 1:**
+Los tickets de backend, frontend y base de datos se redactaron con tareas, criterios de aceptación y estimación, y se actualizaron tras el cambio de versionado y de propuesta (flujo `prepare`/`complete`). El agente local quedó como ticket adicional, fuera de los 3 detallados.
 
-**Prompt 2:**
+**Prompt 2 (Entrega 2, a partir de la devolución):**
+La revisión señaló que el ticket de backend concentraba demasiado y que el agente local no tenía ticket propio. La IA dividió el backend en cuatro sub-tickets ordenados por hito: carga y versionado, motor PAdES con proveedor `local`, validación de confianza, y auditoría con webhook. Con eso la épica pasó de 14 h a 34 h. Además detalló el agente como Ticket 4, con criterios verificables con SoftHSM, y separó el widget en hito 1 (firma propia) y hito 2 (token).
 
-**Prompt 3:**
+**Prompt 3 (Entrega 2, widget de firma con OpenSpec):**
+> actualmente mi codigo cumple con: Entrega 2 — Código funcional: Archivos actualizados + scaffolds de tu arquitectura conectados + el flujo principal parcialmente operativo: al menos una funcionalidad operativa de extremo a extremo
+
+La IA comparó el repositorio con la consigna y encontró que el flujo solo funcionaba por API, sin interfaz. El autor eligió el alcance completo (widget, panel y scaffold del agente) y trabajar con un change de OpenSpec por componente. El change `add-signing-widget-viewer` agregó al contrato `file_name` y `size_bytes`, la consulta `GET /signature-requests/{id}` con el token del enlace, CORS por lista de orígenes y el widget en React. El widget lee el enlace, quita el fragmento de la barra y muestra el documento con una vista previa hecha con pdf.js. Los tests se escribieron antes que el código, según los escenarios de la spec: 17 tests nuevos de backend y 40 de Vitest.
+
+**Prompt 4 (Entrega 2, panel de administración con OpenSpec):**
+> ok (aplicar los changes: primero el widget, después el panel y por último el scaffold del agente)
+
+Con el change `add-admin-signing-panel` la IA creó `frontend/` (Angular 21 + PrimeNG 21 con Aura) y agregó el Ticket 5 al readme. El panel tiene el acceso con el token de administración (`sessionStorage`, interceptor y guard), el formulario «Firmar documento» con sus validaciones y la carga real con el widget embebido. También incluye la descarga del original y los errores de la API en lenguaje claro. Los tests de Vitest se escribieron antes del código, uno por escenario de la spec (54 en total). La prueba manual se automatizó en Edge por el protocolo de depuración: ingreso con un token equivocado y uno correcto, validaciones, carga, descarga con el mismo SHA-256, «Cargar otro documento» y «Salir».
+
+**Prompt 5 (Entrega 2, scaffold del agente):** dentro del mismo «ok», la IA creó `agent/` con lo mínimo para que la pieza exista y esté conectada a la arquitectura, sin anticipar el Ticket 4. Incluye FastAPI con `create_app(settings)` igual que el backend, escucha fija en `127.0.0.1` y un middleware que rechaza con `403` los orígenes no permitidos (incluido `null`). También tiene `GET /health`, que se agregó al contrato del agente para que el widget pueda detectarlo, y 12 tests escritos antes del código. `GET /certificates`, `POST /sign` y PKCS#11 quedan para el Ticket 4.
+
+**Prompt 6 (Entrega 2, Ticket 1b — firma local end-to-end):**
+> Aplicar el change OpenSpec del Ticket 1b: motor PAdES con proveedor `local`, endpoints `prepare` / `complete`, habilitar «Firma propia» en el widget y `postMessage` `firmadoc:signed` al panel.
+
+Con el change `ticket-1b-local-signing` la IA implementó `LocalPAdESProvider`, desafíos de un solo uso, integración en el widget y listener en el panel. **Ajuste humano tras prueba en navegador:** `prepare` persistía con `flush` pero sin `commit`, así que `complete` veía la solicitud aún en `pending` y respondía **409**; se corrigió con `session.commit()` en los endpoints tras éxito (los tests de integración no lo revelaban porque reutilizan la misma sesión).
+
+**Prompt 7 (Entrega 2, preparación de evaluación):**
+> Registrar backlog en Jira, documentación C4/ADR, guía para evaluadores y cumplimiento de Entrega 2 (Typeform + rama, sin PR obligatorio).
 
 ---
 
 ### 7. Pull Requests
 
-**Prompt 1:**
+La consigna de Entrega 2 **no exige Pull Request**: la entrega oficial es la rama indicada en el Typeform. Los cambios de código están en `feature/entrega-2-bbmv`. Esta sección se completará si más adelante se usan PRs para Entrega final o revisión interna.
 
-**Prompt 2:**
+---
 
-**Prompt 3:**
+## 8. Seguimiento en Jira
+
+**Prompt 8 (backlog SCRUM):**
+> Este es mi espacio de trabajo [backlog SCRUM] y necesito registrar todas las HU con tickets allí estén o no terminados de este proyecto.
+
+Con el MCP de Atlassian (proyecto team-managed `SCRUM`) se creó la épica **SCRUM-1**, las doce historias alineadas con el readme §5 (`SCRUM-2`–`SCRUM-13`, incluida HU1b en **SCRUM-4**), los tickets §6 (**SCRUM-14**–**SCRUM-22**) y se inició **SCRUM Sprint 1** con las 22 claves. El autor confirmó con «ok» el refinamiento: subtareas **1a–1d** bajo **SCRUM-14**, story points iguales a las horas del readme y estados según el avance del repo.
+
+**Salida documentada:** [readme.md §8](readme.md#8-seguimiento-en-jira), [docs/jira-backlog.md](docs/jira-backlog.md) y la ficha §0.6 del readme.
+
+---
+
+## 9. Ajustes humanos sobre el output de la IA
+
+- La **idea de negocio y el dominio del problema** (firma digital embebible para organismos públicos) los aportó íntegramente la usuaria, a partir de un dolor real de su trabajo; la IA lo analizó y estructuró.
+- La usuaria **corrigió el alcance del embebido**: Claude había asumido React como única pieza de frontend; al informar que su organismo usa Angular, se separó la "implementación interna del widget" de la "superficie de embebido" (iframe / Web Component).
+- La usuaria **eligió explícitamente el stack** entre las opciones propuestas.
+- Los **datos de identidad del proyecto** (nombre, iniciales, nombre "Firmadoc") los aportó la usuaria.
+- Por **confidencialidad**, a pedido de la usuaria se removió toda mención al nombre del organismo empleador, usando referencias genéricas.
+- El requisito de **versionado** lo detectó la usuaria al revisar visualmente el mockup interactivo de referencia visual (no incluido en el repositorio), no desde una especificación escrita: un prototipo temprano destapó un requisito que el texto no había capturado.
+- Claude redactó una primera versión con descarga y versionado como alternativas; la usuaria lo **corrigió** (deben darse siempre ambos).
+- La firma **en lote** fue pedido de la usuaria; la priorización como *should-have* fue decisión de la IA y la usuaria no la corrigió.
+- Por confidencialidad, el README cita el paper académico utilizado como antecedente pero no nombra al organismo, a la provincia ni al proveedor comercial de referencia.
+- La usuaria **pidió el PIN "en el medio de la pantalla sobre el diálogo de Angular"**; Claude explicó que el PIN no puede ingresarse en el navegador (invariante de seguridad del proyecto) y lo resolvió en la ventana nativa del agente: mínima (titular y PIN), centrada y siempre al frente. También se decidió poder **simular la firma con token** mediante un token de software, para que un revisor recorra los flujos sin hardware.
+- La usuaria **decidió que el CUIL del certificado no se coteja con el del firmante por defecto** (firma quien tiene el token y su PIN; la firma registra el certificado usado), dejando el cotejo como opción de configuración.
+- Pendiente de revisión humana antes de cerrar la Entrega 1: validar que las estimaciones de horas por ticket sean realistas y confirmar la viabilidad del despliegue on-premise.
+
+### Ajustes tras la devolución de la Entrega 1
+
+- **Alcance recortado** según la revisión. El MVP queda en un único camino: carga de PDF, firma con `local` por `prepare` / `complete`, y descarga y versión vigente. El agente con SoftHSM pasa a ser el hito 2; lote, FirmAR, TSA, Web Component, OAuth2 y reintentos de webhooks pasan a la versión 2.
+- La IA detectó cuatro contradicciones (las mismas que la revisión) y propuso opciones. **Cada decisión la tomó el autor:**
+  - El CUIL **no se coteja por defecto**; se activa con `FIRMADOC_REQUIRE_CUIL_MATCH=true`. Se ratifica la decisión anterior y se corrigen las secciones que decían lo contrario.
+  - **PostgreSQL en todos los entornos**, con los PDF **dentro de la base** (`bytea`). Se descarta SQLite y el object storage.
+  - La URL del webhook se guarda **por solicitud** (`SignatureRequest.callback_url`).
+  - El formulario de carga del panel **pide nombre y CUIL del firmante**, para que toda solicitud tenga un `Signer`.
+- La IA propuso un nivel PAdES B-B en el MVP (sin TSA), como recomendó la revisión, y el autor lo aceptó.
+
+### Ajustes durante la implementación
+
+- **Ticket 3:** un test generado por la IA esperaba que un CUIL con guiones fuera rechazado por el `CHECK` (`IntegrityError`). Al ejecutarlo contra PostgreSQL real, el rechazo llegó antes por la longitud de la columna (`DataError`). Se corrigió el test para aceptar cualquier rechazo de la base: la protección existe en las dos capas. Es un ejemplo de por qué los tests corren contra la base real y no contra mocks.
+- **Ticket 1a (herramientas):** `TestClient` de Starlette emitía un aviso de obsolescencia con `httpx`; se reemplazó por `httpx2` en `requirements-dev.txt`. La tarea de prueba manual decía `uvicorn app.main:app`, pero la app se construye con una fábrica (`create_app(settings)`) para que los tests inyecten su configuración; se corrigió a `uvicorn app.main:create_app --factory`.
+- **Ticket 1a (test corregido):** un test generado por la IA afirmaba que el corte previo sobre el texto base64 coincidía exactamente con el tamaño máximo. Base64 codifica de a 3 bytes, así que 1000 y 1001 bytes ocupan lo mismo. Se corrigió el test para comprobar lo que el diseño pedía: el corte previo es una cota superior que nunca rechaza un archivo válido, y el límite exacto se aplica después de decodificar.
+- **Ticket 1a (escenario reubicado):** el escenario «token de enlace de otra solicitud» se probó en los tests de descarga, con documentos reales, y no con un endpoint de prueba, porque es ahí donde se aplica la regla.
+- **Widget (bundle):** la primera compilación importaba pdf.js de forma estática y el paquete principal superaba el límite de Vite. Como ya preveía el diseño, se pasó a `import()` dinámico: la pantalla carga primero y pdf.js llega solo cuando hay que dibujar la vista previa.
+- **Widget (prueba manual):** al copiar el token desde PowerShell, `.Split('#t=')` corta en cada carácter y no en la cadena completa, así que el token quedaba truncado y la API respondía `401`. Se usó `-split '#t='`. La captura con Edge en modo headless y `--virtual-time-budget` salía con «Cargando vista previa…», porque el tiempo virtual no espera al worker de pdf.js. Se tomó controlando el navegador en tiempo real por el protocolo de depuración, y así se verificó también que el fragmento desaparece y que la recarga sigue mostrando el documento.
+- **Widget (texto):** la IA había redactado un texto legal confuso para la «Firma propia»; se reescribió como «es inmediata, pero sin la presunción legal de la firma digital».
+- **Widget (tests):** con `restoreMocks` activado, Vitest reiniciaba el mock de `renderFirstPage` definido a nivel de módulo; se movió su configuración a `beforeEach`.
+- **Panel (bug que encontró un test):** la primera versión de la pantalla de acceso tenía un `<form>` con `(ngSubmit)` pero sin `[formGroup]`. Así, `ngSubmit` nunca se emitía y, en el navegador, el submit habría recargado la página. Lo detectó el test del escenario «Token ingresado» y se corrigió con un `FormGroup`. En el mismo test apareció que jsdom no implementa `requestSubmit`, así que los tests envían el formulario con un evento `submit`.
+- **Panel (selector de archivo):** el design pedía `FileUpload` de PrimeNG en modo básico. Sin `auto`, ese modo convierte el botón «Elegir» en un botón de subida una vez elegido el archivo, y quedaban dos botones de carga. Se usó `auto` con `customUpload`: el componente entrega el archivo al formulario, que lo valida con sus propios mensajes, y el envío lo hace el servicio.
+- **Panel (tamaño del bundle):** el bundle inicial superaba el presupuesto de 500 kB. Se cargaron las rutas con `loadComponent`, y el resto lo ocupa el preset Aura de PrimeNG, que se necesita al inicio; el aviso se subió a 600 kB y el error quedó en 1 MB.
+- **Panel (prueba manual):** la primera captura mostró el widget cortado dentro del iframe; se aumentó su altura.
+- **Ticket 1b (OpenSpec apply):** se implementó `prepare` / `complete` con pyHanko (`SimpleSigner` + actualización incremental), desafíos de un solo uso y el flujo en el widget; el panel escucha `firmadoc:signed` para mostrar la versión firmada.

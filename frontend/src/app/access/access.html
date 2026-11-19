@@ -1,0 +1,14 @@
+<p-card>
+  <h1>Acceso al panel</h1>
+  <p class="hint">Ingresá el token de administración de Firmadoc. Se guarda solo en esta pestaña y se borra al cerrarla.</p>
+
+  @if (rejected()) {
+    <p-message severity="error" text="El token de administración no es válido" />
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label for="admin-token">Token de administración</label>
+    <input pInputText id="admin-token" type="password" autocomplete="off" formControlName="token" />
+    <p-button type="submit" label="Ingresar" [disabled]="form.invalid" />
+  </form>
+</p-card>
