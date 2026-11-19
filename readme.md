@@ -244,6 +244,9 @@ Cada acción se comprueba de nuevo al confirmarla: si lo que se mostró ha cambi
 
 ### **1.4. Instrucciones de instalación:**
 
+> [!IMPORTANT]
+> **El proyecto ya está desplegado.** El dashboard está disponible en <https://2.29.196.188.sslip.io> (acceso con usuario y contraseña; las credenciales se envían al evaluador a través del formulario de entrega). No es necesario instalar nada para probarlo.
+
 TALOS no usa base de datos: no hay migraciones ni semillas de datos. El único andamiaje inicial son los directorios de `./data/`, que crea un script. La guía completa para una máquina limpia (pensada para un Trader no desarrollador) está en `docs/quickstart.md`, y el uso diario en `docs/operations.md`.
 
 #### Opción A — Docker (uso completo)
@@ -310,32 +313,22 @@ Los artefactos se guardan en `./data/artifacts/` y los datos de Freqtrade en `./
 
 Esta guía explica cómo crear una estrategia desde el dashboard y propone dos ejemplos de datos listos para copiar en el formulario.
 
-##### 1. Qué es una estrategia en TALOS
-
-En TALOS una **estrategia** es una *hipótesis* de investigación: qué comportamiento del mercado se cree explotable y cómo sabremos si funciona. No contiene código. El código (una clase `IStrategy` de Freqtrade) se añade después en una **versión** de la estrategia.
-
-```text
-Strategy (hipótesis) → Version (implementación) → Validation Plan → Run
-```
-
-Al crearla, la estrategia nace en estado `PROPOSED`, con el rol `TRADER`, y se guarda en `artifacts/strategies/STR-XXXX/strategy.yaml`. El identificador (`STR-0001`, `STR-0002`...) se asigna solo.
-
-##### 2. Requisitos previos
+##### 1. Requisitos previos
 
 - Los servicios están levantados con Docker Compose (Opción A, arriba) y `docker compose ps` muestra `dashboard` en `Up`.
 - El dashboard es accesible en <http://127.0.0.1:8501>.
 
-##### 3. Pasos para crear la estrategia en el dashboard
+##### 2. Pasos para crear la estrategia en el dashboard
 
 1. Abre <http://127.0.0.1:8501>.
 2. En la barra lateral, pulsa **Create strategy**. Aparece un cuadro con el título `New strategy STR-XXXX`, que indica el id que se va a crear.
-3. Rellena los **8 campos obligatorios** (tabla de la sección 4). Todos son obligatorios; si falta alguno, no se escribe nada y el dashboard muestra una lista con los campos que hay que corregir.
+3. Rellena los **8 campos obligatorios** (tabla de la sección 3). Todos son obligatorios; si falta alguno, no se escribe nada y el dashboard muestra una lista con los campos que hay que corregir.
 4. Pulsa **Confirm**. Si todo es válido, aparece el mensaje `STR-XXXX created` y la estrategia se puede seleccionar en el desplegable **Strategy** de la barra lateral.
 5. Pulsa **Cancel** si quieres cerrar el formulario sin crear nada.
 
 Alternativa por terminal: `talos strategy new --from-template` lanza un asistente que pregunta los mismos datos y pide confirmación antes de escribir el fichero.
 
-##### 4. Campos del formulario
+##### 3. Campos del formulario
 
 | Campo | Tipo | Qué escribir |
 |---|---|---|
@@ -357,7 +350,7 @@ Los demás datos del `strategy.yaml` (id, estado `PROPOSED`, fecha, autor, rol `
 - Los **riesgos** son las condiciones de mercado en las que se espera que la estrategia pierda.
 - El **criterio de éxito** debe ser medible, por ejemplo con un Sharpe mínimo, un drawdown máximo y el número de activos o regímenes donde se cumple.
 
-##### 5. Ejemplo 1: cruce de medias móviles (seguimiento de tendencia)
+##### 4. Ejemplo 1: cruce de medias móviles (seguimiento de tendencia)
 
 | Campo | Valor a introducir |
 |---|---|
@@ -372,7 +365,7 @@ Los demás datos del `strategy.yaml` (id, estado `PROPOSED`, fecha, autor, rol `
 
 En los campos de varias líneas, escribe cada supuesto o riesgo en su propia línea (pulsa Intro entre uno y otro).
 
-##### 6. Ejemplo 2: reversión a la media con RSI y bandas de Bollinger
+##### 5. Ejemplo 2: reversión a la media con RSI y bandas de Bollinger
 
 | Campo | Valor a introducir |
 |---|---|
@@ -385,14 +378,14 @@ En los campos de varias líneas, escribe cada supuesto o riesgo en su propia lí
 | **Success criteria** | `Tasa de acierto superior al 55 %, factor de beneficio superior a 1,3 y drawdown máximo inferior al 20 % en la evaluación fuera de muestra, manteniendo resultados positivos en al menos 3 pares distintos.` |
 | **Families** | `mean_reversion` |
 
-##### 7. Qué comprobar tras crearla
+##### 6. Qué comprobar tras crearla
 
 - El mensaje **`STR-XXXX created`** aparece en verde.
 - La estrategia está en el desplegable **Strategy** con estado `PROPOSED`.
 - Al abrirla, los 8 campos coinciden con los datos introducidos.
 - (Opcional) Por terminal: `talos strategy list` la muestra con el estado `PROPOSED`, y `talos store validate artifacts/strategies` responde `all artifacts valid.`
 
-##### 8. Errores habituales
+##### 7. Errores habituales
 
 | Situación | Resultado |
 |---|---|
@@ -400,7 +393,7 @@ En los campos de varias líneas, escribe cada supuesto o riesgo en su propia lí
 | Ninguna familia seleccionada | Igual que el caso anterior: el campo `families` es obligatorio. |
 | Dos usuarios crean estrategia a la vez | Si el id ya existe, TALOS no escribe nada y propone el siguiente id; hay que pulsar **Confirm** de nuevo. |
 
-##### 9. Siguiente paso del flujo
+##### 8. Siguiente paso del flujo
 
 Una estrategia en `PROPOSED` aún no se puede investigar. El Trader la aprueba con `talos strategy transition STR-XXXX --to RESEARCH`, fija su reserva de datos con `talos strategy reserve` y crea una versión con `talos version new`. El flujo completo está en la sección del Trader del `readme.md`.
 
@@ -655,7 +648,9 @@ flowchart LR
 
 No hay más servicios (ADR-054, ADR-059): Freqtrade corre dentro de `talos` y de `worker` como subproceso.
 
-**Despliegue.** Actualmente es manual: `docker compose up -d --build`, en local o en un VPS, donde el dashboard está publicado en <https://2.29.196.188.sslip.io> con acceso protegido por credenciales. No hay despliegue continuo (el roadmap sitúa el pipeline completo de CI/CD en la Fase 3); `docs/quickstart.md` explica cómo instalarlo en un servidor Linux.
+> [!IMPORTANT]
+> ### Despliegue
+> ### Actualmente es manual: `docker compose up -d --build`, en local o en un VPS, donde el dashboard está publicado en <https://2.29.196.188.sslip.io> con acceso protegido por credenciales. No hay despliegue continuo (el roadmap sitúa el pipeline completo de CI/CD en la Fase 3); `docs/quickstart.md` explica cómo instalarlo en un servidor Linux.
 
 **Integración continua** (GitHub Actions):
 
