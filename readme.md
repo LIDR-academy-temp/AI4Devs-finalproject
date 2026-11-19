@@ -11,6 +11,7 @@
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
 8. [Seguimiento en Jira](#8-seguimiento-en-jira)
+9. [Documentación técnica (`docs/`)](#9-documentación-técnica-docs)
 
 ---
 
@@ -243,6 +244,8 @@ A medida que se sumen la API, el widget, el panel y el agente, se completará aq
 
 ### **2.1. Diagrama de arquitectura:**
 
+**Vistas C4 y ADR:** [docs/architecture/](docs/architecture/README.md) (contexto, contenedores, componentes) y [docs/adr.md](docs/adr.md) (decisiones en un solo documento).
+
 ```mermaid
 flowchart TB
     subgraph Cliente["Sistema integrador (ej. gestor documental institucional - Angular)"]
@@ -366,7 +369,11 @@ firmadoc/
 │   ├── src/environments/        # apiUrl, widgetUrl y maxUploadMb
 │   └── package.json
 ├── docs/
-│   └── openapi.yaml             # contrato de la API (fuente de verdad, se escribe antes que el código)
+│   ├── openapi.yaml             # contrato de la API (fuente de verdad, se escribe antes que el código)
+│   ├── architecture/            # diagramas C4 (C1–C4) y índice de arquitectura
+│   ├── adr.md                   # Decisiones de arquitectura (ADR único, liviano)
+│   ├── adr/                     # Redirección a adr.md
+│   └── jira-backlog.md          # trazabilidad HU/tickets ↔ claves SCRUM
 ├── docker-compose.yml
 ├── .env.example
 ├── CLAUDE.md                    # contexto para la IA: stack, carpetas, comandos y convenciones
@@ -904,3 +911,17 @@ Todas las historias cuelgan de la épica **SCRUM-1** (campo *parent* en un proye
 | Backlog v2 | HU6–HU11 |
 
 Al cerrar un ticket en el repositorio (OpenSpec / merge), conviene mover la incidencia en Jira y anotar el commit o PR en la descripción o en un comentario de la clave correspondiente.
+
+---
+
+## 9. Documentación técnica (`docs/`)
+
+| Carpeta / archivo | Contenido |
+|---|---|
+| [docs/openapi.yaml](docs/openapi.yaml) | Contrato OpenAPI 3.1 de la API (fuente de verdad HTTP) |
+| [docs/architecture/](docs/architecture/README.md) | **Modelo C4**: contexto, contenedores, componentes y referencia de código |
+| [docs/adr.md](docs/adr.md) | **Decisiones de arquitectura** (D-01 … D-10, un solo ADR) |
+| [docs/jira-backlog.md](docs/jira-backlog.md) | Mapa HU/tickets ↔ incidencias Jira `SCRUM` |
+| [docs/screenshots/](docs/screenshots/) | Capturas del panel y del widget (§1.3) |
+
+La sección [2. Arquitectura del sistema](#2-arquitectura-del-sistema) del readme sigue siendo la narrativa principal; los diagramas C4 en `docs/architecture/` la complementan para revisión de arquitectura y entrega académica.

@@ -6,8 +6,9 @@ Servicio de firma digital institucional: un backend con proveedores de firma int
 
 1. `docs/openapi.yaml`: rutas, esquemas, códigos de estado y errores. No inventes endpoints ni campos; si falta algo, proponé el cambio al contrato antes de programarlo.
 2. `readme.md`, secciones 3 (modelo de datos), 5 (historias y criterios Dado/Cuando/Entonces), 6 (tickets) y 8 (trazabilidad Jira `SCRUM`).
-3. `docs/jira-backlog.md`: mapa de claves Jira ↔ HU/tickets (actualizar al cerrar tickets).
-4. Este archivo, para stack, comandos y convenciones.
+3. `docs/architecture/` (C4) y `docs/adr.md` (decisiones de arquitectura); actualizar al cambiar contenedores o decisiones estructurales.
+4. `docs/jira-backlog.md`: mapa de claves Jira ↔ HU/tickets (actualizar al cerrar tickets).
+5. Este archivo, para stack, comandos y convenciones.
 
 ## Alcance actual
 
