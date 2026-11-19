@@ -1662,4 +1662,4 @@ Paper trading con Freqtrade, reglas de asignación de capital y gestión de cart
 
 **6. Despliegue y operación continua**
 
-Despliegue en un VPS con CI/CD completo (hoy el despliegue en el VPS es manual), y activación del índice SQLite, que existe pero ni el CLI ni el dashboard usan. También una demo en vídeo grabada del dashboard con datos de demostración, una vez cerrada la épica del bucle de investigación (TALOS-198, que sigue *In Progress* en Plane; su último ticket, la comprobación real del bucle en Docker, TALOS-215, está *Cancelled*, de modo que esa evidencia documentada no existe todavía).
+Despliegue en un VPS con CI/CD completo (hoy el despliegue en el VPS es manual), y activación del índice SQLite, que existe pero ni el CLI ni el dashboard usan. La demo en vídeo ya está disponible al principio de este documento. Sigue pendiente cerrar la épica del bucle de investigación (TALOS-198, que sigue *In Progress* en Plane; su último ticket, la comprobación real del bucle en Docker, TALOS-215, está *Cancelled*, de modo que esa evidencia documentada no existe todavía).
