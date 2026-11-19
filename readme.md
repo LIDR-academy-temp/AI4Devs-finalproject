@@ -9,6 +9,14 @@
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
 
+> **Actualización del jueves 19/11/2026 — estado vigente; donde choque con lo de abajo, manda esta nota.**
+>
+> - **Ya hay código:** la estructura de la aplicación y la integración continua (estilo, tipos, pruebas y compilación), en verde. Todavía no hay funciones de negocio.
+> - **La especificación está aprobada**, tras siete rondas de revisión adversarial: `openspec/specs/acceso`, `aviso-inicio` y `no-reportados` (32 requisitos y 134 escenarios). Es la fuente de verdad de lo que se construye: **si este README y la especificación difieren, gana la especificación.**
+> - **El PRD vigente es la versión 8:** `docs/prd/PRD-MVP-Controlador-de-Tiempo-20261119-v8.md`.
+> - **Para esta entrega se construye un recorte del MVP:** acceso, aviso de inicio y reporte de no reportados. El registro de actividades, la aprobación y la exportación que describen las secciones 1 a 6 quedan para después, con lo que las cubre mientras tanto en el PRD.
+> - **Lo que este README todavía no refleja:** el modelo de datos (sección 3), la API (sección 4) y las historias y tickets (secciones 5 y 6) siguen siendo los del MVP completo, con nombres anteriores a la especificación. Se reescriben cuando haya código que los respalde, antes de la entrega final.
+>
 > **Versión 2 del documento (martes 17/11/2026).** Incorpora las once recomendaciones de la revisión de la entrega 1 y el documento de producto (PRD) del MVP, que pasó por dos rondas de revisión adversarial con un modelo distinto al que lo redactó. El cambio de fondo es un **recorte del alcance**: la versión 1 proponía nueve capacidades y la revisión señaló que era demasiado para el plazo. Lo que salió del MVP no se borró: está en el apartado 1.2 con lo que lo cubre mientras tanto.
 >
 > **Estado.** Sigue siendo documentación: todavía no hay código. La sección 7 y los apartados que dependen de código en marcha (1.3 imágenes, 1.4 instalación, 2.6 tests ejecutados) se declaran como pendientes. Un hueco declarado es una decisión; un hueco callado es un descuido.
