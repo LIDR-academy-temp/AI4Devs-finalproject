@@ -17,8 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          # La versión con la que se probaron en local.
-          python-version: "3.9"
+          # En local se probaron con 3.9, que el ejecutor ya no ofrece.
+          python-version: "3.12"
       - name: El hook bloquea lo que debe y deja pasar lo que debe
         run: python3 tests/harness/prueba-datos-que-no-salen.py
       - name: El instalador instala lo que debe
