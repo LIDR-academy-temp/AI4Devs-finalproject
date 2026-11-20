@@ -35,6 +35,8 @@ Local Postgres: `docker-compose up -d` (see `docker-compose.yml`) before running
 - `/code-review` (nivel `medium` o superior) antes de dar por cerrada cualquier entrega con código — no solo antes de un PR, ya que este curso no usa PRs para las entregas.
 - `/security-review` antes de la Entrega Final, dado que hay auth de negocio y datos de clientes (nombre/teléfono) de por medio.
 - Skill `run` para levantar y probar la app manualmente en vez de asumir que "compila" equivale a "funciona".
+- Skill de proyecto `.claude/skills/validar-entrega/SKILL.md`: el checklist de validación pre-commit (validate + build + coherencia de readme/prompts + verificación manual) usado repetidamente en la Entrega 2 — invócalo antes de comitear en cualquier entrega futura.
+- Hook de proyecto `.claude/hooks/block-no-verify.sh` (vía `.claude/settings.json`, `PreToolUse` sobre `Bash`): bloquea cualquier `git commit`/`push` con `--no-verify`, para que el hook de husky (`npm run validate`) no se pueda saltar sin que el usuario lo pida explícitamente.
 
 ## Environment
 
@@ -93,6 +95,10 @@ Monolito modular en **Next.js App Router + TypeScript**, full-stack (frontend + 
 - **Rate limiting (`lib/security/rateLimit.ts`):** los endpoints públicos (`/api/appointments`, `/api/businesses/[id]/slots`) limitan peticiones por IP (en memoria, por proceso — válido para el MVP de un solo servidor; en un despliegue multi-instancia habría que moverlo a Redis/Upstash). Cualquier endpoint público nuevo debe aplicar el mismo patrón.
 - `clientPhone` se valida con un patrón tipo E.164 (`^\+?[1-9]\d{6,14}$`), no solo longitud — es el dato que después usará el job de recordatorios de WhatsApp.
 - Cabeceras de seguridad básicas (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) aplicadas globalmente en `next.config.ts`.
+- **Login (`lib/auth.ts`):** `checkRateLimit` por IP+email (5 intentos / 5 min) dentro de `authorize`, y `bcrypt.compare` contra un hash dummy cuando el email no existe, para que el tiempo de respuesta no delate si una cuenta existe.
+- **`clientIp` (`lib/security/rateLimit.ts`):** toma el **último** hop de `X-Forwarded-For`, nunca el primero — el primero lo puede fijar el propio cliente con cualquier valor; el último es el que agrega el proxy de confianza (Vercel) justo antes del servidor.
+- **`POST /api/appointments`:** revalida el `startAt` recibido contra `computeAvailableSlots` (disponibilidad real + citas existentes + no-pasado) antes de intentar crear la cita — sin esto, un cliente podía mandar un horario arbitrario directo a la API sin pasar por el selector de la UI. La transacción final usa aislamiento `Serializable` (no el nivel por defecto de Postgres) para que dos reservas concurrentes del mismo hueco no puedan colarse ambas; Prisma lanza `P2034` en ese caso, mapeado al mismo 409.
+- **`callbackUrl` en `/login`:** se sanitiza a solo rutas relativas (`sanitizeCallbackUrl` en `LoginForm.tsx`) para que `?callbackUrl=https://evil.com` no sirva de open redirect tras un login legítimo.
 
 ## Course delivery process (AI4Devs Proyecto Final)
 

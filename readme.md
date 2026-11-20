@@ -64,7 +64,7 @@ AgendaYa resuelve esto dando al dueño del negocio una agenda online donde defin
 
 ### **1.3. Diseño y experiencia de usuario:**
 
-Identidad visual implementada en la Entrega 2: paleta violeta (`#5B3DF5`) + coral (`#FF4D6D`) + sol (`#FFC53D`) sobre blanco, tipografía Bricolage Grotesque (titulares) + Plus Jakarta Sans (resto), y un sistema de componentes compartido (`app/globals.css`: botones, inputs, badges, tablas) aplicado a las 8 pantallas de la app. La reserva pública usa un indicador de pasos (Servicio → Fecha → Hora → Datos) porque es un flujo realmente secuencial; el panel del negocio usa pastillas de navegación y badges de estado. Responsive verificado en mobile y desktop (tablas con scroll horizontal en vez de romperse, nav con scroll en vez de envolver).
+Identidad visual implementada en la Entrega 2: paleta violeta (`#5B3DF5`) + coral (`#FF4D6D`) + sol (`#FFC53D`) sobre blanco, tipografía Bricolage Grotesque (titulares) + Plus Jakarta Sans (resto), y un sistema de componentes compartido (`app/globals.css`: botones, inputs, badges, tablas) aplicado a las 8 pantallas de la app. La reserva pública usa un indicador de pasos (Servicio → Fecha → Hora → Datos) porque es un flujo realmente secuencial; el panel del negocio usa pastillas de navegación y badges de estado. Responsive verificado en mobile y desktop (tablas con scroll horizontal en vez de romperse, nav con scroll en vez de envolver). Favicon (`app/icon.svg`) e imagen de vista previa para compartir en redes (`app/opengraph-image.tsx`, generada con `next/og`) con la misma identidad; se eliminaron los assets de ejemplo de `create-next-app` que no se usaban en ninguna página.
 
 > Pendiente para la Entrega Final: capturas de pantalla y/o un video de 2-3 minutos mostrando el flujo completo (alta de disponibilidad y servicios por el negocio → reserva pública por el cliente → recordatorio de WhatsApp recibido → panel de agenda).
 
@@ -211,6 +211,9 @@ flowchart LR
 - **Rate limiting en los endpoints públicos:** `/api/appointments` (5 req/min por IP) y `/api/businesses/{id}/slots` (30 req/min por IP), implementado en `lib/security/rateLimit.ts`. Es en memoria y por proceso — suficiente para el MVP de un único servidor; en un despliegue multi-instancia habría que moverlo a un almacén compartido (Redis/Upstash). Limitación conocida, no bloqueante para esta entrega.
 - **Cabeceras HTTP básicas:** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, aplicadas globalmente en `next.config.ts`.
 - **Validación obligatoria antes de commitear:** hook `pre-commit` (husky) que corre `npm run validate` (lint + typecheck + tests) y bloquea el commit si algo falla.
+- **Login:** rate limit por IP+email (5 intentos/5 min) y comparación contra un hash "dummy" cuando el email no existe, para que el tiempo de respuesta no delate cuentas válidas (mitiga fuerza bruta y ataques de timing).
+- **`POST /api/appointments`:** revalida el horario recibido contra la disponibilidad real del negocio (no solo contra citas existentes) antes de crear la cita, y usa aislamiento `Serializable` en la transacción final para que dos reservas concurrentes del mismo hueco no puedan crearse ambas.
+- **`X-Forwarded-For`:** se confía solo en el último hop (el que agrega el proxy, no el que puede fijar el propio cliente) al identificar la IP para rate limiting.
 - **Secretos:** credenciales de WhatsApp (Twilio) y cadena de conexión a la base de datos solo en variables de entorno (`.env`, no versionado); `.env.example` documenta las claves sin valores reales.
 - **Datos de prueba:** las únicas credenciales versionadas son las del seed de desarrollo, explícitamente de prueba y sin acceso a producción.
 

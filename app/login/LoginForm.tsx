@@ -4,10 +4,19 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
+// Solo rutas internas relativas: "https://evil.com", "//evil.com" y
+// "/\evil.com" (los navegadores lo tratan como protocol-relative) quedan
+// descartados para que ?callbackUrl= no sirva como open redirect.
+function sanitizeCallbackUrl(raw: string | null): string {
+  if (!raw) return "/agenda";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return "/agenda";
+  return raw;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/agenda";
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

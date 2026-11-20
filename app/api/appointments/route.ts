@@ -1,7 +1,8 @@
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "../../../lib/db";
-import { rangesOverlap } from "../../../lib/services/slots";
+import { computeAvailableSlots } from "../../../lib/services/slots";
 import { checkRateLimit, clientIp } from "../../../lib/security/rateLimit";
 
 const createAppointmentSchema = z.object({
@@ -41,45 +42,85 @@ export async function POST(request: NextRequest) {
   const start = new Date(startAt);
   const end = new Date(start.getTime() + service.durationMinutes * 60_000);
 
+  const dayStart = new Date(start);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(start);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  // Revalida contra la disponibilidad real del negocio: sin esto, un cliente
+  // podía mandar un `startAt` arbitrario (fuera de horario, en el pasado, o ya
+  // tomado) directamente a la API sin pasar por el selector de huecos de la UI.
+  const [availability, sameDayAppointments] = await Promise.all([
+    prisma.availability.findMany({ where: { businessId, dayOfWeek: start.getDay() } }),
+    prisma.appointment.findMany({
+      where: { businessId, status: { not: "cancelled" }, startAt: { gte: dayStart, lte: dayEnd } },
+      select: { startAt: true, endAt: true },
+    }),
+  ]);
+
+  const requestedSlot = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+  const validSlots = computeAvailableSlots({
+    date: start,
+    availability: availability.map((a) => ({ startTime: a.startTime, endTime: a.endTime })),
+    durationMinutes: service.durationMinutes,
+    existingAppointments: sameDayAppointments,
+    now: new Date(),
+  });
+
+  if (!validSlots.includes(requestedSlot)) {
+    return NextResponse.json(
+      { error: "El horario solicitado no está disponible" },
+      { status: 409 }
+    );
+  }
+
   try {
-    const appointment = await prisma.$transaction(async (tx) => {
-      const dayStart = new Date(start);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(start);
-      dayEnd.setHours(23, 59, 59, 999);
+    const appointment = await prisma.$transaction(
+      async (tx) => {
+        // Re-chequeo dentro de la transacción: dos peticiones concurrentes
+        // pudieron pasar la validación de arriba antes de que cualquiera
+        // escribiera. Con aislamiento Serializable, Postgres aborta una de
+        // las dos (P2034) en vez de dejarlas crear la misma cita dos veces.
+        const conflict = await tx.appointment.findFirst({
+          where: {
+            businessId,
+            status: { not: "cancelled" },
+            startAt: { lt: end },
+            endAt: { gt: start },
+          },
+          select: { id: true },
+        });
+        if (conflict) {
+          throw new SlotTakenError();
+        }
 
-      const sameDayAppointments = await tx.appointment.findMany({
-        where: {
-          businessId,
-          status: { not: "cancelled" },
-          startAt: { gte: dayStart, lte: dayEnd },
-        },
-        select: { startAt: true, endAt: true },
-      });
-
-      const conflict = sameDayAppointments.some((appt) =>
-        rangesOverlap(start, end, appt.startAt, appt.endAt)
-      );
-      if (conflict) {
-        throw new SlotTakenError();
-      }
-
-      return tx.appointment.create({
-        data: {
-          businessId,
-          serviceId,
-          clientName,
-          clientPhone,
-          startAt: start,
-          endAt: end,
-          status: "pending",
-        },
-      });
-    });
+        return tx.appointment.create({
+          data: {
+            businessId,
+            serviceId,
+            clientName,
+            clientPhone,
+            startAt: start,
+            endAt: end,
+            status: "pending",
+          },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
 
     return NextResponse.json(appointment, { status: 201 });
   } catch (err) {
     if (err instanceof SlotTakenError) {
+      return NextResponse.json(
+        { error: "El horario solicitado ya no está disponible" },
+        { status: 409 }
+      );
+    }
+    // P2034: fallo de serialización de Postgres (dos transacciones Serializable
+    // en conflicto) — el mismo caso que SlotTakenError, solo que lo detecta la
+    // base de datos en vez de nuestra propia consulta.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2034") {
       return NextResponse.json(
         { error: "El horario solicitado ya no está disponible" },
         { status: 409 }
