@@ -1,0 +1,48 @@
+
+== P1 · Fijar una contraseña nueva: ¿se cierran solas las demás sesiones?
+cambio de contraseña desde la sesión 1: 200
+sesión 2, pase ya emitido, consulta al servicio: 403
+sesión 2, renovar: 400 refresh_token_not_found
+sesión 1 (la que cambió la contraseña), renovar: 200 
+
+== P2 · Cerrar las demás sesiones a propósito: ¿el servidor lo detecta antes de que venza el pase?
+cerrar las demás desde la sesión 1: 204
+sesión 2, pase ya emitido, consulta al servicio: 403 session_not_found
+sesión 2, renovar: 400 refresh_token_not_found
+sesión 1, consulta al servicio: 200
+cerrar la propia (sesión 1): 204
+sesión 1 ya cerrada, pase ya emitido, consulta al servicio: 403 session_not_found
+
+== P3 · Enlace de contraseña: un solo uso y el más reciente invalida al anterior
+pedir enlace 1: 200
+pedir enlace 2: 200
+correos con enlace recibidos: 2
+abrir el enlace viejo: (303, 'RECHAZADO otp_expired')
+abrir el enlace nuevo: (303, 'ACEPTADO')
+abrir el enlace nuevo otra vez: (303, 'RECHAZADO otp_expired')
+
+== P4 · Cuenta bloqueada en el servicio: entrada, pase vigente, renovación, enlace vigente y enlace nuevo
+bloquear: 200 | bloqueada hasta: 2126-10-26T02:55:34.819955178Z
+entrar: 400 user_banned
+pase ya emitido, consulta al servicio: 200 
+renovar: 400 user_banned
+abrir el enlace emitido antes del bloqueo: (303, 'RECHAZADO user_banned')
+pedir enlace estando bloqueada: 200 {} | correos nuevos: 1
+
+== P5 · ¿La aplicación puede saber cuándo entró la persona?
+campos del pase: ['aal', 'amr', 'app_metadata', 'aud', 'email', 'exp', 'iat', 'is_anonymous', 'iss', 'phone', 'role', 'session_id', 'sub', 'user_metadata']
+amr al entrar: [{'method': 'password', 'timestamp': 1795056940}] | iat: 1795056940 | session_id: True
+amr tras renovar: [{'method': 'password', 'timestamp': 1795056940}] | iat: 1795056943
+la marca de entrada se conserva al renovar: True | el iat cambia: True
+ID_SESION 10fafec1-ce03-4908-8005-63696efa1fb1
+
+== P6 · «Olvidé mi contraseña»: ¿la respuesta delata si hay cuenta?
+cuenta existente: 200 {} 21 ms
+cuenta inexistente: 200 {} 5 ms
+tiempos recuperación inexistente (ms): [24, 23, 24, 23, 25]
+entrada con cuenta inexistente: 400 invalid_credentials [11, 12, 9] ms
+entrada con contraseña mala: 400 invalid_credentials [104, 114, 99] ms
+
+== P7 · Intentos fallidos: ¿hay bloqueo por cuenta?
+20 intentos con contraseña mala: {400: 20}
+después, con la contraseña buena: 200

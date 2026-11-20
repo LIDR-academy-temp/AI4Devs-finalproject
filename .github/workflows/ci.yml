@@ -4,6 +4,8 @@ name: Integración continua
 
 on:
   push:
+    # Solo ramas: una etiqueta con el nombre de una rama confundiría la base.
+    branches: ["**"]
   pull_request:
 
 permissions:
@@ -15,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Historia completa: la comprobación de inmutabilidad compara con la base.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           # En local se probaron con 3.9, que el ejecutor ya no ofrece.
@@ -23,6 +28,37 @@ jobs:
         run: python3 tests/harness/prueba-datos-que-no-salen.py
       - name: El instalador instala lo que debe
         run: python3 tests/harness/prueba-instalar-guardarrailes.py
+      - name: El verificador de referencias detecta lo que debe (D-91)
+        run: python3 tests/harness/prueba-verificar-referencias.py
+      - name: Toda referencia del repositorio resuelve y ninguna copia cambió (D-91)
+        env:
+          EVENTO: ${{ github.event_name }}
+          RAMA: ${{ github.ref_name }}
+          RAMA_BASE: ${{ github.base_ref }}
+          ANTES: ${{ github.event.before }}
+        run: |
+          # La inmutabilidad se compara con lo ya unido, no commit por commit (D-97):
+          # - pull request: con su rama base;
+          # - push a la rama de la entrega: con lo que había antes del push;
+          # - push a cualquier otra rama: con el punto donde salió de la entrega
+          #   (merge-base, D-90). Lo que la rama agregó después puede corregirse
+          #   antes de unir; lo que ya estaba al salir, no.
+          # Nunca se corre sin --base: si falta la referencia, el paso falla.
+          ENTREGA="feature/entrega-1-JC"
+          if [ "$EVENTO" = "pull_request" ]; then
+            python3 scripts/verificar-referencias.py --base "origin/$RAMA_BASE"
+          elif [ "$RAMA" != "$ENTREGA" ]; then
+            SALIDA_DE_LA_ENTREGA="$(git merge-base "origin/$ENTREGA" HEAD)" || {
+              echo "Inmutabilidad: no se halló dónde salió $RAMA de $ENTREGA (sin historia común o sin la referencia); no se puede comprobar."
+              exit 1
+            }
+            python3 scripts/verificar-referencias.py --base "$SALIDA_DE_LA_ENTREGA"
+          elif [ -n "$ANTES" ] && [ "$ANTES" != "0000000000000000000000000000000000000000" ]; then
+            python3 scripts/verificar-referencias.py --base "$ANTES"
+          else
+            echo "Inmutabilidad: push a $ENTREGA sin estado anterior (rama creada o recreada); no se puede comprobar."
+            exit 1
+          fi
 
   aplicacion:
     name: Aplicación (estilo, tipos, pruebas y compilación)
