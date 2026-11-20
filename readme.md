@@ -45,6 +45,9 @@ Dashboard desplegado: <https://2.29.196.188.sslip.io>
 
 El acceso está protegido con usuario y contraseña. Las credenciales se enviarán al evaluador a través del formulario de entrega.
 
+> [!WARNING]
+> **Agente de IA con coste.** El dashboard desplegado tiene configurada la API de DeepSeek, de modo que el evaluador puede probar el Agente de IA (por ejemplo, el chat del dashboard). Su uso incurre en costes, pero el presupuesto está limitado.
+
 ### 0.5. URL o archivo comprimido del repositorio
 
 https://github.com/lgarcias/talos
