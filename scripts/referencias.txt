@@ -1,0 +1,55 @@
+# Configuración de scripts/verificar-referencias.py (decisión D-91).
+# Una entrada por línea; lo que va después de dos espacios y «#» es comentario.
+
+[vivos]
+# Documentos que se mantienen al día. Toda cita suya tiene que resolver.
+# Las copias de docs/trazabilidad/ son fotos fechadas: no se revisan sus
+# citas, solo que su huella coincida con el índice.
+readme.md
+prompts.md
+CLAUDE.md
+docs/trazabilidad/README.md
+openspec/specs/*/spec.md
+docs/trazabilidad/03-PRD/PRD-MVP-Controlador-de-Tiempo-20261119-v8.md
+.github/workflows/*.yml
+scripts/*.py
+scripts/*.sh
+.claude/hooks/*.py
+docs/revisiones/*-respuesta.md
+# Fuera a propósito: tests/ (sus datos de juguete citan cosas que no existen,
+# para probar que se detectan), el código de la aplicación (todavía no cita) y
+# los informes del revisor (docs/revisiones/<rama>-ronda<N>.md y sus
+# -corrida<M>.md): no los redactamos, son la opinión de un modelo y pueden
+# citar mal; eso es lo que la respuesta contesta. De docs/revisiones/ solo son
+# vivas las respuestas.
+
+[fuentes]
+# familia: archivos donde se define cada identificador (fila de tabla que empieza por él)
+D: docs/trazabilidad/01-Discovery/discovery-controlador-tiempo.md
+PA: docs/trazabilidad/01-Discovery/discovery-controlador-tiempo.md
+HU: docs/trazabilidad/05-Tickets/Tickets-MVP-Controlador-de-Tiempo-20261118-v4.md, docs/trazabilidad/05-Tickets/Recorte-Entrega-20261119-v4.md
+H: docs/trazabilidad/05-Tickets/Tickets-MVP-Controlador-de-Tiempo-20261118-v4.md, docs/trazabilidad/05-Tickets/Recorte-Entrega-20261119-v4.md
+RF: docs/trazabilidad/03-PRD/PRD-MVP-Controlador-de-Tiempo-20261119-v8.md
+RNF: docs/trazabilidad/03-PRD/PRD-MVP-Controlador-de-Tiempo-20261119-v8.md
+RA: docs/trazabilidad/03-PRD/PRD-MVP-Controlador-de-Tiempo-20261119-v8.md
+R: docs/trazabilidad/03-PRD/PRD-MVP-Controlador-de-Tiempo-20261119-v8.md
+E: docs/trazabilidad/05-Tickets/Tickets-MVP-Controlador-de-Tiempo-20261118-v4.md
+PA-B: docs/trazabilidad/04-Backlog/Backlog-MVP-Controlador-de-Tiempo-20261118-v5.md
+PA-P: docs/trazabilidad/03-PRD/PRD-MVP-Controlador-de-Tiempo-20261119-v8.md, docs/trazabilidad/03-PRD/PRD-MVP-Controlador-de-Tiempo-20261116-v1.md  # los cerrados se definieron en la v1
+CA: docs/trazabilidad/04-Backlog/Backlog-MVP-Controlador-de-Tiempo-20261118-v5.md
+M: docs/trazabilidad/03-PRD/PRD-MVP-Controlador-de-Tiempo-20261119-v8.md
+N: docs/trazabilidad/04-Backlog/Backlog-MVP-Controlador-de-Tiempo-20261118-v5.md
+
+[previstas]
+# ruta  ticket que la crea. Cuando la ruta exista, se saca de aquí.
+supabase/migrations  HU-03.1
+supabase/validaciones  HU-03.1
+supabase/seed.sql  H-3
+
+[no-son-rutas]
+# Texto entre comillas invertidas que parece ruta y no lo es.
+America/Panama  # zona horaria
+feature/entrega-1-JC  # rama de la entrega
+origin/feature/entrega-1-JC  # la misma, en el remoto
+docs/trazabilidad-d91  # rama del PR de trazabilidad
+refs/pull/1/head  # referencia de git del PR en GitHub

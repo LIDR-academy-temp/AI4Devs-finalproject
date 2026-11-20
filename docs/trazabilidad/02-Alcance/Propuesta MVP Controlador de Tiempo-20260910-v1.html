@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propuesta MVP — Controlador de Tiempo · 10/09/2026 v1</title>
+<style>
+  @page { size: letter; margin: 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 10.4pt; line-height: 1.5;
+         color: #1a1a1a; max-width: 900px; margin: 0 auto; padding: 22px 24px; }
+  h1 { font-size: 17pt; margin: 0 0 3px; }
+  .sub { font-size: 9.2pt; color: #555; margin-bottom: 16px; padding-bottom: 9px; border-bottom: 2px solid #1a3a5c; }
+  h2 { font-size: 12pt; color: #fff; background: #1a3a5c; margin: 24px 0 9px; padding: 5px 10px; border-radius: 2px; }
+  h3 { font-size: 10.6pt; margin: 14px 0 5px; color: #1a3a5c; }
+  .mapa { border: 1.5px solid #1a3a5c; background: #f4f7fa; padding: 11px 15px; margin: 4px 0 8px; }
+  .mapa table { margin: 0; }
+  .nota { border-left: 3px solid #1f7a4d; background: #f2f9f5; padding: 9px 13px; margin: 9px 0; }
+  .alerta { border-left: 3px solid #a8202a; background: #fdf3f3; padding: 9px 13px; margin: 9px 0; }
+  .alerta b { color: #a8202a; }
+  .regla { border: 1.5px solid #6a3d9a; background: #f6f2fa; padding: 11px 15px; margin: 10px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 7px 0; font-size: 9.5pt; }
+  td, th { border: .7px solid #c4ccd4; padding: 5px 8px; vertical-align: top; text-align: left; }
+  th { background: #eef2f6; color: #1a3a5c; font-size: 8.7pt; text-transform: uppercase; letter-spacing: .3px; }
+  .ok { color: #1f7a4d; font-weight: 700; }
+  .no { color: #a8202a; font-weight: 700; }
+  .tag { display:inline-block; font-size:7.8pt; padding:1px 6px; border-radius:2px; color:#fff; white-space:nowrap; }
+  .t-mvp { background:#1f7a4d; } .t-tub { background:#6a3d9a; } .t-fuera { background:#8a8f96; }
+  ul, ol { margin: 4px 0 4px 20px; padding: 0; } li { margin-bottom: 4px; }
+  .foot { margin-top: 20px; padding-top: 8px; border-top: 1px solid #c4ccd4; font-size: 8.4pt; color: #666; }
+  code { background:#eef2f6; padding:1px 4px; font-size:9pt; }
+  .ts { display:block; font-size:8.4pt; color:#666; font-weight:400; margin-top:2px; }
+  @media (max-width: 640px) { body { padding: 14px 12px; font-size: 10pt; } table { font-size: 8.8pt; } }
+</style>
+</head>
+<body>
+
+<h1>Controlador de Tiempo — Propuesta de MVP</h1>
+<div class="sub"><b>Proveedor A · Proveedor B</b> — herramienta interna<br>
+Para revisión en la <b>reunión operativa del miércoles 16/09/2026</b> · Documento de trabajo v1 · jueves 10/09/2026<br>
+Construido con método SDD (discovery → alcance → PRD → backlog), como proyecto final del máster AI4Devs</div>
+
+<div class="mapa">
+<b>En una página</b>
+<table>
+<tr><th style="width:26%">Pregunta</th><th>Respuesta</th></tr>
+<tr><td><b>Qué resuelve</b></td><td>Dos dolores: <b>enterarnos por el cliente</b> de que un recurso no asistió o no se conectó (reputación), y <b>sustentar la facturación</b> con actividad y aprobaciones trazables (Perú lo exige por ley)</td></tr>
+<tr><td><b>Para quién</b></td><td>Se diseña para <b>el consultor</b>. Registrar debe costar segundos</td></tr>
+<tr><td><b>Qué se construye</b></td><td>Registro diario · aprobación del supervisor · <b>un formato único de reporte</b> · trazabilidad · exportación</td></tr>
+<tr><td><b>Qué no, todavía</b></td><td>Alertas, conectores, aprobación del cliente, multi-empresa, migración — <b>con las tuberías listas</b></td></tr>
+<tr><td><b>Qué sustituye</b></td><td>Las plantillas Excel de Proveedor A y Proveedor B, Clockify y el modelo de catálogo en HTML</td></tr>
+<tr><td><b>Primer cliente</b></td><td><b>Cliente A</b> — arranca sin histórico que migrar</td></tr>
+<tr><td><b>Qué decide el equipo el miércoles</b></td><td>Sección 9</td></tr>
+</table>
+</div>
+
+<h2>1 · El problema — dos dolores distintos</h2>
+
+<p>La necesidad apareció en tres clientes y no es de un proyecto: <b>es capacidad operativa central
+de Proveedor A y Proveedor B para todo servicio de staff augmentation</b>. Pero son dos dolores con exigencias
+distintas, y conviene no tratarlos igual:</p>
+
+<table>
+<tr><th style="width:22%">&nbsp;</th><th>Presencia y puntualidad</th><th>Actividad</th></tr>
+<tr><td><b>Por qué duele</b></td><td>Nos enteramos <b>por el cliente</b> de que un recurso no asistió o no se conectó. Costo de reputación</td><td>Sin sustento de actividad <b>no se puede facturar</b>. En Perú es exigencia legal</td></tr>
+<tr><td><b>Qué necesita</b></td><td><b>Detección oportuna</b> — hoy, no al cierre de la quincena</td><td><b>Evidencia</b> con trazabilidad y aprobación</td></tr>
+<tr><td><b>Si falla</b></td><td>Perdemos reputación</td><td>No facturamos</td></tr>
+</table>
+
+<div class="nota"><b>El reencuadre que guía el diseño.</b> El primer dolor no es de registro, es de
+<b>detección</b>. Una hoja de horas que se llena al cierre del período deja que el cliente siga
+avisando primero. El registro es el subproducto; el objetivo es <b>saberlo antes que el cliente</b>.</div>
+
+<p><b>Lo que hay hoy.</b> Tres modelos conviviendo que no se hablan: (A) <i>asistencia</i> —entrada y
+salida por día, subtotales por quincena— en las plantillas <code>RegHoras</code> de Proveedor A y Proveedor B; (B)
+<i>imputación</i> a proyectos del cliente con porcentaje, como el reporte mensual de Cliente B; y (C)
+<i>actividad</i> por catálogo propio, diseñado en HTML y sin implementar. Más historial real en
+Cliente B, Cliente C, Cliente D y Cliente E.</p>
+
+<h2>2 · Para quién</h2>
+
+<p><b>Usuario primario: el consultor asignado.</b> La pantalla principal se diseña para él.</p>
+
+<p>Esto tiene una consecuencia que manda sobre todo lo demás: el consultor no gana nada registrando
+—el valor lo cobran Proveedor A y Proveedor B—. Si el incentivo es externo (contrato o reglamento), <b>la adopción
+depende por completo de que registrar no cueste nada</b>. La fricción mínima no es aspiración: es
+restricción de diseño.</p>
+
+<table>
+<tr><th>Usuario</th><th>Qué hace</th><th>En el MVP</th></tr>
+<tr><td><b>Consultor</b></td><td>Registra su día: conexión y actividad</td><td class="ok">Sí</td></tr>
+<tr><td><b>Supervisor Proveedor A / Proveedor B</b></td><td>Revisa, pide correcciones, aprueba y bloquea el período</td><td class="ok">Sí</td></tr>
+<tr><td><b>Dirección</b></td><td>Obtiene el reporte que respalda la factura</td><td class="ok">Sí</td></tr>
+<tr><td><b>Contraparte del cliente</b></td><td>Da conformidad a las horas</td><td class="no">No — recibe el reporte exportado, como hoy</td></tr>
+</table>
+
+<h2>3 · Qué se construye en el MVP</h2>
+
+<ol>
+<li><b>Registro diario del consultor</b> — marca de conexión y actividad imputada, en segundos, desde el teléfono o la computadora.</li>
+<li><b>Asignaciones</b> — consultor + cliente + proyecto, con el <b>horario comprometido tomado del contrato del cliente</b>. No se inventa: el contrato de Cliente A lo fija en 8:00–17:00, lunes a viernes.</li>
+<li><b>Catálogo de actividades</b> — transversales (GEN-01 a GEN-05: reuniones, documentación, incidencias, transferencia, gestión) más las fases propias de cada cliente.</li>
+<li><b>Revisión y aprobación del supervisor</b> — con ida y vuelta para correcciones y <b>bloqueo del período</b> una vez aprobado.</li>
+<li><b>Un formato único de reporte</b> — sección 4. Es el respaldo que acompaña la factura.</li>
+<li><b>Trazabilidad</b> — quién registró, quién corrigió, quién aprobó y cuándo. Nada aprobado se modifica sin dejar rastro.</li>
+<li><b>Exportar todo a archivo</b> — la red de seguridad que el Excel daba gratis. Si el sistema falla en el cierre del mes, se factura igual.</li>
+</ol>
+
+<h2>4 · El formato único de reporte</h2>
+
+<p><b>Decisión de la Dirección: un solo formato, el mejor que podamos definir, y todos los clientes
+se adaptan.</b> Se diseña para contener lo que los cuatro formatos actuales necesitaban, de modo que
+ningún cliente pierda información al migrar:</p>
+
+<table>
+<tr><th style="width:20%">Bloque</th><th>Contenido</th><th style="width:24%">Cubre lo que hoy pide</th></tr>
+<tr><td><b>Encabezado</b></td><td>Empresa (Proveedor A/Proveedor B) · cliente · proyecto o asignación · consultor · supervisor · contraparte del cliente (VP o gerencia) · período · horario comprometido</td><td>Todas las plantillas actuales</td></tr>
+<tr><td><b>Detalle diario</b></td><td>Fecha · entrada · salida · horas · modalidad (presencial / remoto) · actividad (código del catálogo) · referencia del cliente (opcional) · descripción · tipo de hora (ordinaria / extra)</td><td>(A) asistencia · (C) actividad · Perú (sustento de tareas)</td></tr>
+<tr><td><b>Ausencias justificadas</b></td><td>Vacaciones · incapacidad · permiso — <b>no facturables</b></td><td>un contrato vigente con Cliente F</td></tr>
+<tr><td><b>Resumen</b></td><td>Horas por actividad · horas por referencia del cliente <b>con porcentaje</b> · subtotales por quincena · total ordinarias · total extras</td><td>(B) Cliente B — <b>el % se calcula, no se teclea</b></td></tr>
+<tr><td><b>Conformidad</b></td><td>Tres firmas: consultor · supervisor Proveedor A/Proveedor B · contraparte del cliente · con fecha y período bloqueado</td><td>(C) modelo de catálogo</td></tr>
+</table>
+
+<div class="nota">Dos de estos campos vienen del terreno y no de la teoría: las <b>horas extra</b>
+(ya existen las plantillas <code>RegHorasXtras</code> en Proveedor A y Proveedor B) y las <b>ausencias no
+facturables</b> (exigencia del un contrato vigente con Cliente F). Si no entran en el formato, alguien vuelve
+a abrir un Excel.</div>
+
+<h2>5 · Capacidades anticipadas — con las tuberías listas</h2>
+
+<div class="regla"><b>La regla de las tuberías.</b> Una tubería es un <b>punto de extensión, no una
+funcionalidad a medias</b>. Tres tipos permitidos:
+<ol>
+<li><b>Un campo o una entidad</b> en el modelo de datos</li>
+<li><b>Una interfaz genérica</b>, aunque exista una sola implementación</li>
+<li><b>Un estado</b> en el registro</li>
+</ol>
+<b>Si hay que probarlo, no es tubería: es funcionalidad.</b><br>
+<b>La prueba:</b> <i>¿se puede agregar después sin migrar datos ni reescribir?</i> Si sí, no hace falta
+tubería. Si no, esa es la que se deja. Por eso la tubería se concentra en el <b>modelo de datos</b>,
+que es lo caro de cambiar después — las pantallas son baratas.</div>
+
+<table>
+<tr><th style="width:24%">Capacidad futura</th><th>Tubería que se deja en el MVP</th><th style="width:28%">Lo que NO se construye</th></tr>
+<tr><td><b>Alerta de ausencia o impuntualidad</b><br><span class="ts">Resuelve el dolor de reputación</span></td><td>Horario comprometido por asignación; cada marca con fecha y hora exactas</td><td>El motor de alertas y el canal de aviso</td></tr>
+<tr><td><b>Recordatorio al consultor</b></td><td>El mismo horario comprometido</td><td>Los recordatorios</td></tr>
+<tr><td><b>Leer tickets del cliente</b><br><span class="ts">Jira, Azure DevOps, ClickUp, Trello</span></td><td>La imputación apunta a una <b>referencia externa genérica</b> (sistema · clave · título · fecha de lectura), no a texto libre</td><td>Ningún conector</td></tr>
+<tr><td><b>Escribir horas en la herramienta del cliente</b></td><td>Cada registro aprobado nace con <b>estado de sincronización</b> («no aplica» en el MVP)</td><td>La integración — exige autorización formal de cada cliente</td></tr>
+<tr><td><b>Evidencia pasiva desde repositorios</b><br><span class="ts">GitHub, GitLab</span></td><td>La marca de presencia registra su <b>fuente</b> (manual en el MVP)</td><td>La lectura de repositorios</td></tr>
+<tr><td><b>Aprobación del cliente dentro del sistema</b></td><td>El flujo de aprobación admite <b>varios niveles</b>; el rol de aprobador del cliente existe</td><td>El acceso de usuarios externos</td></tr>
+<tr><td><b>Segregación entre proveedores</b></td><td>Todo registro pertenece a una <b>organización</b> desde el día uno</td><td>La administración multi-empresa</td></tr>
+<tr><td><b>Cobro por recursos del cliente y de terceros</b></td><td>La organización y el <b>tipo de recurso</b> (propio · del cliente · de otro proveedor)</td><td>Planes, precios, facturación del servicio</td></tr>
+<tr><td><b>Migración del histórico</b><br><span class="ts">Excel, Clockify</span></td><td>Importación desde archivo con mapeo de columnas</td><td>La migración ejecutada</td></tr>
+<tr><td><b>Reglas por país o cliente</b><br><span class="ts">Perú frente a Panamá</span></td><td>País y reglas de facturación como <b>atributos de la asignación</b></td><td>Un motor de reglas</td></tr>
+<tr><td><b>Presencia física verificada</b></td><td>El campo de modalidad (presencial / remoto)</td><td>Geolocalización — <b>requiere evaluación de privacidad antes</b></td></tr>
+<tr><td><b>Indicadores</b><br><span class="ts">Ocupación, puntualidad, horas por cliente</span></td><td>Datos estructurados y fechados</td><td>Tableros</td></tr>
+<tr><td><b>Aplicación móvil nativa</b></td><td>Todo el sistema expuesto por API; el MVP es web adaptada al teléfono</td><td>La app nativa</td></tr>
+<tr><td><b>Firma electrónica calificada</b></td><td>Cada aprobación con quién y cuándo, inalterable</td><td>La integración con un proveedor de firma</td></tr>
+</table>
+
+<div class="alerta"><b>Dos tuberías que no se pueden postergar.</b> La <b>organización</b> en todo
+registro y la <b>referencia externa genérica</b>. Son las únicas cuya ausencia obligaría a
+<b>migrar datos</b> más adelante: agregar «organización» a un sistema que ya tiene meses de registros
+sin ella, o convertir texto libre en referencias estructuradas, es reescribir la historia. Las demás
+se pueden agregar sin tocar lo existente.</div>
+
+<h2>6 · Fuera de alcance del MVP, explícito</h2>
+<ul>
+<li>Alertas y recordatorios · conectores de lectura y escritura · evidencia desde repositorios</li>
+<li>Aprobación del cliente dentro del sistema · usuarios externos</li>
+<li>Multi-empresa, segregación entre proveedores y cobro del servicio</li>
+<li>Migración del histórico · indicadores y tableros · app nativa · geolocalización</li>
+<li>Motor de facturación — <b>no hace falta</b>: se factura por otra vía; el sistema produce el respaldo</li>
+</ul>
+
+<h2>7 · Riesgos</h2>
+
+<div class="alerta"><b>Riesgo 1 — Así recortado, el MVP no resuelve el primer dolor.</b> Resuelve el
+de facturación —respaldo, trazabilidad, Perú— y deja preparado el de reputación, que llega con la
+alerta. <b>El primer entregable no evita la llamada del cliente.</b> Es coherente con la decisión de
+que la bitácora es la base y la alerta una funcionalidad encima; conviene que el equipo lo sepa desde
+el principio para no leer después «funcionalidad» como «secundario».</div>
+
+<p><b>Riesgo 2 — Sin red.</b> Al sustituir todo, una caída en el cierre del mes significa no
+facturar. El Excel tiene cero caída. Mitigación: la exportación completa a archivo está dentro del
+MVP, y la adopción empieza por un cliente.</p>
+
+<p><b>Riesgo 3 — Adopción.</b> Si el consultor no gana nada por registrar, el sistema depende de
+la obligación. Mitigación: fricción mínima como restricción de diseño, y una cláusula contractual o
+reglamento interno — <b>y la cláusula sola no basta</b>: una obliga, la alerta detecta. Van juntas.</p>
+
+<p><b>Riesgo 4 — El formato único puede no ser aceptado por todos los clientes.</b> La decisión es
+que se adapten; conviene validarlo primero con Cliente A, que no tiene formato previo.</p>
+
+<h2>8 · Decisiones y puntos abiertos</h2>
+
+<h3>Decisiones tomadas en el discovery</h3>
+<table>
+<tr><th style="width:9%">#</th><th>Decisión</th></tr>
+<tr><td>D-1</td><td>Mide <b>presencia</b> y <b>actividad</b>, por razones distintas</td></tr>
+<tr><td>D-2</td><td><b>Bitácora = base. Alerta = funcionalidad encima</b> — no secundaria</td></tr>
+<tr><td>D-3</td><td>Se diseña <b>para el consultor</b></td></tr>
+<tr><td>D-4</td><td><b>Fricción mínima</b> como restricción de diseño</td></tr>
+<tr><td>D-5</td><td><b>Sustituye</b> Excel, Clockify y el modelo en HTML — estado final, no fecha</td></tr>
+<tr><td>D-6</td><td>El <b>reporte de salida entra al MVP</b></td></tr>
+<tr><td><s>D-7</s></td><td><s>Un registro alimenta cuatro formatos de salida</s> — <b>superada por D-15</b></td></tr>
+<tr><td>D-8</td><td>Conectores <b>bidireccionales</b>: leer tickets e imputar; empujar horas</td></tr>
+<tr><td>D-9</td><td><b>Fuente de verdad por objeto</b>: horas y aprobaciones, el sistema · tickets del cliente, el cliente, con copia fechada</td></tr>
+<tr><td>D-10</td><td>El <b>porcentaje se deriva</b> de la imputación; no se captura</td></tr>
+<tr><td>D-11</td><td>Una imputación aprobada <b>no pierde significado</b> si el cliente cambia sus tickets después</td></tr>
+<tr><td>D-12</td><td>Integraciones <b>intercambiables por configuración</b></td></tr>
+<tr><td>D-13</td><td><b>Proyectos</b> = destino de imputación · <b>repositorios</b> = evidencia de actividad</td></tr>
+<tr><td>D-14</td><td><b>Interna + intermedia</b>: incluida en el costo de venta para recursos propios; cobrable para recursos del cliente y de otros proveedores; no se ofrece a la competencia</td></tr>
+<tr><td><b>D-15</b></td><td><b>Un solo formato de reporte</b>, el mejor que podamos definir; todos los clientes se adaptan. El registro sigue siendo rico: la simplificación está en la salida</td></tr>
+<tr><td><b>D-16</b></td><td><b>Anticipar todas las necesidades previsibles; construir solo las del MVP y dejar las tuberías listas para el resto</b>, bajo la regla de la sección 5</td></tr>
+</table>
+
+<h3>Puntos abiertos</h3>
+<table>
+<tr><th style="width:9%">#</th><th>Punto abierto</th></tr>
+<tr><td>PA-1</td><td>Canal y modo de la alerta</td></tr>
+<tr><td>PA-2</td><td>Qué gana el consultor por registrar — contrato o reglamento interno</td></tr>
+<tr><td>PA-3</td><td>En qué instrumento va la obligación de registrar, y desde cuándo</td></tr>
+<tr><td>PA-4</td><td>Orden de adopción por cliente — propuesta: Cliente A primero</td></tr>
+<tr><td>PA-5</td><td>¿El histórico migra o queda como archivo?</td></tr>
+<tr><td>PA-6</td><td>Escribir en la herramienta del cliente exige autorización formal por cliente</td></tr>
+<tr><td>PA-7</td><td>Segregación entre proveedores — resuelta a nivel de tubería por D-16; falta decidir cuándo se activa</td></tr>
+<tr><td>PA-8</td><td>Qué integración va primero</td></tr>
+<tr><td><b>PA-9</b></td><td><b>Dónde vive el repositorio del producto</b> — y bajo qué cuenta. Bloquea el paso siguiente del método</td></tr>
+</table>
+
+<h2>9 · Qué se decide el miércoles</h2>
+<ol>
+<li><b>¿El alcance del MVP es el correcto?</b> Sección 3.</li>
+<li><b>¿El formato único cubre lo que cada cliente necesita?</b> Sección 4 — ¿falta algún campo que alguien use hoy?</li>
+<li><b>¿Falta alguna capacidad por anticipar?</b> Sección 5 — el equipo conoce casos que esta propuesta no.</li>
+<li><b>¿Se acepta el riesgo 1?</b> Que el primer entregable resuelva la facturación y no todavía la reputación.</li>
+<li><b>Cómo se obliga el registro</b> — contrato, reglamento o ambos (PA-2 y PA-3).</li>
+<li><b>Dónde vive el producto</b> (PA-9).</li>
+</ol>
+
+<div class="foot">
+Documento de trabajo de Proveedor A y Proveedor B · v1, jueves 10/09/2026 (fecha verificada).<br>
+Fuente: discovery del 09/09/2026 (<code>Capacitaciones/L1DR/MasterAI/ProyectoFinal/01-Discovery/discovery-controlador-tiempo.md</code>),
+plantillas <code>RegHoras</code> de Proveedor A y Proveedor B, <code>ClienteB ReporteHorasMensuales.xlsx</code>, y
+<code>Modelo Control de Tiempo - Catalogo y Reporte.html</code>.<br>
+Siguiente paso del método tras la reunión: consolidar el alcance aprobado y generar el PRD.
+</div>
+
+</body>
+</html>
