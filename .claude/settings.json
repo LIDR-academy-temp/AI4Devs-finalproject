@@ -7,6 +7,21 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/block-no-verify.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-destructive-prisma.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-multi-tenancy.sh"
           }
         ]
       }

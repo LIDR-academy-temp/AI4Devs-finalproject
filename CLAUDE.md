@@ -36,7 +36,12 @@ Local Postgres: `docker-compose up -d` (see `docker-compose.yml`) before running
 - `/security-review` antes de la Entrega Final, dado que hay auth de negocio y datos de clientes (nombre/teléfono) de por medio.
 - Skill `run` para levantar y probar la app manualmente en vez de asumir que "compila" equivale a "funciona".
 - Skill de proyecto `.claude/skills/validar-entrega/SKILL.md`: el checklist de validación pre-commit (validate + build + coherencia de readme/prompts + verificación manual) usado repetidamente en la Entrega 2 — invócalo antes de comitear en cualquier entrega futura.
-- Hook de proyecto `.claude/hooks/block-no-verify.sh` (vía `.claude/settings.json`, `PreToolUse` sobre `Bash`): bloquea cualquier `git commit`/`push` con `--no-verify`, para que el hook de husky (`npm run validate`) no se pueda saltar sin que el usuario lo pida explícitamente.
+- Skill de proyecto `.claude/skills/seed-demo/SKILL.md`: reset del entorno local a datos de demo limpios (docker + migrate + seed), sin recurrir nunca a `prisma migrate reset`.
+- Skill de proyecto `.claude/skills/documentar-prompt/SKILL.md`: formato exacto para agregar un prompt nuevo a `prompts.md` (numeración, cita textual, *Criterio humano*) — invócalo justo después de terminar trabajo de código a partir de un prompt real del usuario.
+- Hooks de proyecto (`.claude/settings.json` + `.claude/hooks/*.sh`):
+  - `block-no-verify.sh` (`PreToolUse` / `Bash`): bloquea `git commit`/`push` con `--no-verify`, para que el hook de husky (`npm run validate`) no se pueda saltar sin que el usuario lo pida explícitamente.
+  - `block-destructive-prisma.sh` (`PreToolUse` / `Bash`): bloquea `prisma migrate reset` y `prisma db push --force-reset|--accept-data-loss` — comandos que borran toda la base local, no solo los datos del seed.
+  - `check-multi-tenancy.sh` (`PostToolUse` / `Edit|Write`): advierte (no bloquea) si se edita un Route Handler bajo `app/api/businesses/[businessId]/**` (salvo `slots`, público a propósito) que no llama a `requireOwnBusiness`.
 
 ## Environment
 
