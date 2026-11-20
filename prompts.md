@@ -179,3 +179,63 @@ Se pidió a Claude generar un ticket de backend (cálculo de huecos disponibles)
 **Prompt 2:**
 
 **Prompt 3:**
+
+---
+
+## 8. Entrega 2 — Implementación end-to-end
+
+> A diferencia de la Entrega 1 (solo documentación), aquí los prompts generan y modifican código real sobre la rama `feature/entrega-2-rm`. Se mantiene el mismo criterio: máximo ~3 prompts por tema, priorizando los de creación inicial, corrección de bugs y endurecimiento final.
+
+**Prompt 1 — Alcance y arranque:**
+
+"listo, ahora vamos preparando la entrega dos"
+
+Preguntas de acotamiento de Claude (AskUserQuestion) antes de escribir código: *¿qué funcionalidad hacemos 100% operativa end-to-end?* → **"Disponibilidad + reserva pública"**; *¿dónde vive el código?* → **"Raíz de AI4Devs-finalproject"**; *¿cómo levantamos Postgres local?* → **"Docker Compose local"**. A partir de estas tres decisiones se generó: `prisma/schema.prisma` (Business/Service/Availability/Appointment), `lib/services/slots.ts` (cálculo puro de huecos) con 7 tests unitarios en Vitest, los Route Handlers `GET /api/businesses/[id]/slots` y `POST /api/appointments` (validados con Zod, con manejo de conflicto 409 dentro de una transacción Prisma), la página pública `/[businessSlug]` con su formulario de reserva, el panel `/agenda` de solo lectura, y `prisma/seed.ts` con datos de demo.
+
+*Criterio humano:* se verificó el flujo real en 3 niveles antes de considerarlo "hecho" — consultas Prisma directas, `curl` contra los endpoints (slots, creación 201, doble reserva 409) y la UI completa en el navegador — en vez de confiar solo en que `npm run validate` pasara en limpio.
+
+**Prompt 2 — Corrección de bugs encontrados al verificar (no al escribir código):**
+
+Durante la verificación manual (no a partir de un prompt de producto, sino de inspeccionar el comportamiento real) se detectaron y corrigieron dos bugs: (a) `prisma/seed.ts` generaba IDs de servicio no-UUID (`${business.id}-corte`) que rompían la validación `.uuid()` de Zod en ambos endpoints — se corrigió dejando que Prisma generara UUIDs reales (`@default(uuid())`); (b) `BookingForm.tsx` no cargaba los huecos disponibles al montar la página (solo en `onChange`), por lo que la página pública se veía "sin horarios" al abrirla — se corrigió con un `useEffect` de montaje.
+
+*Criterio humano:* ambos bugs se encontraron usando la propia app (browser + curl), no leyendo el código en abstracto; es la misma disciplina de "probar el flujo manualmente" que exige `CLAUDE.md § Validación y tests`.
+
+**Prompt 3 — Endurecimiento antes de comitear (seguridad, spec-driven, validación de commit):**
+
+"antes de eso, asegurate de documentar los prompts, que el harness esté debidamente, que tengamos open spec para el spec driven, seguridad, unit test, validaciones al commit, generación de user stories etc"
+
+A partir de este prompt se: extrajo el contrato de API a un `openapi.yaml` independiente (spec-driven, referenciado desde `readme.md § 4` y `CLAUDE.md`); se añadió `lib/security/rateLimit.ts` (rate limit en memoria por IP) a los dos endpoints públicos; se endureció la validación de `clientPhone` (regex E.164 en vez de solo longitud); se cambiaron las consultas a `Business` para usar `select` explícito y no arrastrar `passwordHash`; se añadieron cabeceras de seguridad básicas en `next.config.ts`; se instaló `husky` con un hook `pre-commit` que corre `npm run validate`; y se documentó todo en `readme.md` (Ticket 4, sección 2.5/2.6 actualizadas) y aquí mismo.
+
+*Criterio humano:* se revisó que el rate limiting y el `select` explícito fueran proporcionales al alcance de un MVP de curso (sin introducir Redis/colas) y se dejó explícitamente documentada la limitación conocida (rate limit en memoria, no compartido entre instancias) en vez de presentarlo como una solución de producción completa.
+
+**Prompt 4 — "corre localmente el proyecto para probarlo" antes de comitear:**
+
+"antes de esto corre localmente el projecto para probarlo"
+
+Se levantó `npm run dev`, se completó una reserva real en el navegador (`/barberia-demo` → slot → nombre/teléfono → confirmación) y se verificó que apareciera en `/agenda`. Además, se corrió `npm run build` (producción), algo que no se había hecho hasta este punto — y falló: `cacheComponents`/`partialPrefetching` (activados en `next.config.ts` desde el harness inicial) exigen `Suspense` o `"use cache"` alrededor de cualquier acceso a datos dinámico, y `/agenda` (consulta Prisma directa, sin `searchParams`/`cookies`) no los tenía. Se corrigió desactivando esos flags experimentales (no aportan nada a este MVP) y marcando `/agenda` con `export const dynamic = "force-dynamic"` para que nunca sirva una foto fija de las citas tomada en build time.
+
+*Criterio humano:* probar solo con `npm run dev` habría dejado pasar este bug a producción sin que ningún test lo detectara; se añadió la regla de correr `npm run build` antes de cambios de rutas/config a `CLAUDE.md` para que no se repita.
+
+**Prompt 5 — Feedback en medio del commit: falta el panel del negocio:**
+
+"definitivamente la ui es un punto a mejorar, tambien falta el panel del duelo del negocio donde se adminsitra los tiempos disponible y donde se puede ver la agenta, configurar el mensaje de confirmacion etc"
+
+Se preguntó (AskUserQuestion) si continuar con el commit de Entrega 2 ya validado (dejando el panel para después) o empezar el panel de inmediato → respuesta: **"Empezar ya el panel del negocio"**. A partir de ahí se construyó, en la misma rama: autenticación real con Auth.js v5 (Credentials provider contra `Business` + bcrypt, sesión JWT), `proxy.ts` protegiendo `/agenda`/`/servicios`/`/disponibilidad`/`/configuracion`, `lib/security/authz.ts` como único punto de verificación de multi-tenancy, CRUD completo de servicios (con "eliminar" implementado como desactivar, no borrar, para no arrastrar citas históricas), CRUD de disponibilidad (con validación `endTime > startTime`), y una página de configuración para editar la plantilla del mensaje de confirmación de WhatsApp (campo nuevo `Business.confirmationMessageTemplate` + migración). `/agenda` dejó de usar un slug de negocio fijo y pasó a leer el `businessId` de la sesión.
+
+*Criterio humano:* se verificó explícitamente la frontera de seguridad antes de dar el trabajo por terminado — `curl` sin sesión contra los nuevos endpoints debía responder 401 (y lo hizo), y las páginas protegidas debían redirigir a `/login` (y lo hicieron) — en vez de confiar en que "la UI no muestra el link" fuera suficiente protección. También se decidió no implementar NextAuth/Auth.js como mock u OAuth social (fuera de alcance de un MVP de curso) sino Credentials simple, coherente con la decisión ya documentada en `readme.md § 2.2`.
+
+**Prompt 6 — Identidad visual ("diseños modernos e intuitivos, colores llamativos y con contraste"):**
+
+"Seguir afinando UI" (tras: *"ahora solo enfoquemonos en la ui, usemos diseños modernos e intuitivos, usa colores llamativos y con contraste"*)
+
+Se cargó la skill `frontend-design` del propio Claude Code antes de escribir una sola línea de CSS, para evitar los defaults típicos de una UI generada por IA (crema+serif+terracota, negro+verde ácido, tarjetas SaaS idénticas). Se definió un sistema de tokens en `app/globals.css` (paleta violeta/coral/sol sobre blanco, tipografía Bricolage Grotesque + Plus Jakarta Sans vía `next/font`) y se rediseñaron las 8 pantallas: landing (hero con mock-up real del selector de horarios en vez de una ilustración genérica), reserva pública (indicador de pasos, porque el flujo es realmente secuencial), login (panel dividido), y las 4 páginas del panel de negocio (nav con pastilla activa, badges de estado).
+
+*Criterio humano:* se hizo una pasada de autocrítica explícita después de la primera versión — en vez de darla por terminada, se revisó en el navegador en mobile y se encontraron y corrigieron 3 problemas reales: la tabla de agenda se rompía en mobile (texto apilado en varias líneas), el nav se partía en 2-3 líneas, y el anillo de foco por teclado era violeta sobre fondos ya violetas (invisible). También se agregó una página 404 con la misma identidad, porque la reserva pública usa `notFound()` para slugs inexistentes y antes caía en la plantilla genérica de Next.js.
+
+**Prompt 7 — Validación final antes del commit:**
+
+"ok estamos cerca de hacer commit solo hay que validar que los prompts esten documentados y se cumpla con lo requerido de la entrega 2"
+
+Se revisó `prompts.md` contra la conversación real (este mismo prompt añadió los Prompts 6 y 7 que faltaban) y se auditó `readme.md` contra el código actual, encontrando y corrigiendo desincronizaciones: las instrucciones de instalación todavía mencionaban `NEXTAUTH_SECRET` en vez de `AUTH_SECRET` (Auth.js v5), y la sección 1.2 no reflejaba que disponibilidad/servicios/agenda ya están implementados con UI real (no solo modelo de datos), no solo "planeados".
+
+*Criterio humano:* en vez de asumir que la documentación escrita en pasos anteriores seguía siendo exacta, se releyó contra el estado real del código antes de comitear — la propia guía del curso evalúa que `readme.md`/`prompts.md` sean coherentes con el código de cada entrega, no solo que existan.

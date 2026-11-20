@@ -51,11 +51,11 @@ AgendaYa resuelve esto dando al dueño del negocio una agenda online donde defin
 
 **Funcionalidades must-have (alcance de este proyecto):**
 
-1. **Gestión de disponibilidad horaria:** el dueño del negocio define los días y rangos horarios en que atiende (p. ej. lunes a viernes 9:00–18:00), y la duración de los turnos, para que el sistema calcule automáticamente los huecos reservables.
-2. **Catálogo de servicios del negocio:** el dueño crea/edita los servicios que ofrece (nombre, duración en minutos, precio), que el cliente elige al reservar.
-3. **Reserva pública de citas:** el cliente, sin necesidad de cuenta, consulta los horarios libres de un negocio para un servicio y una fecha, y reserva un turno indicando nombre y teléfono.
-4. **Recordatorio automático por WhatsApp 24h antes:** un proceso programado detecta las citas cuya hora de inicio está a ~24 horas de distancia y envía un mensaje de WhatsApp (vía API de WhatsApp Business/Twilio) confirmando fecha, hora y servicio; se registra el envío para no duplicarlo.
-5. **Panel de agenda del negocio:** el dueño visualiza sus citas (por día/semana) con estado (pendiente, confirmada, cancelada) para organizar su atención.
+1. **Gestión de disponibilidad horaria** *(implementado — `/disponibilidad`)*: el dueño del negocio define los días y rangos horarios en que atiende (p. ej. lunes a viernes 9:00–18:00), para que el sistema calcule automáticamente los huecos reservables según la duración de cada servicio.
+2. **Catálogo de servicios del negocio** *(implementado — `/servicios`)*: el dueño crea y desactiva los servicios que ofrece (nombre, duración en minutos, precio), que el cliente elige al reservar.
+3. **Reserva pública de citas** *(implementado — `/[businessSlug]`)*: el cliente, sin necesidad de cuenta, consulta los horarios libres de un negocio para un servicio y una fecha, y reserva un turno indicando nombre y teléfono.
+4. **Recordatorio automático por WhatsApp 24h antes** *(pendiente — Entrega Final)*: un proceso programado detecta las citas cuya hora de inicio está a ~24 horas de distancia y envía un mensaje de WhatsApp (vía API de WhatsApp Business/Twilio) usando la plantilla configurable en `/configuracion`; se registra el envío para no duplicarlo.
+5. **Panel de agenda del negocio** *(implementado — `/agenda`, requiere login)*: el dueño visualiza sus citas con estado (pendiente, confirmada, cancelada) para organizar su atención.
 
 **Funcionalidades should-have (opcionales, no forman parte del alcance operativo exigido):**
 
@@ -64,11 +64,13 @@ AgendaYa resuelve esto dando al dueño del negocio una agenda online donde defin
 
 ### **1.3. Diseño y experiencia de usuario:**
 
-> Pendiente para la Entrega Final: se incluirán capturas de pantalla y/o un video de 2-3 minutos mostrando el flujo completo (alta de disponibilidad y servicios por el negocio → reserva pública por el cliente → recordatorio de WhatsApp recibido → panel de agenda).
+Identidad visual implementada en la Entrega 2: paleta violeta (`#5B3DF5`) + coral (`#FF4D6D`) + sol (`#FFC53D`) sobre blanco, tipografía Bricolage Grotesque (titulares) + Plus Jakarta Sans (resto), y un sistema de componentes compartido (`app/globals.css`: botones, inputs, badges, tablas) aplicado a las 8 pantallas de la app. La reserva pública usa un indicador de pasos (Servicio → Fecha → Hora → Datos) porque es un flujo realmente secuencial; el panel del negocio usa pastillas de navegación y badges de estado. Responsive verificado en mobile y desktop (tablas con scroll horizontal en vez de romperse, nav con scroll en vez de envolver).
+
+> Pendiente para la Entrega Final: capturas de pantalla y/o un video de 2-3 minutos mostrando el flujo completo (alta de disponibilidad y servicios por el negocio → reserva pública por el cliente → recordatorio de WhatsApp recibido → panel de agenda).
 
 ### **1.4. Instrucciones de instalación:**
 
-> El código aún no se ha implementado (esta es la Entrega 1, documentación). Estas instrucciones reflejan la instalación prevista una vez exista el scaffold de la Entrega 2, y se mantendrán actualizadas en cada entrega.
+> Desde la Entrega 2 el código ya existe y estas instrucciones son reales (verificadas end-to-end): disponibilidad + reserva pública contra base de datos real. Se mantendrán actualizadas en cada entrega.
 
 ```bash
 # 1. Clonar el repositorio
@@ -80,7 +82,7 @@ npm install
 
 # 3. Configurar variables de entorno
 cp .env.example .env
-# completar DATABASE_URL, NEXTAUTH_SECRET, WHATSAPP_API_TOKEN (credenciales de prueba), etc.
+# completar DATABASE_URL, AUTH_SECRET, WHATSAPP_API_TOKEN (credenciales de prueba), etc.
 
 # 4. Levantar base de datos local (Postgres) con Docker
 docker-compose up -d
@@ -94,7 +96,7 @@ npm run dev
 # abrir http://localhost:3000
 ```
 
-**Datos de prueba (seed):** la seed crea un negocio demo ("Barbería AgendaYa Demo", email `demo@agendaya.test` / password `Demo1234!`), 2 servicios y disponibilidad para la semana en curso, para poder probar la reserva pública sin pasos manuales previos.
+**Datos de prueba (seed):** la seed crea un negocio demo ("Barbería AgendaYa Demo", email `demo@agendaya.test` / password `Demo1234!`), 2 servicios y disponibilidad para la semana en curso, para poder probar la reserva pública sin pasos manuales previos. Esas mismas credenciales sirven para entrar al panel del negocio en `/login`.
 
 ---
 
@@ -136,7 +138,7 @@ flowchart LR
 
 - **Frontend (Next.js / React + TypeScript + Tailwind CSS):** dos superficies, la pública de reserva (sin login) y el panel del negocio (con login), renderizadas por el mismo proyecto Next.js.
 - **API (Next.js Route Handlers):** expone los endpoints de disponibilidad, servicios, citas y autenticación; valida entradas con Zod y habla con la base de datos a través de Prisma.
-- **Autenticación (NextAuth.js):** sesión del dueño del negocio (email + password con hash bcrypt); la reserva pública no requiere autenticación.
+- **Autenticación (Auth.js v5, antes NextAuth.js):** sesión del dueño del negocio vía Credentials provider (email + password con hash bcrypt, JWT de sesión); la reserva pública no requiere autenticación. Rutas del panel protegidas por `proxy.ts` (antes `middleware.ts`, renombrado por el propio Next.js 16).
 - **Base de datos (PostgreSQL + Prisma ORM):** persistencia de negocios, servicios, disponibilidad y citas.
 - **Job programado (Vercel Cron / node-cron en local):** se ejecuta cada hora, busca citas cuya hora de inicio cae dentro de la ventana de 24h y aún no tienen recordatorio enviado, y dispara el envío de WhatsApp.
 - **Integración WhatsApp (Twilio WhatsApp Business API, modo sandbox/test):** servicio externo usado solo para enviar la plantilla de confirmación/recordatorio; se usan credenciales de prueba (Account SID/Auth Token de sandbox), nunca credenciales de producción, documentadas vacías en `.env.example`.
@@ -148,23 +150,31 @@ Estructura prevista (Next.js App Router), orientada por capas dentro de cada mó
 ```
 /app
   /(public)/[businessSlug]         # página pública de reserva por negocio
-  /(dashboard)/agenda               # panel de agenda del negocio (requiere login)
-  /(dashboard)/servicios             # gestión de servicios
-  /(dashboard)/disponibilidad        # gestión de horarios disponibles
+  /(dashboard)/layout.tsx           # nav + sesión, envuelve todo el panel (requiere login)
+  /(dashboard)/agenda               # panel de agenda del negocio
+  /(dashboard)/servicios             # CRUD de servicios
+  /(dashboard)/disponibilidad        # CRUD de horarios disponibles
+  /(dashboard)/configuracion         # mensaje de confirmación de WhatsApp (plantilla)
+  /login                            # login del negocio (Credentials provider)
   /api
-    /auth/[...nextauth]             # autenticación del negocio
-    /businesses/[id]/availability    # alta/consulta de disponibilidad
-    /businesses/[id]/slots          # cálculo de huecos reservables
-    /appointments                    # creación/consulta de citas
+    /auth/[...nextauth]             # rutas de Auth.js (login/logout/sesión)
+    /businesses/[id]                # PATCH — configuración del negocio (mensaje de confirmación)
+    /businesses/[id]/availability    # alta/consulta/borrado de disponibilidad (requiere sesión)
+    /businesses/[id]/services       # alta/consulta/edición de servicios (requiere sesión)
+    /businesses/[id]/slots          # cálculo de huecos reservables (público)
+    /appointments                    # creación/consulta de citas (público)
 /lib
   /services                          # lógica de negocio pura (cálculo de slots, reglas de reserva)
-  /notifications                     # integración con la API de WhatsApp
-  /db                                 # cliente Prisma
+  /security                          # rate limiting, verificación de ownership (businessId de sesión)
+  /notifications                     # integración con la API de WhatsApp (Entrega Final)
+  auth.ts                            # configuración de Auth.js (Credentials + JWT)
+  db.ts                              # cliente Prisma
 /prisma
   schema.prisma                      # modelo de datos
   seed.ts                            # datos de prueba
+proxy.ts                            # protege /agenda, /servicios, /disponibilidad, /configuracion
 /jobs
-  send-reminders.ts                  # job de recordatorios 24h
+  send-reminders.ts                  # job de recordatorios 24h (Entrega Final)
 /tests
   /unit
   /integration
@@ -195,16 +205,24 @@ flowchart LR
 
 - **Contraseñas:** hash con bcrypt; nunca se almacena ni se loguea la contraseña en texto plano.
 - **Sesión del negocio:** cookies de sesión firmadas vía NextAuth, `httpOnly` y `secure` en producción.
-- **Validación de entrada:** todos los endpoints validan el body/query con Zod antes de tocar la base de datos (evita inyección y datos corruptos).
-- **Acceso a datos del panel:** cada endpoint del panel del negocio filtra siempre por el `businessId` de la sesión autenticada, para que un negocio no pueda leer ni modificar citas/servicios de otro negocio.
+- **Validación de entrada:** todos los endpoints validan el body/query con Zod antes de tocar la base de datos (evita inyección y datos corruptos); `clientPhone` usa un patrón tipo E.164 (`^\+?[1-9]\d{6,14}$`), no solo longitud, porque ese dato alimentará el job de recordatorios de WhatsApp.
+- **Acceso a datos del panel:** cada endpoint del panel del negocio (`/api/businesses/{id}/services`, `/availability`, el PATCH de configuración) pasa por `lib/security/authz.ts` (`requireOwnBusiness`), que exige sesión válida y compara `session.user.businessId` contra el `businessId` de la URL — 401 sin sesión, 403 si no coincide. Nunca se confía en el `businessId` recibido del cliente.
+- **Minimización de datos leídos:** toda consulta Prisma a `Business` desde `app/**` usa `select` explícito (nunca `include`/objeto completo), para que `passwordHash` nunca viaje hacia un Server Component o una respuesta JSON, aunque hoy no se renderice.
+- **Rate limiting en los endpoints públicos:** `/api/appointments` (5 req/min por IP) y `/api/businesses/{id}/slots` (30 req/min por IP), implementado en `lib/security/rateLimit.ts`. Es en memoria y por proceso — suficiente para el MVP de un único servidor; en un despliegue multi-instancia habría que moverlo a un almacén compartido (Redis/Upstash). Limitación conocida, no bloqueante para esta entrega.
+- **Cabeceras HTTP básicas:** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, aplicadas globalmente en `next.config.ts`.
+- **Validación obligatoria antes de commitear:** hook `pre-commit` (husky) que corre `npm run validate` (lint + typecheck + tests) y bloquea el commit si algo falla.
 - **Secretos:** credenciales de WhatsApp (Twilio) y cadena de conexión a la base de datos solo en variables de entorno (`.env`, no versionado); `.env.example` documenta las claves sin valores reales.
 - **Datos de prueba:** las únicas credenciales versionadas son las del seed de desarrollo, explícitamente de prueba y sin acceso a producción.
 
 ### **2.6. Tests**
 
-> Plan de pruebas para la Entrega Final (en la Entrega 1 no hay código todavía):
+**Implementado en la Entrega 2:**
 
-- **Unitarios:** cálculo de huecos disponibles a partir de la disponibilidad configurada y las citas ya existentes (`/lib/services`), incluyendo casos límite (servicio que no cabe antes del cierre, solapamiento de citas).
+- **Unitarios (`tests/unit/slots.test.ts`, Vitest):** 7 tests sobre `lib/services/slots.ts` — cálculo de huecos disponibles a partir de la disponibilidad configurada y las citas ya existentes, incluyendo casos límite (servicio que no cabe antes del cierre, slot ya pasado respecto a `now`, solapamiento parcial, bloques de disponibilidad inexistentes). Corren con `npm run test`; forman parte de `npm run validate`, que además se ejecuta automáticamente en cada commit vía el hook `pre-commit` (husky).
+- **Manual end-to-end (navegador + `npm run build`):** antes de comitear se corrió `npm run dev` y se completó una reserva real desde `/barberia-demo` hasta verla en `/agenda`, y se corrió `npm run build` (producción) para detectar errores que `npm run dev`/los tests no cubren. Esto encontró y corrigió un bug real: con `cacheComponents`/`partialPrefetching` activados en `next.config.ts`, `next build` fallaba al prerenderizar `/agenda` (acceso a Prisma sin `Suspense`/`"use cache"`); se desactivaron esos flags experimentales (no aportan nada a un MVP sin necesidad de PPR) y se marcó `/agenda` con `export const dynamic = "force-dynamic"` para que nunca sirva una foto fija de las citas tomada en build time.
+
+**Pendiente para la Entrega Final:**
+
 - **Integración:** endpoints de disponibilidad y de creación de citas contra una base de datos de pruebas (p. ej. SQLite/Postgres efímero), verificando que una cita creada bloquea el hueco correspondiente.
 - **E2E:** flujo completo "negocio configura disponibilidad y servicio → cliente reserva en la página pública → la cita aparece en el panel del negocio", con el envío de WhatsApp simulado/mockeado para no depender de la red real.
 
@@ -222,6 +240,7 @@ erDiagram
         string email UK
         string passwordHash
         string timezone
+        string confirmationMessageTemplate
         datetime createdAt
     }
 
@@ -264,7 +283,7 @@ erDiagram
 
 ### **3.2. Descripción de entidades principales:**
 
-- **Business** (negocio/dueño): entidad raíz del sistema. `id` (PK, uuid), `name` (nombre del negocio, not null), `email` (UK, not null, usado para login), `passwordHash` (not null), `timezone` (not null, usada para calcular huecos y la ventana de 24h), `createdAt`.
+- **Business** (negocio/dueño): entidad raíz del sistema. `id` (PK, uuid), `name` (nombre del negocio, not null), `email` (UK, not null, usado para login), `passwordHash` (not null), `timezone` (not null, usada para calcular huecos y la ventana de 24h), `confirmationMessageTemplate` (not null, con default; plantilla del recordatorio de WhatsApp, placeholders `{{clientName}}`/`{{service}}`/`{{date}}`/`{{time}}`/`{{business}}`, editable desde el panel), `createdAt`.
 - **Service** (servicio ofrecido por el negocio): `id` (PK), `businessId` (FK → Business.id, not null), `name` (not null), `durationMinutes` (int, not null, > 0), `price` (decimal, not null, >= 0), `active` (boolean, default true), `createdAt`. Relación N:1 con Business.
 - **Availability** (horario disponible recurrente): `id` (PK), `businessId` (FK → Business.id, not null), `dayOfWeek` (int 0-6, not null), `startTime`/`endTime` (time, not null, `endTime` > `startTime`). Relación N:1 con Business. Define las ventanas semanales dentro de las cuales se calculan los huecos reservables según la duración de cada `Service`.
 - **Appointment** (cita reservada): `id` (PK), `businessId` (FK → Business.id, not null), `serviceId` (FK → Service.id, not null), `clientName`/`clientPhone` (not null, datos del cliente final, sin cuenta propia), `startAt`/`endAt` (datetime, not null, calculados a partir del slot elegido y la duración del servicio), `status` (enum `pending|confirmed|cancelled`, default `pending`), `reminderSentAt` (datetime, nullable; se rellena cuando el job de WhatsApp envía el recordatorio, para evitar reenvíos), `createdAt`. Restricción lógica: no puede solaparse con otra `Appointment` del mismo `businessId` (validada en la capa de servicio al crear la cita).
@@ -272,6 +291,8 @@ erDiagram
 ---
 
 ## 4. Especificación de la API
+
+> **Fuente de verdad (spec-driven):** [`openapi.yaml`](openapi.yaml), en la raíz del repo. Este apartado es un resumen narrativo que debe mantenerse coherente con ese archivo; ante cualquier discrepancia, manda el `.yaml`. Incluye los 2 endpoints implementados en la Entrega 2 (slots, appointments) y el de disponibilidad como `x-status: planned` (contrato fijado, aún sin implementar — requiere NextAuth).
 
 Especificación de los 3 endpoints principales (formato resumido tipo OpenAPI):
 
@@ -401,6 +422,16 @@ Como **cliente que reservó una cita**, quiero **recibir un mensaje de WhatsApp 
 - Para cada una, envía una sola vez un mensaje de WhatsApp con negocio, servicio, fecha y hora, y registra `reminderSentAt` para no reenviarlo.
 - Si el envío falla (p. ej. error de la API de WhatsApp), la cita queda marcada para reintento sin bloquear el resto del proceso.
 
+**Historia de Usuario 4**
+
+Como **dueño de un negocio por cita**, quiero **iniciar sesión y administrar mis servicios, mis horarios disponibles y el texto del mensaje de confirmación desde un panel**, para **no depender de que alguien edite la base de datos por mí cada vez que cambio de horario o agrego un servicio**.
+
+*Criterios de aceptación:*
+- Puedo iniciar sesión con mi email y contraseña; sin sesión, cualquier URL del panel (`/agenda`, `/servicios`, `/disponibilidad`, `/configuracion`) me redirige a `/login`.
+- Puedo crear servicios y desactivarlos (sin perder el historial de citas ya hechas con ellos), y crear/eliminar bloques de disponibilidad.
+- Puedo editar el mensaje de confirmación que se enviará por WhatsApp cuando el recordatorio automático esté activo.
+- No puedo ver ni modificar servicios, disponibilidad o citas de otro negocio aunque adivine su `businessId`.
+
 ---
 
 ## 6. Tickets de Trabajo
@@ -426,11 +457,25 @@ Como **cliente que reservó una cita**, quiero **recibir un mensaje de WhatsApp 
 - **Criterios de aceptación:** `npx prisma migrate dev` crea el esquema sin errores; `npx prisma db seed` deja datos consultables desde la página pública de reserva; existe un índice que permite consultar las citas de un negocio por rango de fechas de forma eficiente.
 - **Estimación:** 5 puntos.
 
+**Ticket 4 (Transversal) — Endurecimiento de seguridad y harness de validación**
+
+- **Descripción:** antes de dar por cerrada la Entrega 2, formalizar el contrato de API en un `openapi.yaml` independiente (spec-driven), y cerrar huecos de seguridad detectados en el flujo end-to-end: validación débil de `clientPhone`, lectura de `Business` sin `select` explícito (riesgo de arrastrar `passwordHash`), ausencia de rate limiting en los endpoints públicos y ausencia de una validación obligatoria antes de cada commit.
+- **Alcance:** `openapi.yaml`; `lib/security/rateLimit.ts` (rate limit en memoria por IP) aplicado en `/api/appointments` y `/api/businesses/{id}/slots`; regex E.164 en `clientPhone`; `select` explícito en las consultas a `Business` de `app/(public)/[businessSlug]/page.tsx` y `app/(dashboard)/agenda/page.tsx`; cabeceras de seguridad básicas en `next.config.ts`; hook `pre-commit` (husky) que corre `npm run validate`.
+- **Criterios de aceptación:** `npm run validate` sigue pasando en limpio; una 6ª petición en el mismo minuto a `/api/appointments` desde la misma IP responde 429; un teléfono sin formato internacional es rechazado con 400; un commit con lint/typecheck/tests en rojo es bloqueado por el hook; `openapi.yaml` coincide exactamente con los esquemas Zod implementados.
+- **Estimación:** 3 puntos.
+
+**Ticket 5 (Full-stack) — Panel del negocio: auth, servicios, disponibilidad y mensaje de confirmación**
+
+- **Descripción:** construir el panel que le faltaba al MVP para ser usable por un dueño de negocio real (no solo por quien edita la base de datos a mano): login con Auth.js v5 (Credentials + JWT), CRUD de servicios, CRUD de disponibilidad, y edición de la plantilla del mensaje de confirmación de WhatsApp.
+- **Alcance:** `lib/auth.ts` (Auth.js, Credentials provider contra `Business` + bcrypt), `proxy.ts` (protege `/agenda`, `/servicios`, `/disponibilidad`, `/configuracion`, redirige a `/login` sin sesión), `lib/security/authz.ts` (`requireOwnBusiness`, multi-tenancy en cada endpoint), `app/api/businesses/{id}/services[/​{id}]`, `app/api/businesses/{id}/availability[/​{id}]`, `app/api/businesses/{id}` (PATCH), páginas `/login`, `/servicios`, `/disponibilidad`, `/configuracion` y el layout compartido del panel; campo `Business.confirmationMessageTemplate` + migración.
+- **Criterios de aceptación:** sin sesión, `/servicios` redirige a `/login` y las API devuelven 401; con sesión de un negocio, pedir el `businessId` de otro negocio devuelve 403; crear/desactivar un servicio y crear/eliminar un bloque de disponibilidad se reflejan de inmediato en `/barberia-demo` (huecos) sin reiniciar el servidor; "desactivar" un servicio nunca borra sus citas históricas; guardar el mensaje de confirmación persiste en `Business.confirmationMessageTemplate`.
+- **Estimación:** 8 puntos.
+
 ---
 
 ## 7. Pull Requests
 
-> No aplica todavía: la Entrega 1 es solo documentación (0% código) y, según las bases del proyecto, los pull requests no se evalúan en esta entrega. Se documentarán 3 PRs principales en la Entrega Final.
+> No aplica: según las bases del proyecto, las entregas de este curso son rama + Typeform, sin Pull Requests (no hay PRs que abrir ni revisar entre entregas). Se documentarán 3 PRs principales en la Entrega Final si el proceso de esa entrega lo requiere.
 
 **Pull Request 1**
 

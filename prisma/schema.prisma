@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Business {
+  id                          String         @id @default(uuid())
+  slug                        String         @unique
+  name                        String
+  email                       String         @unique
+  passwordHash                String
+  timezone                    String         @default("America/Lima")
+  // Plantilla del recordatorio de WhatsApp (Entrega Final); placeholders
+  // {{clientName}}, {{service}}, {{date}}, {{time}}, {{business}}.
+  confirmationMessageTemplate String         @default("Hola {{clientName}}, te confirmamos tu cita de {{service}} el {{date}} a las {{time}} en {{business}}. ¡Te esperamos!")
+  createdAt                   DateTime       @default(now())
+  services                    Service[]
+  availability                Availability[]
+  appointments                Appointment[]
+}
+
+model Service {
+  id               String        @id @default(uuid())
+  businessId       String
+  business         Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name             String
+  durationMinutes  Int
+  price            Decimal       @db.Decimal(10, 2)
+  active           Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  appointments     Appointment[]
+
+  @@index([businessId])
+}
+
+model Availability {
+  id         String   @id @default(uuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int // 0 = domingo ... 6 = sábado
+  startTime  String // "HH:mm"
+  endTime    String // "HH:mm"
+
+  @@index([businessId, dayOfWeek])
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  cancelled
+}
+
+model Appointment {
+  id             String            @id @default(uuid())
+  businessId     String
+  business       Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  serviceId      String
+  service        Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  clientName     String
+  clientPhone    String
+  startAt        DateTime
+  endAt          DateTime
+  status         AppointmentStatus @default(pending)
+  reminderSentAt DateTime?
+  createdAt      DateTime          @default(now())
+
+  @@index([businessId, startAt])
+}
