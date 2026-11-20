@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/*
+  Identidad visual de AgendaYa: violeta + coral + sol sobre blanco, con
+  tipografía de carácter (Bricolage Grotesque para titulares, Plus Jakarta
+  Sans para el resto). Un solo tema (claro) — el acento vivo pierde fuerza
+  en modo oscuro automático y no aporta aquí.
+*/
+@theme {
+  --color-ink: #17121f;
+  --color-ink-soft: #4a4458;
+  --color-paper: #ffffff;
+  --color-mist: #f3effc;
+  --color-mist-line: #e4dcf7;
+
+  --color-violet: #5b3df5;
+  --color-violet-dark: #4027c9;
+  --color-coral: #ff4d6d;
+  --color-coral-dark: #e22f50;
+  --color-sun: #ffc53d;
+  --color-sun-dark: #cc9100;
+}
+
+/* Las fuentes las inyecta next/font como variables en <html>; se mapean
+   aquí para poder usarlas como utilidades (font-display, font-sans). */
+@theme inline {
+  --font-display: var(--font-bricolage);
+  --font-sans: var(--font-jakarta);
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+}
+
+::selection {
+  background: var(--color-sun);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-violet);
+  outline-offset: 2px;
+}
+
+/* El anillo violeta es invisible sobre un fondo ya violeta. */
+.btn-primary:focus-visible,
+.slot-pill-selected:focus-visible,
+.bg-violet :focus-visible {
+  outline-color: var(--color-paper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Sistema de componentes reutilizado en toda la app ---- */
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-violet px-5 py-2.5 text-sm font-semibold text-paper transition-colors hover:bg-violet-dark disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-transparent px-5 py-2.5 text-sm font-semibold text-ink ring-2 ring-ink/10 transition-colors hover:text-violet hover:ring-violet disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .field-label {
+    @apply flex flex-col gap-1.5 text-sm font-medium text-ink;
+  }
+  .field-input {
+    @apply rounded-xl border-2 border-mist-line bg-paper px-3.5 py-2.5 text-base text-ink outline-none transition-colors placeholder:text-ink-soft/50 focus:border-violet;
+  }
+
+  .slot-pill {
+    @apply rounded-full border-2 border-mist-line bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-violet;
+  }
+  .slot-pill-selected {
+    @apply border-violet bg-violet text-paper hover:border-violet;
+  }
+
+  .badge-pending {
+    @apply inline-flex items-center rounded-full bg-sun/25 px-2.5 py-1 text-xs font-semibold text-sun-dark;
+  }
+  .badge-confirmed {
+    @apply inline-flex items-center rounded-full bg-violet/15 px-2.5 py-1 text-xs font-semibold text-violet-dark;
+  }
+  .badge-cancelled {
+    @apply inline-flex items-center rounded-full bg-coral/15 px-2.5 py-1 text-xs font-semibold text-coral-dark;
+  }
+
+  .panel-table {
+    @apply w-full min-w-[640px] border-collapse text-sm;
+  }
+  .panel-table th {
+    @apply border-b-2 border-mist-line py-2.5 pr-4 text-left text-xs font-semibold whitespace-nowrap text-ink-soft;
+  }
+  .panel-table td {
+    @apply border-b border-mist-line py-3 pr-4 whitespace-nowrap text-ink;
+  }
+}
