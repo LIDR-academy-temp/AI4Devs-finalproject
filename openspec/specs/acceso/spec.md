@@ -1,8 +1,9 @@
 # Especificación · acceso
 
 > **Estado: aprobada por la Dirección el 19/11/2026 (D-89), tras siete rondas de revisión
-> adversarial.** Ticket H-1. Quedan cuatro comprobaciones «por comprobar al construir», cada una con
-> su salida escrita: HU-01.2 (cookie), HU-01.1 (dos, sobre el correo) y HU-03.1 (sesión abierta).
+> adversarial.** Ticket H-1. Quedan tres comprobaciones «por comprobar al construir», cada una con
+> su salida escrita: HU-01.2 (cookie) y HU-01.1 (dos, sobre el correo). La de HU-03.1 (sesión
+> abierta) quedó comprobada el 23/11/2026; el resultado está en su requisito.
 > Cubre las historias HU-01 (entrar con cuenta propia), HU-02 (cada rol ve y hace solo lo suyo) y
 > HU-03 (ninguna organización ve a otra). Cada requisito cita el criterio del backlog del que sale
 > o la decisión de la Dirección que lo origina.
@@ -304,7 +305,7 @@ el servicio la tenga abierta y que no hayan pasado más de `sesion_dias` días d
 Son las mismas condiciones de «Sesión vigente», puestas también en la base, porque un pase se
 puede usar para consultar la base directamente sin pasar por el servidor.
 
-**Por comprobar al construir HU-03.1:** que la base pueda consultar si la sesión que nombra el pase
+**Comprobado al construir HU-03.1 (23/11/2026; el resultado, en la nota que sigue a este párrafo). Antes de construirlo quedaba por comprobar:** que la base pueda consultar si la sesión que nombra el pase
 sigue abierta en el servicio. Que el pase trae el identificador de su sesión y el momento de
 entrada está comprobado en la prueba local de HU-01.6: el momento de entrada en el resultado P5 del
 resumen, y el identificador de sesión en la salida completa de esa prueba
@@ -318,6 +319,19 @@ consulta directa de este requisito y de «Reglas por rol en la base» pasan a pe
 rechace toda consulta que no venga del servidor, y la sesión cerrada la corta «Sesión vigente».
 Lo mismo vale para la parte de sesión cerrada del escenario «la base no registra sin usuario
 activo y sesión vigente» (especificación `aviso-inicio`).
+
+*Comprobado al construir HU-03.1 (23/11/2026), en la base local: la base sí puede consultarlo, y
+la salida alternativa no hace falta. La función `sesion_abierta()` responde sí con la sesión
+abierta y no con el pase de una sesión ya cerrada que todavía no expira
+(`tests/base/prueba-acceso-organizacion.py`, casos P1, N1 y P2). Ampliado el 24/11/2026, tras la
+revisión adversarial del tramo: tampoco responde sí con la sesión de otra cuenta, sin identificador
+de sesión, con un pase que dice otro rol ni pasado el fin que el servicio le fije a la sesión, aunque
+pase entre dos consultas de la misma transacción; y sí con un fin futuro (casos P4, P6 y N23 a N27 y
+N32). La hora que mira es la del inicio de cada consulta: una consulta que empezó antes del fin
+conserva su respuesta hasta terminar (riesgo aceptado, D-102; caso P7). El ticket H-4 del
+recorte v4 no pide repetir estos casos en el servicio gestionado: se agregan a su criterio con los
+tickets v5 (D-99), y sin eso no se abre el pull request del tramo 8 (D-101). La regla se apoya en `es_mi_organizacion`, que hasta el tramo 3 responde siempre
+«no» (D-100; casos N28 a N31, N33 a N36 y P5).*
 
 La regla por organización DEBE ser restrictiva: se suma como condición obligatoria a cualquier
 otra, de modo que ninguna regla por rol pueda dejar ver más allá de la organización.
@@ -354,8 +368,10 @@ aviso»).
 
 Origen: HU-03.CA-1, HU-03.CA-2, HU-03.CA-3.
 
-**Límite declarado:** la comprobación de estructura prueba que la regla existe, no que esté bien
-escrita. Que no deje pasar datos lo prueban los escenarios con dos organizaciones.
+**Límite declarado:** la comprobación de estructura prueba que la regla existe y que está escrita
+como se pide (restrictiva, para toda orden y todo rol, con la función de organización al leer y al
+escribir), no que se comporte bien. Que no deje pasar datos lo prueban los escenarios con dos
+organizaciones.
 
 #### Scenario: consulta directa a la base
 - **DADO** dos organizaciones con datos
@@ -550,3 +566,4 @@ Origen: HU-02.CA-1 a CA-8; Definition of Done de los tickets de tipo Endpoint/AP
 | Lo comprobado del servicio lo fue en una instancia local, no en la gestionada | HU-01.6 | El despliegue (H-4) repite contra el servicio gestionado las pruebas P1, P2 y P5 de HU-01.6 |
 | Si una cuenta cambia su correo en el propio servicio, `usuario.correo` queda viejo y la base no lo detecta | D-87 | Los correos no se cambian: solo un error de captura, excepcional y una sola vez. El sistema no ofrece cambiar el correo, y la base comprueba la coincidencia cada vez que se escribe el usuario |
 | El momento de entrada que usa «Sesión vigente» es un campo del pase que la documentación del servicio no describe; una actualización del servicio podría cambiarlo | D-85 | La prueba P5 lo comprobó en local y H-4 la repite en el servicio gestionado; si el campo falta, la sesión se trata como vencida, nunca como vigente |
+| `sesion_abierta()` mira la hora del inicio de cada consulta: una consulta que empezó antes del fin fijado de la sesión conserva su respuesta hasta terminar | D-102 | La siguiente consulta ya mira la hora nueva (casos N32 y P7 de `tests/base/prueba-acceso-organizacion.py`), y una consulta por la API no dura más de 8 segundos: es el tiempo máximo que la base local trae configurado para `authenticator`, el rol con que entra la API, y para `authenticated` (lo comprueba en cada corrida el caso P9, en la base local; en el servicio gestionado no se ha comprobado). Entra en las características a considerar en versiones futuras (D-48): comprobar ese tiempo máximo en el servicio gestionado, o dejarlo fijado por una migración |

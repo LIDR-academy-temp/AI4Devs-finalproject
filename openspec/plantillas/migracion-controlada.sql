@@ -30,6 +30,18 @@
 --     herramienta que se use; mientras no esté confirmado, una migración que
 --     falle a la mitad deja creados los objetos de los bloques anteriores, y
 --     la validación 1 a 1 es la que lo delata.
+--     Probado con la herramienta de Supabase 2.109.1 el 24/11/2026, en la
+--     base local, con una migración cuyo segundo bloque falla a propósito
+--     (la atomicidad queda confirmada solo para los dos primeros caminos):
+--       · `supabase migration up` y `supabase db reset`: no queda el objeto
+--         que creó el primer bloque ni la migración registrada;
+--       · `supabase start` sobre una base NUEVA (el camino de la integración
+--         continua, que siempre parte de cero): detiene todo y borra la base,
+--         y el paso termina en rojo. Eso no es atomicidad: es que no queda
+--         base que usar, ni entera ni a medias. `start` sobre una base local
+--         que ya existe no se probó: ahí no se supone nada.
+--     Al cambiar de versión de la herramienta, se repite. La prueba se hizo a
+--     mano y su salida no se guardó: la plantilla registra lo observado.
 --   - Recrear un índice o una constraint no pierde datos, pero bloquea la
 --     tabla mientras dura. En una tabla grande se planifica aparte.
 --

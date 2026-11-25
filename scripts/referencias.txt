@@ -42,8 +42,6 @@ N: docs/trazabilidad/04-Backlog/Backlog-MVP-Controlador-de-Tiempo-20261118-v5.md
 
 [previstas]
 # ruta  ticket que la crea. Cuando la ruta exista, se saca de aquí.
-supabase/migrations  HU-03.1
-supabase/validaciones  HU-03.1
 supabase/seed.sql  H-3
 
 [no-son-rutas]
@@ -52,4 +50,5 @@ America/Panama  # zona horaria
 feature/entrega-1-JC  # rama de la entrega
 origin/feature/entrega-1-JC  # la misma, en el remoto
 docs/trazabilidad-d91  # rama del PR de trazabilidad
+tramo-2/hu-03.1-organizacion  # rama del tramo 2 (HU-03.1)
 refs/pull/1/head  # referencia de git del PR en GitHub

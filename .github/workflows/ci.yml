@@ -80,3 +80,30 @@ jobs:
         run: pnpm test
       - name: Compilación
         run: pnpm build
+
+  base:
+    name: Base de datos (migraciones, validación y comprobación de estructura)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: supabase/setup-cli@v1
+        with:
+          # La misma versión con la que se probó en local.
+          version: 2.109.1
+      - name: Base local con las migraciones aplicadas
+        run: bash scripts/base/levantar-base.sh
+      - name: Los scripts de la base deciden bien (sin base)
+        run: python3 tests/base/prueba-scripts-base.py
+      - name: Validación 1 a 1 de cada migración
+        run: python3 scripts/base/correr-validaciones.py
+      - name: Comprobación de estructura (HU-03.1)
+        run: python3 scripts/base/comprobar-estructura.py
+      - name: La comprobación de estructura detecta lo que debe
+        run: python3 tests/base/prueba-comprobacion-estructura.py
+      - name: La validación de organizacion detecta lo que debe
+        run: python3 tests/base/prueba-validacion-organizacion.py
+      - name: Organización y sesión, con datos, por la API y por SQL
+        run: python3 tests/base/prueba-acceso-organizacion.py
