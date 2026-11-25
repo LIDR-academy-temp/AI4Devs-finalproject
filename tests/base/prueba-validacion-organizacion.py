@@ -66,8 +66,10 @@ CASOS = [
      "drop table public.organizacion cascade;", "tabla public.organizacion"),
     ("N16 id con otro valor por defecto",
      "alter table public.organizacion alter column id drop default;", "columna id"),
+    # Con «cascade»: desde HU-01.1 la llave foránea de usuario depende de esta
+    # llave; la transacción se deshace y la devuelve.
     ("N17 la llave primaria sobre otra columna",
-     "alter table public.organizacion drop constraint organizacion_pkey;"
+     "alter table public.organizacion drop constraint organizacion_pkey cascade;"
      "alter table public.organizacion add constraint organizacion_pkey primary key (nombre);",
      "constraint organizacion_pkey"),
     ("N18 el nombre único junto con otra columna",

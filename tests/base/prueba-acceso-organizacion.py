@@ -11,10 +11,12 @@ la API de la base, con el pase de una persona, y el SQL directo.
   dice otro rol ni pasado el fin fijado de la sesión. Sin sesión no se puede
   preguntar. Mira la hora del inicio de cada consulta (riesgo aceptado
   D-102), acotada por el tiempo máximo de consulta de los roles de la API.
-- organizacion: hasta el tramo 3 nadie la ve ni la cambia por la API (D-100),
-  ni con sesión ni sin ella. es_mi_organizacion responde «no», y con una
-  regla permisiva que deja todo es la restrictiva la que corta (con su
-  control: sin la restrictiva, sí se ven filas).
+- organizacion: nadie la ve ni la cambia por la API mientras las personas no
+  tengan permiso de leer (lo da HU-02.1), ni con sesión ni sin ella.
+  es_mi_organizacion responde «no» a una cuenta sin usuario, y con una regla
+  permisiva que deja todo es la restrictiva la que corta (con su control: sin
+  la restrictiva, sí se ven filas). El caso con usuario está en
+  tests/base/prueba-usuario.py (HU-01.1).
 - Las constraints de organizacion, con un caso que pasa y uno que no.
 
 Crea una cuenta de prueba con correo de example.com y una organización de
@@ -215,7 +217,8 @@ def main() -> int:
              and not hasta_8s("lock_timeout=8s") and not hasta_8s("")
              and hasta_8s("lock_timeout=8s\nstatement_timeout=8s"), "lectura comprobada")
 
-        # organizacion por la API: nadie la ve ni la cambia hasta el tramo 3 (D-100).
+        # organizacion por la API: nadie la ve ni la cambia mientras las personas
+        # no tengan permiso de leer (lo da HU-02.1).
         # Hoy la API la rechaza antes de llegar a la regla, porque las personas
         # todavía no tienen permiso de leer (lo da HU-02.1); una respuesta vacía
         # también vale. Lo que no vale es recibir la fila.
@@ -262,10 +265,13 @@ def main() -> int:
         r = como_persona("authenticated", "truncate public.organizacion;")
         caso("N17 authenticated no puede vaciar la tabla", r.returncode != 0, "se rechaza" if r.returncode else "se aceptó")
 
-        # es_mi_organizacion() hasta el tramo 3 (D-100): responde «no» siempre. Sin
-        # regla permisiva la base ya no deja ver nada, así que N12 a N16 pasarían
-        # aunque respondiera «sí». Por eso se prueba la función directamente y,
-        # con una regla permisiva que deja todo, que es la restrictiva la que corta.
+        # es_mi_organizacion(): la cuenta de esta prueba no tiene usuario, así que
+        # responde «no» (hasta el tramo 3 respondía «no» siempre, D-100; desde
+        # HU-01.1 mira el usuario, y el caso con usuario está en
+        # tests/base/prueba-usuario.py). Sin regla permisiva la base ya no deja
+        # ver nada, así que N12 a N16 pasarían aunque respondiera «sí». Por eso se
+        # prueba la función directamente y, con una regla permisiva que deja todo,
+        # que es la restrictiva la que corta.
         # P5 es el control: sin la restrictiva, el mismo camino sí ve filas.
         consulta = f"select public.es_mi_organizacion('{org_id}');"
         r = con_pase("authenticated", pase_bueno, consulta)
@@ -303,26 +309,9 @@ def main() -> int:
                      f"('00000000-0000-0000-0000-000000000000', 'N35 {uuid.uuid4()}', 'UTC');", antes=permisiva)
         caso("N35 con una regla permisiva, tampoco se crea eligiendo el identificador",
              r.returncode != 0 and "row-level security" in r.stderr, responde(r))
-        # Y el cuerpo mismo, sin comentarios: en el tramo 2 es solo «SELECT false;».
-        # HU-01.1 (tramo 3) lo cambia, y con él este caso.
-        # Se quitan los comentarios de línea («--» hasta el fin de la línea, también
-        # al final de una sentencia) y los de bloque («/* … */»), y se normalizan
-        # los espacios. Límite declarado: no entiende comentarios de bloque
-        # anidados, que PostgreSQL admite; con uno, N36 daría un rojo falso (el
-        # lado seguro), no un verde falso. P8 es el control del normalizador:
-        # no consulta la base, pero corre dentro de esta prueba, que sí la necesita.
-        def sin_comentarios(texto: str) -> str:
-            texto = re.sub(r"/\*.*?\*/", " ", texto, flags=re.DOTALL)
-            texto = re.sub(r"--[^\n]*", " ", texto)
-            return " ".join(texto.split())
-
-        muestra = "-- D-100\n  SELECT /* bloque\n de dos líneas */ false; -- al final\n"
-        caso("P8 control: el normalizador quita comentarios de línea, al final y de bloque",
-             sin_comentarios(muestra) == "SELECT false;", repr(sin_comentarios(muestra)))
-        cuerpo = psql_ok("select prosrc from pg_proc where oid = 'public.es_mi_organizacion(uuid)'::regprocedure;")
-        sentencia = sin_comentarios(cuerpo)
-        caso("N36 el cuerpo de es_mi_organizacion es solo «SELECT false;» (D-100)", sentencia == "SELECT false;",
-             f"cuerpo: {sentencia!r}")
+        # N36 y su control P8 comprobaban que el cuerpo fuera solo «SELECT false;»
+        # (D-100). HU-01.1 (tramo 3) cambió el cuerpo y los retiró: lo que hace
+        # ahora se prueba con datos en tests/base/prueba-usuario.py.
 
         # Constraints, por SQL directo, dentro de una transacción que se deshace.
         def inserta(valores: str) -> bool:

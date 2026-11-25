@@ -107,3 +107,7 @@ jobs:
         run: python3 tests/base/prueba-validacion-organizacion.py
       - name: Organización y sesión, con datos, por la API y por SQL
         run: python3 tests/base/prueba-acceso-organizacion.py
+      - name: Usuario, su correo y su organización, con datos (HU-01.1)
+        run: python3 tests/base/prueba-usuario.py
+      - name: La validación de usuario detecta lo que debe
+        run: python3 tests/base/prueba-validacion-usuario.py

@@ -28,8 +28,11 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 # Servicios que no se usan: archivos, tiempo real, funciones, imágenes, panel,
-# su API de metadatos, registros, el agrupador de conexiones y el buzón de prueba.
-NO_SE_USAN="storage-api,realtime,edge-runtime,imgproxy,studio,postgres-meta,logflare,vector,supavisor,mailpit"
+# su API de metadatos, registros y el agrupador de conexiones. El buzón de
+# prueba sí se levanta desde HU-01.1: sin él, el servicio responde con un error
+# de envío a la solicitud de cambio de correo, y la prueba de D-103 no podría
+# distinguir ese error del rechazo de la base (visto en local el 25/11/2026).
+NO_SE_USAN="storage-api,realtime,edge-runtime,imgproxy,studio,postgres-meta,logflare,vector,supavisor"
 
 if ! supabase start -x "$NO_SE_USAN"; then
   echo "ERROR: la base local no arrancó. Si una migración falló, su mensaje está arriba." >&2

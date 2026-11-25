@@ -11,10 +11,11 @@
 -- No cambia nada. Se corre con scripts/base/correr-validaciones.py, que falla
 -- si alguna fila no dice OK o si el fichero no devuelve ninguna fila.
 --
--- Lo que no comprueba: el cuerpo de es_mi_organizacion, que HU-01.1 cambia
+-- Lo que no comprueba: el cuerpo de es_mi_organizacion, que HU-01.1 cambió
 -- en el tramo 3 (D-100). Lo que hace se prueba con datos en
--- tests/base/prueba-acceso-organizacion.py (casos N28 a N31, N33 a N36 y su
--- control P5).
+-- tests/base/prueba-acceso-organizacion.py (cuenta sin usuario: casos N28 a
+-- N31, N33 a N35 y su control P5) y en tests/base/prueba-usuario.py (con
+-- usuario: casos P4 a P6 y N10 a N20).
 -- ============================================================
 set search_path = pg_catalog;
 

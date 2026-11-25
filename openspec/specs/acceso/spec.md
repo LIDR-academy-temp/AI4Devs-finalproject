@@ -1,9 +1,9 @@
 # Especificación · acceso
 
 > **Estado: aprobada por la Dirección el 19/11/2026 (D-89), tras siete rondas de revisión
-> adversarial.** Ticket H-1. Quedan tres comprobaciones «por comprobar al construir», cada una con
-> su salida escrita: HU-01.2 (cookie) y HU-01.1 (dos, sobre el correo). La de HU-03.1 (sesión
-> abierta) quedó comprobada el 23/11/2026; el resultado está en su requisito.
+> adversarial.** Ticket H-1. Queda una comprobación «por comprobar al construir», con su salida
+> escrita: HU-01.2 (cookie). Las de HU-03.1 (sesión abierta, 23/11/2026) y HU-01.1 (las dos sobre
+> el correo, 25/11/2026) quedaron comprobadas; el resultado está en su requisito.
 > Cubre las historias HU-01 (entrar con cuenta propia), HU-02 (cada rol ve y hace solo lo suyo) y
 > HU-03 (ninguna organización ve a otra). Cada requisito cita el criterio del backlog del que sale
 > o la decisión de la Dirección que lo origina.
@@ -118,7 +118,10 @@ condiciones de una sesión vigente:
 3. No pasaron más de `sesion_dias` días desde que la persona entró. La duración la controla el
    sistema, no el servicio (D-69). El momento de entrada es el que el servicio anota en el pase al
    entrar con contraseña, que se conserva cuando la sesión se renueva (prueba P5 de HU-01.6). Si el
-   pase no trae ese momento, la condición no se cumple: ante la duda, la sesión vence.
+   pase no trae ese momento, la condición no se cumple: ante la duda, la sesión vence. Si trae
+   varios, vale el más antiguo, por la misma razón. Un día son 24 horas: el plazo no depende de la
+   zona horaria ni de los cambios de horario (revisión del tramo 3, ronda 1; criterio del agente,
+   a confirmar por la Dirección).
 
 Si falla cualquiera, la sesión se cierra en el servicio y la petición se trata como sin sesión.
 
@@ -246,22 +249,43 @@ usuario, el correo con el que esa cuenta entra en el servicio de autenticación:
 un usuario cuyo correo no coincida con el de su cuenta en el servicio, comparado sin distinguir
 mayúsculas. Que siga coincidiendo después es el límite declarado de abajo (D-87).
 
-**Por comprobar al construir HU-01.1:** que la base pueda leer el correo de la cuenta en el
-servicio. Si no puede, la garantía deja de estar en la base y esta especificación se corrige antes
-de escribir el código: la comprobación la hace la carga de los datos de arranque, el escenario «el
-correo no es el de la cuenta» se prueba sobre la carga y no sobre la base, y lo que entre por otra
-vía queda como límite declarado.
+**Comprobado al construir HU-01.1 (25/11/2026, en la base local): la base sí puede leer el correo
+de la cuenta**, con el rol de las migraciones; las personas, la credencial del sistema y `anon` no
+pueden leer las cuentas del servicio. La comprobación corre al escribir el usuario con los
+permisos de quien escribe, así que en esta entrega solo escriben usuarios los datos de arranque;
+cualquier otro rol que lo intente recibe un rechazo con mensaje nuestro. *Antes de construirlo
+quedaba por comprobar*, con su salida: si la base no podía leerlo, la comprobación pasaba a la
+carga de los datos de arranque y se corregía esta especificación antes de escribir el código. No
+hizo falta.
 
-**Límite declarado:** la comprobación vale cuando se escribe el usuario. Si después la cuenta
-cambia su correo en el propio servicio, la base no se entera: el sistema no ofrece cambiar el
-correo, pero el servicio puede permitírselo a la persona con su pase. El efecto sería que el correo
-del supervisor quede viejo y su reporte vaya a la dirección anterior. **Riesgo aceptado (D-87):**
-los correos no se cambian; solo se corregiría, excepcionalmente, un error de captura, una sola vez.
-**Por comprobar al construir HU-01.1:** si el servicio deja desactivar que la persona cambie su
-propio correo. Si se puede, se desactiva; así la regla «los correos no se cambian» no depende solo
-de que nadie lo intente.
+**Nadie cambia por sí solo el correo de su cuenta (D-103).** Si una persona pasa a usar otro correo
+—por ejemplo, el del cliente en vez del de la empresa consultora—, se crea un usuario nuevo con ese
+correo, que empieza su propia historia; los registros del usuario anterior quedan tal cual. El
+servicio no tiene una opción de configuración que lo impida, así que lo impide la base: un
+disparador en las cuentas del servicio rechaza, con mensaje nuestro, la solicitud de cambio que
+hace la persona con su pase. *Antes de construirlo quedaba por comprobar* si el servicio dejaba
+desactivarlo. **Comprobado en la base local el 25/11/2026:** no hay esa opción, y el disparador
+rechaza la solicitud de la persona y deja el correo como estaba; tampoco deja confirmar una
+solicitud que ya estuviera pendiente, y no estorba a la renovación de la sesión
+(`tests/base/prueba-usuario.py`, casos N9, N24 y P13). En el servicio gestionado, H-4 repite por la
+API los casos N9 y P13 y la corrección en dos pasos de abajo (P3 y P10), porque el disparador
+depende de cómo anota el servicio una solicitud de cambio. N24 es solo local: necesita un
+superusuario para fabricar una solicitud pendiente, y supone que el servicio confirma pasando el
+correo pedido al correo de la cuenta (revisión del tramo 3, ronda 1 y revisión interna).
 
-Origen: HU-01.CA-12, D-66.
+**La corrección excepcional de un error de captura (D-87) se hace en dos pasos, y la hacen los
+administradores técnicos:** con la credencial del sistema cambian el correo de la cuenta en el
+servicio, y con el rol de las migraciones —el único que puede leer las cuentas— reescriben el
+usuario (caso P10). Mientras el usuario no se reescriba, la base no deja escribirlo (caso N25). Si
+la cuenta tiene una solicitud de cambio pendiente hacia ese mismo correo, primero la limpian: el
+bloqueo la trataría como la confirmación de la persona.
+
+**Límite declarado:** la comprobación del correo vale cuando se escribe el usuario. Si quien corrige
+la cuenta no reescribe el usuario, la base no se entera: el correo del usuario quedaría viejo y el
+reporte del supervisor iría a la dirección anterior. **Riesgo aceptado (D-87, acotado por D-103 a la
+credencial del sistema).**
+
+Origen: HU-01.CA-12, D-66, D-103.
 
 #### Scenario: correo repetido en otra organización
 - **DADO** un usuario con un correo en la organización A
@@ -272,6 +296,11 @@ Origen: HU-01.CA-12, D-66.
 - **DADO** una cuenta del servicio de autenticación que entra con el correo A
 - **CUANDO** se intenta crear su usuario con el correo B
 - **ENTONCES** la base lo rechaza
+
+#### Scenario: la persona pide cambiar su correo
+- **DADO** una persona con sesión
+- **CUANDO** pide al servicio de autenticación cambiar el correo de su cuenta
+- **ENTONCES** la solicitud se rechaza, y el correo de la cuenta y el de su usuario quedan como estaban
 
 #### Scenario: quien trabaja para dos empresas
 - **DADO** una persona con dos usuarios, cada uno con el correo de su empresa
@@ -330,8 +359,11 @@ pase entre dos consultas de la misma transacción; y sí con un fin futuro (caso
 N32). La hora que mira es la del inicio de cada consulta: una consulta que empezó antes del fin
 conserva su respuesta hasta terminar (riesgo aceptado, D-102; caso P7). El ticket H-4 del
 recorte v4 no pide repetir estos casos en el servicio gestionado: se agregan a su criterio con los
-tickets v5 (D-99), y sin eso no se abre el pull request del tramo 8 (D-101). La regla se apoya en `es_mi_organizacion`, que hasta el tramo 3 responde siempre
-«no» (D-100; casos N28 a N31, N33 a N36 y P5).*
+tickets v5 (D-99), y sin eso no se abre el pull request del tramo 8 (D-101). La regla se apoya en `es_mi_organizacion`, que hasta el tramo 3 respondía siempre
+«no» (D-100). Desde HU-01.1 (25/11/2026) responde «sí» solo para la organización de un usuario
+activo, con la sesión del pase abierta y sin pasar `sesion_dias` desde que entró con contraseña
+(`tests/base/prueba-usuario.py`, casos P4 a P6 y N10 a N20); a una cuenta sin usuario le sigue
+respondiendo «no» (`tests/base/prueba-acceso-organizacion.py`, casos N28 a N31, N33 a N35 y P5).*
 
 La regla por organización DEBE ser restrictiva: se suma como condición obligatoria a cualquier
 otra, de modo que ninguna regla por rol pueda dejar ver más allá de la organización.
@@ -411,6 +443,15 @@ El sistema DEBE filtrar por la organización del usuario en toda consulta del c�
 lugar, y responder ante un dato de otra organización igual que si no existiera.
 
 Origen: HU-03.CA-1, HU-03.CA-3, HU-03.CA-4, D-59.
+
+*Construido en HU-03.2 (25/11/2026):* el único lugar es `lib/datos/separacion.ts`, y lo prueba
+`tests/unit/separacion.test.ts`, que además falla si un archivo de código del repositorio llama a
+`.from(...)` o a `.rpc(...)` por fuera de ese módulo. Es una búsqueda en el texto: no ve una consulta
+por `fetch` directo a la API de la base, ni un `from` sacado del cliente o llamado con `.call`
+(límite declarado en el módulo). Las operaciones que se llaman como función, como el registro del
+aviso, entran a este módulo con su ticket (HU-06.3). **Límite declarado:** se prueba con un cliente falso; con la base
+real y dos organizaciones lo prueba HU-03.3. La identidad de quien pregunta la entrega «Sesión
+vigente» (HU-01.2).
 
 #### Scenario: dato ajeno por su identificador
 - **CUANDO** un usuario pide por su identificador un dato de otra organización
@@ -564,6 +605,6 @@ Origen: HU-02.CA-1 a CA-8; Definition of Done de los tickets de tipo Endpoint/AP
 | El servicio limita los intentos de entrada por dirección IP y no por cuenta (E-4) | D-72 | El límite por IP que el servicio declara en su documentación (comprobación documental de HU-01.6). **No se ha probado:** la prueba local no lo cubrió. H-4 lo comprueba en el servicio gestionado, y comprueba también **qué dirección ve el servicio**: la entrada la llama el servidor (E-3), y si el servicio ve la del servidor, el límite es uno solo para todos y alguien podría agotarlo y bloquear la entrada de todos |
 | El tiempo de respuesta de la entrada delata si un correo tiene cuenta (E-8) | D-77 | El mismo límite por IP, con la misma salvedad: documentado, no probado; H-4 lo comprueba |
 | Lo comprobado del servicio lo fue en una instancia local, no en la gestionada | HU-01.6 | El despliegue (H-4) repite contra el servicio gestionado las pruebas P1, P2 y P5 de HU-01.6 |
-| Si una cuenta cambia su correo en el propio servicio, `usuario.correo` queda viejo y la base no lo detecta | D-87 | Los correos no se cambian: solo un error de captura, excepcional y una sola vez. El sistema no ofrece cambiar el correo, y la base comprueba la coincidencia cada vez que se escribe el usuario |
+| Si la credencial del sistema cambia el correo de una cuenta en el servicio y no reescribe el usuario, `usuario.correo` queda viejo y la base no lo detecta | D-87, acotado por D-103 | Los correos no se cambian: solo un error de captura, excepcional y una sola vez, y lo corrige la credencial del sistema. La persona no puede cambiar el suyo: la base rechaza la solicitud (D-103; `tests/base/prueba-usuario.py`, caso N9). El sistema no ofrece cambiar el correo, y la base comprueba la coincidencia cada vez que se escribe el usuario |
 | El momento de entrada que usa «Sesión vigente» es un campo del pase que la documentación del servicio no describe; una actualización del servicio podría cambiarlo | D-85 | La prueba P5 lo comprobó en local y H-4 la repite en el servicio gestionado; si el campo falta, la sesión se trata como vencida, nunca como vigente |
 | `sesion_abierta()` mira la hora del inicio de cada consulta: una consulta que empezó antes del fin fijado de la sesión conserva su respuesta hasta terminar | D-102 | La siguiente consulta ya mira la hora nueva (casos N32 y P7 de `tests/base/prueba-acceso-organizacion.py`), y una consulta por la API no dura más de 8 segundos: es el tiempo máximo que la base local trae configurado para `authenticator`, el rol con que entra la API, y para `authenticated` (lo comprueba en cada corrida el caso P9, en la base local; en el servicio gestionado no se ha comprobado). Entra en las características a considerar en versiones futuras (D-48): comprobar ese tiempo máximo en el servicio gestionado, o dejarlo fijado por una migración |
