@@ -53,6 +53,21 @@ supervise una asignación que no ha terminado. Para quitárselo, antes se cambia
 le quita mientras tenga una asignación que no ha terminado. Así nadie avisa por tener una
 asignación sin que ningún rol se lo permita.
 
+*Construido en HU-06.1 (25/11/2026):* las tres tablas, con sus llaves, sus CHECK, el único aviso
+por asignación y día, y los dos disparadores que impiden editar, quitar o vaciar avisos, en toda
+escritura y con cualquier rol, también el dueño de la tabla (migración
+`20261125170000_aviso_modelo`, `tests/base/prueba-aviso-modelo.py`). **Hasta dónde llega esa
+garantía (revisión del tramo 4, ronda 1):** un disparador no puede impedir que el dueño de la
+tabla lo apague o lo quite antes de escribir, porque `ALTER TABLE` es suyo. Ese dueño es el rol de
+las migraciones, que el sistema en servicio no usa y que queda dentro del límite de confianza; la
+garantía vale frente a toda identidad con la que el sistema se conecta, la credencial del sistema
+incluida. El caso P11 de `tests/base/prueba-aviso-modelo.py` deja escrito ese límite.
+Ninguna identidad con la que se conecte el sistema en servicio puede insertar avisos, tampoco la
+credencial del sistema. **Quedan para su ticket:** los disparadores de los roles de la asignación,
+con sus candados, necesitan la tabla `usuario_rol` y van en HU-02.1; el disparador que pone la
+hora, la fecha y la clasificación, y el rol propio de la operación de registro, van en HU-06.3,
+que también necesita el margen de `parametro` (HU-07.1).
+
 ## Requisitos
 
 ### Requirement: La asignación es coherente en la base

@@ -93,6 +93,16 @@ jobs:
         with:
           # La misma versión con la que se probó en local.
           version: 2.109.1
+      # Node y pnpm en este trabajo, no en el de la aplicación: la prueba con
+      # el cliente oficial necesita la base levantada, y es este el trabajo que
+      # la levanta (hallazgo F de la ronda 1 del tramo 4).
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Dependencias, tal como dice el fichero de bloqueo
+        run: pnpm install --frozen-lockfile
       - name: Base local con las migraciones aplicadas
         run: bash scripts/base/levantar-base.sh
       - name: Los scripts de la base deciden bien (sin base)
@@ -111,3 +121,24 @@ jobs:
         run: python3 tests/base/prueba-usuario.py
       - name: La validación de usuario detecta lo que debe
         run: python3 tests/base/prueba-validacion-usuario.py
+      - name: La sesión con el pase real, cada persona ve lo suyo (HU-01.2)
+        run: python3 tests/base/prueba-sesion.py
+      - name: La validación de la sesión detecta lo que debe
+        run: python3 tests/base/prueba-validacion-sesion.py
+      - name: Cliente, asignación y aviso, con datos (HU-06.1)
+        run: python3 tests/base/prueba-aviso-modelo.py
+      - name: La validación del modelo del aviso detecta lo que debe
+        run: python3 tests/base/prueba-validacion-aviso-modelo.py
+      - name: La validación de la vigencia del pase detecta lo que debe
+        run: python3 tests/base/prueba-validacion-vigencia-del-pase.py
+      # La única prueba que pasa por el cliente oficial del servicio: cookies
+      # reales, entrar, cerrar y reutilizar. Antes solo corría en local, así
+      # que un cambio en ese cableado podía romperse con la CI en verde.
+      - name: La sesión con el cliente oficial y la base local (HU-01.2)
+        env:
+          CT_BASE_LOCAL: "1"
+          # Aquí la suite es obligatoria: si la primera variable faltara, se
+          # saltaría y el trabajo saldría en verde sin haber probado nada. Con
+          # esta, el caso I7 hace fallar ese verde falso.
+          CT_INTEGRACION_EXIGIDA: "1"
+        run: pnpm vitest run tests/integration/sesion.test.ts

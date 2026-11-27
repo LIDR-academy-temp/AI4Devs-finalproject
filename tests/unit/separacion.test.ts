@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import {
   NO_EXISTE,
   buscarPorId,
+  leerMiUsuario,
   consultar,
   usosDirectos,
   type Identidad,
@@ -166,6 +167,38 @@ describe("buscarPorId: lo ajeno responde igual que lo que no existe (D-67)", () 
     const otra = { id: ORG_B, nombre: "Organización B" };
     const r = await buscarPorId(clienteFalso({ data: otra, error: null }).cliente, yo, "organizacion", ORG_B);
     expect(r).toEqual(NO_EXISTE);
+  });
+});
+
+// HU-01.2 (tramo 4): la identidad de quien pregunta sale de leer su propio
+// usuario. Es la única lectura que no se filtra por organización, porque es la
+// que la produce; la regla restrictiva de la base sigue cortando.
+describe("leerMiUsuario: el propio usuario, por su identificador, con el plazo de su organización", () => {
+  it("M1 lee usuario por el identificador de quien pregunta y trae sesion_dias de su organización", async () => {
+    const fila = { id: yo.usuarioId, organizacion_id: ORG_A, activo: true, organizacion: { sesion_dias: 30 } };
+    const { cliente, anotado } = clienteFalso({ data: fila, error: null });
+    const r = await leerMiUsuario(cliente, yo.usuarioId);
+    expect(r).toEqual({ usuarioId: yo.usuarioId, organizacionId: ORG_A, activo: true, sesionDias: 30 });
+    expect(anotado.tabla).toBe("usuario");
+    expect(anotado.filtros).toEqual([["id", yo.usuarioId]]);
+  });
+
+  it("M2 un identificador mal formado no arma ninguna consulta", async () => {
+    const { cliente, anotado } = clienteFalso();
+    expect(await leerMiUsuario(cliente, "no-es-un-uuid")).toBeNull();
+    expect(anotado.tabla).toBe("");
+  });
+
+  it("M3 una fila de otra persona, o sin organización legible, no es el propio usuario", async () => {
+    const ajena = { id: FILA, organizacion_id: ORG_A, activo: true, organizacion: { sesion_dias: 30 } };
+    const sinOrg = { id: yo.usuarioId, organizacion_id: ORG_A, activo: true, organizacion: null };
+    expect(await leerMiUsuario(clienteFalso({ data: ajena, error: null }).cliente, yo.usuarioId)).toBeNull();
+    expect(await leerMiUsuario(clienteFalso({ data: sinOrg, error: null }).cliente, yo.usuarioId)).toBeNull();
+  });
+
+  it("M4 un error de la base se informa con mensaje nuestro, no como «no existe»", async () => {
+    const { cliente } = clienteFalso({ data: null, error: { message: "detalle interno del motor" } });
+    await expect(leerMiUsuario(cliente, yo.usuarioId)).rejects.toThrow("No se pudo comprobar la sesión");
   });
 });
 

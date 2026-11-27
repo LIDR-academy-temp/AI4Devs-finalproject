@@ -11,11 +11,11 @@
 
 > **Estado al miércoles 25/11/2026.**
 >
-> - **Lo que ya está construido:** la estructura de la aplicación (Next.js, ticket H-2), la integración continua en verde en el fork, el harness (reglas de `CLAUDE.md`, hook de datos que no salen, plantilla de migración controlada, verificador de referencias) y la **especificación aprobada** (D-89): `openspec/specs/acceso/spec.md`, `openspec/specs/aviso-inicio/spec.md` y `openspec/specs/no-reportados/spec.md`, con 32 requisitos y 134 escenarios, tras siete rondas de revisión adversarial (135 escenarios desde D-103, 25/11/2026). Construido después: en la base, la organización con su regla de separación (HU-03.1, tramo 2) y el usuario con su correo y su organización (HU-01.1, tramo 3); en el código, el filtro por organización en un solo lugar (HU-03.2, tramo 3).
+> - **Lo que ya está construido:** la estructura de la aplicación (Next.js, ticket H-2), la integración continua en verde en el fork, el harness (reglas de `CLAUDE.md`, hook de datos que no salen, plantilla de migración controlada, verificador de referencias) y la **especificación aprobada** (D-89): `openspec/specs/acceso/spec.md`, `openspec/specs/aviso-inicio/spec.md` y `openspec/specs/no-reportados/spec.md`, con **32 requisitos y 141 escenarios**, tras siete rondas de revisión adversarial. (Al aprobarse eran 134; los cinco posteriores los agregaron D-103 y la ronda 1 de revisión del tramo 4, las dos del 25/11/2026.) Construido después: en la base, la organización con su regla de separación (HU-03.1, tramo 2), el usuario con su correo y su organización (HU-01.1, tramo 3) y el cliente, la asignación y el aviso de inicio, que nadie edita ni quita (HU-06.1, tramo 4); en el código, el filtro por organización en un solo lugar (HU-03.2, tramo 3) y la sesión vigente, entrar y cerrar (HU-01.2, tramo 4). Todavía no hay pantallas: llegan con HU-01.3.
 > - **Tramo 2 (HU-03.1):** la primera tabla de la base, `organizacion`, con su regla de separación forzada, y la **comprobación de estructura**, que corre en cada cambio y falla si una tabla de negocio nace sin organización o sin su regla. Hasta el tramo 3 la regla no deja ver nada a nadie: todavía no existe la tabla de usuarios de la que sale la organización de quien consulta (D-100). Todavía no hay pantallas.
 > - **Lo que se construye para la entrega:** un recorte del MVP con 23 tickets en 11 tramos (`docs/trazabilidad/05-Tickets/Recorte-Entrega-20261119-v4.md`, decisiones D-73 a D-75). Una persona entra con su cuenta, el consultor avisa su inicio con un toque y, al vencer el margen, cada supervisor recibe un correo con los suyos que no avisaron. Todo queda separado por organización y por rol, y desplegado. Meta interna: sábado 05/12/2026 (D-75). Entrega: miércoles 09/12/2026 (R-1).
 > - **Cómo se trabaja:** cada tramo se construye en su propia rama y vuelve por un pull request dentro del fork, con su revisión adversarial guardada (D-90).
-> - **De dónde sale cada cosa:** `docs/trazabilidad/README.md` reúne el registro de decisiones (D-1 a D-103), el PRD, el backlog, los tickets y todas las revisiones. **Si este README y la especificación difieren, manda la especificación.**
+> - **De dónde sale cada cosa:** `docs/trazabilidad/README.md` reúne el registro de decisiones (D-1 a D-105), el PRD, el backlog, los tickets y todas las revisiones. **Si este README y la especificación difieren, manda la especificación.**
 > - **Anonimización.** El proyecto es una herramienta interna real de dos empresas de consultoría. Los clientes aparecen como `Cliente A` … `Cliente I`, con alias estables, y las empresas como Proveedor A y Proveedor B. No se nombran personas, contratos ni códigos de proyecto reales (R-5, RNF-8). La única excepción es el autor del proyecto, en dos lugares: la ficha 0.1, porque la plantilla del curso lo pide (D-92), y los metadatos de cada commit (D-98). El historial conserva además el usuario de la máquina en las rutas de la primera versión de un pull request, como riesgo aceptado (D-97). Esta excepción es posterior al PRD v8 y manda sobre su RNF-8 hasta el PRD v9 (D-99).
 
 ---
@@ -161,6 +161,19 @@ python3 scripts/base/comprobar-estructura.py
 python3 tests/base/prueba-comprobacion-estructura.py
 python3 tests/base/prueba-validacion-organizacion.py
 python3 tests/base/prueba-acceso-organizacion.py
+python3 tests/base/prueba-usuario.py
+python3 tests/base/prueba-validacion-usuario.py
+python3 tests/base/prueba-sesion.py
+python3 tests/base/prueba-validacion-sesion.py
+python3 tests/base/prueba-aviso-modelo.py
+python3 tests/base/prueba-validacion-aviso-modelo.py
+python3 tests/base/prueba-validacion-vigencia-del-pase.py
+```
+
+Y, en el mismo trabajo, la única prueba que pasa por el cliente oficial del servicio: la sesión con cookies reales contra la base local (HU-01.2). Necesita la base levantada, así que `pnpm test` la salta; la integración continua la corre aquí, donde la base está arriba.
+
+```bash
+CT_BASE_LOCAL=1 pnpm vitest run tests/integration/sesion.test.ts
 ```
 
 Para volver a aplicar las migraciones desde cero, con la base ya levantada: `supabase db reset` (borra los datos de la base local, que son solo de prueba). Los datos de arranque llegan en `supabase/seed.sql` con H-3.
@@ -246,6 +259,9 @@ AI4Devs-finalproject/
 ├── .claude/hooks/datos-que-no-salen.py # bloquea secretos, nombres y dominios reales
 ├── .github/workflows/ci.yml            # guardarraíles, aplicación y base, en cada cambio
 ├── app/                                # Next.js (App Router): página provisional de H-2
+├── lib/
+│   ├── datos/separacion.ts             # el único lugar por el que el código consulta la base (HU-03.2)
+│   └── sesion/                         # sesión vigente, entrar y cerrar; reglas y cliente oficial (HU-01.2)
 ├── openspec/
 │   ├── specs/{acceso,aviso-inicio,no-reportados}/spec.md
 │   └── plantillas/migracion-controlada.sql
@@ -265,7 +281,9 @@ AI4Devs-finalproject/
 │   └── base/                           # levantar la base local, validar y comprobar la estructura
 ├── tests/
 │   ├── harness/                        # pruebas de los guardarraíles
-│   └── base/                           # pruebas de la base, contra la base local
+│   ├── base/                           # pruebas de la base, contra la base local
+│   ├── unit/                           # pruebas del código, sin base (Vitest)
+│   └── integration/                    # el código con el cliente oficial y la base local
 └── package.json · pnpm-lock.yaml · tsconfig.json · vitest.config.ts · eslint.config.mjs
 ```
 
@@ -276,7 +294,7 @@ supabase/seed.sql         # H-3: dos organizaciones, los tres roles, un consulto
 app/ (pantallas)          # HU-01.3 (entrada) y HU-06.4 (consultor)
 ```
 
-La organización interna del código del servidor (dónde viven la sesión, la autorización y las reglas) se decide en el primer ticket que la necesita y se documenta aquí en su pull request.
+La organización interna del código del servidor se decide en el primer ticket que la necesita y se documenta aquí en su pull request. Hasta ahora: las consultas a la base, en `lib/datos/` (HU-03.2), y la sesión, en `lib/sesion/` (HU-01.2). La autorización por rol (HU-02.2) y las reglas del aviso (HU-06.2) todavía no tienen lugar.
 
 ### **2.4. Infraestructura y despliegue**
 
@@ -325,16 +343,22 @@ flowchart TB
 | `tests/harness/prueba-verificar-referencias.py` | Que el verificador de referencias detecta cada tipo de cita rota: un caso positivo y uno negativo por regla, y un negativo por cada familia de identificador | 64 |
 | `scripts/verificar-referencias.py` | Que toda cita de los documentos vivos resuelve, y que ninguna copia de `docs/trazabilidad/` cambió frente a la base | — |
 | `tests/base/prueba-scripts-base.py` | Sin base: qué salida de la comprobación se acepta y cuál no (sin resumen, cero tablas, líneas mal formadas), que cada migración tenga su validación, y que un fichero que falta se informe con mensaje propio; y que el `main()` de cada script use de verdad esas piezas | 18 |
-| `scripts/base/correr-validaciones.py` | Que cada migración tiene su validación con el mismo nombre, y que dejó sus objetos hechos como dice la especificación: la validación 1 a 1 de `supabase/validaciones/` | 20 filas |
+| `scripts/base/correr-validaciones.py` | Que cada migración tiene su validación con el mismo nombre, y que dejó sus objetos hechos como dice la especificación: la validación 1 a 1 de `supabase/validaciones/` | 5 validaciones, 72 filas |
 | `scripts/base/comprobar-estructura.py` | Que toda tabla de negocio tiene organización y su regla, que nada se salta las reglas y que las personas no tienen `TRUNCATE`, `TRIGGER` ni `REFERENCES`; falla si no recorrió ninguna tabla | — |
 | `tests/base/prueba-comprobacion-estructura.py` | Que la comprobación de estructura detecta cada falla: un caso que pasa y uno que falla por regla, leídos con el mismo analizador que usa la integración continua; incluye un rol de las personas que puede asumir, directo o en dos saltos, otro que omite las reglas, y una pertenencia que no deja asumirlo, que no es falla | 35 |
 | `tests/base/prueba-validacion-organizacion.py` | Que la validación de `organizacion` da exactamente sus 20 filas, sin repetidas, y marca cada desvío de la especificación en su fila: al menos un desvío por fila | 31 |
 | `tests/base/prueba-acceso-organizacion.py` | Con datos: la base sabe si la sesión del pase sigue abierta, y dice no con la sesión de otra cuenta, sin identificador de sesión, con otro rol o pasado su fin (aunque pase entre dos consultas de la misma transacción), y sí con un fin futuro; una consulta ya empezada conserva su respuesta (riesgo aceptado, D-102), acotada por el tiempo máximo de consulta de los roles de la API; `es_mi_organizacion` responde no a una cuenta sin usuario, para cualquier valor, y aun con una regla permisiva que deja todo, la restrictiva no deja ver ni crear; nadie ve ni cambia una organización, por la API ni por SQL con su rol; las constraints de la tabla | 40 |
-| `tests/base/prueba-usuario.py` | Con datos (HU-01.1): el correo del usuario es el de su cuenta y es único sin distinguir mayúsculas; quien no puede leer las cuentas recibe un rechazo con mensaje nuestro; la persona no cambia el correo de su cuenta y la credencial del sistema sí (D-103); `es_mi_organizacion` responde sí solo con usuario activo, sesión abierta y dentro de `sesion_dias` desde la entrada con contraseña; cada persona ve su usuario y su organización y no los de otra; la corrección de un error de captura en dos pasos; el instante exacto del plazo y un día de 24 horas aunque cambie el horario; la sesión se renueva con el bloqueo de D-103 instalado | 42 |
+| `tests/base/prueba-usuario.py` | Con datos (HU-01.1): el correo del usuario es el de su cuenta y es único sin distinguir mayúsculas; quien no puede leer las cuentas recibe un rechazo con mensaje nuestro; la persona no cambia el correo de su cuenta y la credencial del sistema sí (D-103); `es_mi_organizacion` responde sí solo con usuario activo, sesión abierta y dentro de `sesion_dias` desde la entrada con contraseña; cada persona ve su usuario y su organización y no los de otra; la corrección de un error de captura en dos pasos; el instante exacto del plazo y un día de 24 horas aunque cambie el horario; la sesión se renueva con el bloqueo de D-103 instalado; una entrada con contraseña cuyo momento no se puede leer hace vencer la sesión (D-105) | 43 |
 | `tests/base/prueba-validacion-usuario.py` | Que la validación de `usuario` da exactamente sus 26 filas y marca cada desvío de la especificación en su fila: al menos un desvío por fila | 30 |
-| `tests/unit/separacion.test.ts` | Sin base (HU-03.2): toda consulta del código sale filtrada por la organización de quien pregunta; lo ajeno, lo inexistente y un identificador mal formado responden igual (D-67); un error de la base no se disfraza de «no existe»; ningún archivo de código del repositorio consulta tablas o funciones de la base por fuera de `lib/datos/separacion.ts`; el mensaje de error es fijo y un identificador en mayúsculas sigue siendo propio | 18 |
+| `tests/base/prueba-sesion.py` | Con el pase real (HU-01.2): cada persona lee su propio usuario y su organización, y no los de un compañero ni los de otra organización; no cambia ni inserta nada; deja de verlos al desactivarse, al pasar el plazo (con dos entradas cuenta la más antigua, D-104) y al cerrar; cerrar con alcance local deja inservible ese pase y no cierra las demás sesiones; una entrada con contraseña ilegible o con un momento en el futuro hace vencer la sesión (D-105 y hallazgo G de la ronda 1 del tramo 4) | 24 |
+| `tests/base/prueba-validacion-sesion.py` | Que la validación de la sesión da sus 7 filas y marca cada desvío: una regla permisiva de más, permisos de escribir, lectura para quien no tiene sesión | 11 |
+| `tests/base/prueba-aviso-modelo.py` | Con datos (HU-06.1): zona horaria y alias del cliente; vigencia, horario, días laborables, supervisor distinto y organización común de la asignación; un aviso por asignación y día; nadie edita, quita ni vacía avisos, tampoco el dueño de la tabla, y ninguna identidad del sistema en servicio los inserta. Cada rechazo exige su motivo exacto; y hasta dónde llega esa garantía: el dueño de la tabla puede apagar el disparador antes de escribir, y ninguna identidad del sistema en servicio puede | 56 |
+| `tests/base/prueba-validacion-aviso-modelo.py` | Que la validación del modelo del aviso da sus 15 filas y marca cada desvío en su fila —incluidos un permiso de lectura y una regla permisiva para quien no tiene sesión—, y que la lectura por rol que trae HU-02.1 no la rompe | 25 |
+| `tests/base/prueba-validacion-vigencia-del-pase.py` | Que la validación de la vigencia del pase da sus 4 filas y marca cada desvío: el plazo que deja de ser `stable` o que las personas pueden llamar, la regla de la organización con los privilegios de quien la llama, y los dos defectos que encontró la ronda 1 del tramo 4 vueltos a poner a propósito | 8 |
+| `tests/unit/separacion.test.ts` | Sin base (HU-03.2): toda consulta del código sale filtrada por la organización de quien pregunta; lo ajeno, lo inexistente y un identificador mal formado responden igual (D-67); un error de la base no se disfraza de «no existe»; ningún archivo de código del repositorio consulta tablas o funciones de la base por fuera de `lib/datos/separacion.ts`; el mensaje de error es fijo y un identificador en mayúsculas sigue siendo propio. Desde HU-01.2, la lectura del propio usuario | 22 |
+| `tests/unit/sesion.test.ts` | Sin base, con reloj controlado (HU-01.2): el momento de entrada (el más antiguo, D-104), el plazo de 24 horas por día con el instante exacto, el origen de la petición, las marcas de la cookie, y entrar, cerrar y sesión vigente con un cliente falso. Desde la ronda 1 del tramo 4: el momento ilegible que hace vencer la sesión (D-105), el momento futuro, la marca de conexión cifrada leída del esquema, el cierre que el servicio rechaza y la entrada fallida que deja el navegador sin sesión. Desde su revisión interna: el cierre que no se afirma sin comprobarlo y el servicio caído que no corta la sesión de quien ya estaba dentro | 55 |
 
-El paso de pruebas de la aplicación (`pnpm test`) corre las pruebas de `tests/unit/`. El código de la aplicación empezó en el tramo 3 con `lib/datos/separacion.ts` (HU-03.2).
+El paso de pruebas de la aplicación (`pnpm test`) corre las pruebas de `tests/unit/`. El código de la aplicación empezó en el tramo 3 con `lib/datos/separacion.ts` (HU-03.2). `tests/integration/sesion.test.ts` (7 casos, uno de ellos para que la integración continua no pueda saltarse la suite y quedar en verde) necesita la base levantada: `pnpm test` la salta, y la corre el trabajo de la base en la integración continua (sección 1.4).
 
 **Cómo se escriben las de la aplicación** (D-26, `CLAUDE.md` secciones 3 y 4). En reglas de negocio y permisos, las pruebas van antes del código: el primer commit del ticket son las pruebas fallando y el segundo el código que las hace pasar. Cada pieza tiene un caso que pasa y uno que se rechaza. La IA propone los casos límite desde la especificación, la Dirección los aprueba o agrega, y el prompt queda en `prompts.md`.
 
@@ -567,10 +591,10 @@ HU-03.CA-5, CA-6 y CA-7 dependen de historias que no entran en esta entrega (HU-
 |---|---|---|---|
 | 0 | H-2, HU-01.6 | Integración continua en verde; el servicio de autenticación probado | ✅ Cerrado. HU-01.6 en local; lo del servicio gestionado se repite en H-4 |
 | 1 | H-1 | Especificación inicial refutada y aprobada | ✅ Cerrado (D-89) |
-| 2 | HU-03.1 | Organizaciones en la base y comprobación de estructura | Construido; vuelve por su pull request |
-| 3 | HU-01.1, HU-03.2 | Usuarios; filtro por organización en el código | Siguiente |
-| 4 | HU-01.2, HU-06.1 | Sesión; modelo del aviso | |
-| 5 | HU-01.3, HU-02.1, HU-06.2 | Se puede entrar; roles en la base; regla del aviso | |
+| 2 | HU-03.1 | Organizaciones en la base y comprobación de estructura | ✅ Cerrado (pull request #2) |
+| 3 | HU-01.1, HU-03.2 | Usuarios; filtro por organización en el código | ✅ Cerrado (pull request #3) |
+| 4 | HU-01.2, HU-06.1 | Sesión; modelo del aviso | Construido; vuelve por su pull request |
+| 5 | HU-01.3, HU-02.1, HU-06.2 | Se puede entrar; roles en la base; regla del aviso | Siguiente |
 | 6 | H-3, HU-02.2, HU-07.1 | Datos de prueba; autorización; modelo del no reportado | |
 | 7 | HU-02.4, HU-03.3, HU-07.2 | Permisos y separación probados; núcleo del reporte | |
 | 8 | HU-06.3, HU-07.3 | El aviso se registra y el reporte se genera | |
@@ -600,9 +624,11 @@ Qué trae: la tabla `organizacion` con su regla de separación restrictiva y for
 
 Revisión adversarial: cuatro rondas (las tres primeras con dos corridas unidas, la cuarta corta, con una), **37 observaciones distintas, ninguna crítica** (13, 10, 8 y 6). Cierre: **35 corregidas**, **1 corregida con un riesgo aceptado** por la Dirección (D-102: una consulta ya empezada conserva su respuesta de `sesion_abierta()`, acotada por el tiempo máximo de consulta) y **1 límite declarado** (el normalizador de una prueba no entiende comentarios anidados; daría un rojo de más, nunca un verde de más); ninguna descartada. Nacieron además D-101 (la puerta del tramo 8 pide qué dice H-4) y un control del agente para responder cada ronda. Lo que se aprendió: desde la ronda 2, casi todo lo que se encontró nació de las correcciones de la ronda anterior. Las revisiones y sus respuestas están en `docs/revisiones/tramo-2-hu-03.1-organizacion-ronda1-corrida1.md` y siguientes.
 
-**Pull Request 2**
+**Pull Request 2 — tramo 4, HU-01.2 y HU-06.1 (`tramo-4/hu-01.2-hu-06.1-sesion-aviso` → `feature/entrega-1-JC`)**
 
-Pendiente.
+Qué trae: en el código, las reglas de la sesión en un solo lugar —entrar, cerrar y «sesión vigente», con sus tres condiciones comprobadas en cada petición— y el cliente oficial del servicio con las marcas de la cookie que pone el sistema; en la base, la migración que deja a cada persona leer su propio usuario y su propia organización, y el modelo del aviso: cliente con su zona horaria, asignación con horario, días laborables y vigencia, y el aviso de inicio, uno por asignación y día, que nadie edita ni quita. Con sus pruebas primero, en rojo, y la única prueba que pasa por el cliente oficial, que desde este tramo corre también en la integración continua.
+
+Revisión adversarial: **una ronda con dos corridas unidas, 10 observaciones distintas (6 altas, 4 medias), ninguna crítica.** Cierre: **7 corregidas** y **3 corregidas con un límite declarado** (el cierre que el servicio no confirma, la prueba del cliente oficial que sigue necesitando la base levantada, y hasta dónde llega la inmutabilidad del aviso: el dueño de la tabla puede apagar el disparador antes de escribir); ninguna descartada. Dos de las observaciones eran criterio y no defecto, y las decidió la Dirección: nació **D-105** —si alguna entrada con contraseña del pase trae un momento que no se puede leer, la sesión vence— y la prueba con el cliente oficial pasó a la integración continua. Lo que se aprendió: ninguna observación de esta ronda nació de una corrección de otra —fue la primera y única—, pero las correcciones generaron **11 observaciones nuevas, 2 altas**, que cazaron el motor de la base y una revisión interna antes de pagar otra ronda; una de ellas era una premisa falsa sobre la biblioteca del servicio que habría llegado al cliente. La lección queda escrita: cuando una corrección depende de cómo se comporta una dependencia, se lee su código antes de declarar el límite. Las revisiones y la respuesta están en `docs/revisiones/tramo-4-hu-01.2-hu-06.1-sesion-aviso-ronda1-corrida1.md` y siguientes.
 
 **Pull Request 3**
 

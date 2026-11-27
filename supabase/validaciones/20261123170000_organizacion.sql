@@ -98,8 +98,8 @@ filas(orden, objeto, esperado, encontrado) as (
                           || case when relforcerowsecurity then 'forzadas' else 'sin forzar' end
                    from pg_class where oid = to_regclass('public.organizacion')), '(no existe)')
   union all
-  select 13, 'reglas sobre public.organizacion', 'organizacion_separacion',
-         coalesce((select string_agg(polname, ',' order by polname) from pol), '(ninguna)')
+  select 13, 'reglas restrictivas sobre public.organizacion', 'organizacion_separacion',
+         coalesce((select string_agg(polname, ',' order by polname) from pol where clase = 'restrictiva'), '(ninguna)')
   union all
   select 14, 'regla organizacion_separacion',
          'restrictiva · * · public · public.es_mi_organizacion(id) · public.es_mi_organizacion(id)',
@@ -130,7 +130,8 @@ filas(orden, objeto, esperado, encontrado) as (
                    from fn where firma = 'public.es_mi_organizacion(uuid)'), '(no existe)')
   union all
   -- Solo los privilegios que no pasan por las reglas: los de leer y escribir
-  -- los da HU-02.1, y esta fila no debe cambiar cuando lleguen.
+  -- los dan HU-01.2 (20261125164000_sesion, leer) y HU-02.1 (cada rol), y esta
+  -- fila no debe cambiar cuando lleguen.
   select 20, 'TRUNCATE, TRIGGER y REFERENCES de las personas sobre public.organizacion',
          'anon: ninguno · authenticated: ninguno',
          case when to_regclass('public.organizacion') is null then '(no existe)' else

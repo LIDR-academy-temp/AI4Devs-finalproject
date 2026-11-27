@@ -1,9 +1,9 @@
 # Especificación · acceso
 
 > **Estado: aprobada por la Dirección el 19/11/2026 (D-89), tras siete rondas de revisión
-> adversarial.** Ticket H-1. Queda una comprobación «por comprobar al construir», con su salida
-> escrita: HU-01.2 (cookie). Las de HU-03.1 (sesión abierta, 23/11/2026) y HU-01.1 (las dos sobre
-> el correo, 25/11/2026) quedaron comprobadas; el resultado está en su requisito.
+> adversarial.** Ticket H-1. Las comprobaciones «por comprobar al construir» de HU-03.1 (sesión
+> abierta, 23/11/2026), HU-01.1 (las dos sobre el correo, 25/11/2026) y HU-01.2 (la cookie,
+> 25/11/2026) quedaron comprobadas; el resultado está en su requisito.
 > Cubre las historias HU-01 (entrar con cuenta propia), HU-02 (cada rol ve y hace solo lo suyo) y
 > HU-03 (ninguna organización ve a otra). Cada requisito cita el criterio del backlog del que sale
 > o la decisión de la Dirección que lo origina.
@@ -56,6 +56,17 @@ guarda contraseñas.
 
 Origen: HU-01.CA-1, HU-01.CA-4.
 
+*Construido en HU-01.2 (25/11/2026):* `entrar`, en `lib/sesion/vigente.ts`. Una entrada que se
+rechaza deja el navegador **sin sesión**, también cuando ya tenía una: si no se cortara, seguiría
+operando como la persona anterior. Y si la base falla al comprobar el usuario, la sesión recién
+creada **se retira** antes de informar: solo queda con sesión quien tiene un usuario comprobado y
+activo (las dos, de la revisión del tramo 4, ronda 1). **Rechazada quiere decir rechazada por el
+servicio** —responde con el estado de su API—: si lo que falla es el servicio mismo, no se corta
+nada, porque una falla pasajera sacaría de su sesión a quien ya estaba dentro (revisión interna de
+esa ronda). **Límite declarado:** quien lo intenta ve el mensaje único en los dos casos, porque lo
+exige «Mensaje único ante credenciales incorrectas»; distinguir una indisponibilidad del servicio
+en la pantalla es de HU-01.3.
+
 #### Scenario: credenciales correctas y cuenta activa
 - **DADO** un usuario activo
 - **CUANDO** entra con su correo y su contraseña
@@ -65,6 +76,17 @@ Origen: HU-01.CA-1, HU-01.CA-4.
 - **DADO** un usuario con `activo` en falso
 - **CUANDO** entra con su correo y su contraseña correctos
 - **ENTONCES** no queda con sesión y ve el mismo mensaje que ante credenciales incorrectas
+
+#### Scenario: entrada rechazada en un navegador que ya tenía sesión
+- **DADO** un navegador con la sesión de una persona abierta
+- **CUANDO** se intenta entrar con las credenciales de otra y el servicio las rechaza
+- **ENTONCES** el navegador queda sin sesión: la anterior no sigue sirviendo
+
+#### Scenario: el servicio de autenticación no contesta durante una entrada
+- **DADO** un navegador con la sesión de una persona abierta
+- **CUANDO** se intenta entrar y el servicio de autenticación no contesta
+- **ENTONCES** no se entra y la sesión que ya tenía sigue abierta: una falla pasajera no saca a
+  quien estaba dentro
 
 ### Requirement: Mensaje único ante credenciales incorrectas
 
@@ -119,16 +141,37 @@ condiciones de una sesión vigente:
    sistema, no el servicio (D-69). El momento de entrada es el que el servicio anota en el pase al
    entrar con contraseña, que se conserva cuando la sesión se renueva (prueba P5 de HU-01.6). Si el
    pase no trae ese momento, la condición no se cumple: ante la duda, la sesión vence. Si trae
-   varios, vale el más antiguo, por la misma razón. Un día son 24 horas: el plazo no depende de la
-   zona horaria ni de los cambios de horario (revisión del tramo 3, ronda 1; criterio del agente,
-   a confirmar por la Dirección).
+   varios, vale el más antiguo, por la misma razón; y si alguno de ellos no se puede leer, tampoco
+   hay momento de entrada: no se sabría cuál es el más antiguo (D-105). Un momento posterior a la
+   hora de la petición tampoco da vigencia, sin tolerancia de desfase: un reloj adelantado la
+   alargaría tanto como el adelanto. Un día son 24 horas: el plazo no depende de la zona horaria ni
+   de los cambios de horario (D-104).
 
 Si falla cualquiera, la sesión se cierra en el servicio y la petición se trata como sin sesión.
 
-Origen: HU-01.CA-5, HU-01.CA-6, D-60, D-69, D-76.
+Origen: HU-01.CA-5, HU-01.CA-6, D-60, D-69, D-76, D-104, D-105.
 
 **Decidido aquí:** `sesion_dias` es un valor por organización y rige en cuanto cambia. No lleva
 «desde el día siguiente»: esa regla es del margen y del intervalo (RF-14).
+
+*Construido en HU-01.2 (25/11/2026):* el único lugar es `lib/sesion/vigente.ts`, que consulta al
+servicio con el pase en cada petición y obtiene quién pregunta leyendo, con ese mismo pase, su
+propio usuario y el plazo de su organización (`leerMiUsuario`, en `lib/datos/separacion.ts`). Si
+falla una condición, cierra en el servicio la sesión de ese navegador (alcance local); cerrar
+las demás es HU-01.CA-11, fuera de esta entrega. Lo prueban `tests/unit/sesion.test.ts`, con
+reloj controlado, y `tests/base/prueba-sesion.py`, con el pase real. **Límite declarado:** un
+error de la base al leer el usuario no cierra la sesión; la petición falla con mensaje nuestro.
+Cerrarla por una falla pasajera sacaría a todas las personas a la vez. En la entrada es al
+contrario: ahí la sesión acaba de crearse y, si no se pudo comprobar el usuario, se retira
+(revisión del tramo 4, ronda 1). **Segundo límite declarado:** si el servicio rechaza el corte
+automático o no contesta, la cookie se queda en el navegador y ese error no sale a quien pregunta.
+No queda sesión utilizable —cada petición vuelve a comprobar las tres condiciones y a intentar el
+corte—, pero volvería a servir si la cuenta se reactiva dentro del plazo. Las dos capas, el código
+y la regla `es_mi_organizacion` de la base, leen el momento de entrada igual para las formas que
+emite el servicio (migración `20261125185000_vigencia_del_pase`). **Límite:** no son idénticas para
+cualquier forma imaginable —un número con parte decimal nula, que el servicio no emite, el código
+lo aceptaría y la base no—; la diferencia cae del lado seguro, porque manda la capa más estricta
+(revisión interna de la ronda 1 del tramo 4).
 
 #### Scenario: se vuelve a abrir dentro del plazo
 - **DADO** que una persona entró hace menos de `sesion_dias` días y no cerró su sesión
@@ -150,6 +193,17 @@ Origen: HU-01.CA-5, HU-01.CA-6, D-60, D-69, D-76.
 - **CUANDO** el valor de su organización pasa a 1 y ella hace una petición
 - **ENTONCES** se rechaza: el valor se lee en cada petición, no se copia al entrar
 
+#### Scenario: una entrada con contraseña con el momento ilegible
+- **DADO** un pase con dos entradas con contraseña, una reciente y otra cuyo momento no se puede leer
+- **CUANDO** la persona hace una petición
+- **ENTONCES** se rechaza, la sesión queda cerrada y llega a la pantalla de entrada: sin ese momento
+  no se sabe cuál es la entrada más antigua (D-105)
+
+#### Scenario: un momento de entrada en el futuro
+- **DADO** un pase cuyo momento de entrada con contraseña es posterior a la hora de la petición
+- **CUANDO** la persona hace una petición
+- **ENTONCES** se rechaza y la sesión queda cerrada: un momento futuro no alarga la vigencia
+
 #### Scenario: en el instante exacto del plazo
 - **DADO** una organización con `sesion_dias` en 30
 - **CUANDO** una persona hace una petición exactamente 30 días después de entrar
@@ -168,6 +222,18 @@ de inmediato.
 Origen: HU-01.CA-7. Comprobado en la prueba P2 de HU-01.6: el servicio rechaza el pase de una
 sesión cerrada cuando se le consulta.
 
+*Construido en HU-01.2 (25/11/2026):* `cerrar`, en `lib/sesion/vigente.ts`. El cliente oficial, con
+alcance local, **borra la sesión del navegador antes de pedir la revocación al servicio**, así que
+un error suyo no significa que la persona siga dentro. Por eso, ante un error, se comprueba si
+queda sesión: si no queda, está cerrada; si queda, o no se puede comprobar, se responde con mensaje
+nuestro y no se afirma el cierre (revisión del tramo 4, ronda 1, corregido por su revisión
+interna). El motivo que diera el servicio no sale a quien pregunta.
+
+**Límite declarado:** cuando el cierre local se hizo pero la revocación en el servicio falló, el
+pase anterior puede seguir siendo válido en el servicio hasta que caduque. Este navegador ya no lo
+tiene; quien tuviera una copia podría usarlo mientras el usuario esté activo y dentro del plazo.
+Revocar a la fuerza, o avisar de que la revocación quedó pendiente, es una característica futura.
+
 #### Scenario: cierre
 - **DADO** una persona con sesión abierta
 - **CUANDO** la cierra
@@ -177,6 +243,17 @@ sesión cerrada cuando se le consulta.
 - **DADO** que una persona cerró su sesión
 - **CUANDO** se repite una petición con el pase que tenía antes de cerrar
 - **ENTONCES** se rechaza
+
+#### Scenario: el servicio no revocó el pase, pero la sesión del navegador se cerró
+- **DADO** una persona con sesión abierta
+- **CUANDO** pide cerrarla, su navegador queda sin sesión y el servicio devuelve un error de la revocación
+- **ENTONCES** su sesión queda cerrada y llega a la pantalla de entrada; lo que puede no haberse
+  revocado es el pase en el servicio (límite declarado)
+
+#### Scenario: el cierre falla y la sesión sigue abierta
+- **DADO** una persona con sesión abierta
+- **CUANDO** pide cerrarla, el cierre falla y su navegador sigue con la sesión
+- **ENTONCES** no se le dice que quedó cerrada: ve un aviso nuestro para intentarlo de nuevo
 
 ### Requirement: Peticiones que vienen de otro sitio
 
@@ -200,9 +277,17 @@ subdominio**, y, en el sistema desplegado, para que solo viaje por conexión cif
 Origen: HU-01.CA-2 y HU-06.CA-13 (un aviso no se puede quitar: uno inducido desde otro sitio
 tampoco); hallazgo 7 de la primera ronda de revisión de esta especificación.
 
-**Por comprobar al construir HU-01.2:** con qué atributos entrega la cookie el cliente oficial del
-servicio. No se ha comprobado. La regla de arriba no depende de eso: la comprobación del origen la
-hace el sistema.
+**Comprobado al construir HU-01.2 (25/11/2026), en el código del cliente oficial
+(`@supabase/ssr` 0.12.7):** por sí solo escribe la cookie sin dominio, pero **sin** la marca que
+impide que la lea el código de la página y sin la de conexión cifrada. Por eso el sistema reescribe
+las marcas de toda cookie antes de enviarla (`lib/sesion/cliente.ts`): que no la lea la página,
+sin dominio aunque el cliente lo pida y, si la dirección pública es cifrada, solo por conexión
+cifrada. Lo prueban `tests/unit/sesion.test.ts` y, con el cliente oficial y la base local,
+`tests/integration/sesion.test.ts`, que necesita la base levantada y corre tanto en la máquina como
+en la integración continua, en su trabajo de la base. La comprobación del origen para entrar
+y cerrar está en `lib/sesion/reglas.ts`; la de las operaciones que cambian datos llega con cada
+operación (HU-06.3), y la que impide mostrar las páginas en un marco de otro sitio, con las
+pantallas (HU-01.3).
 
 #### Scenario: petición desde otro sitio
 - **DADO** una persona con sesión vigente
@@ -239,7 +324,12 @@ hace el sistema.
 - **ENTONCES** la cookie de sesión está marcada para viajar solo por conexión cifrada; si llega sin esa marca, la comprobación del despliegue (H-4) falla y H-4 no se cierra
 
 Este último no se puede probar en local, donde no hay cifrado: se comprueba en el despliegue
-(H-4), junto con las pruebas del servicio de autenticación que allí se repiten.
+(H-4), junto con las pruebas del servicio de autenticación que allí se repiten. La marca sale del
+esquema de la dirección pública leída como URL, no de comparar su texto: los esquemas no
+distinguen mayúsculas, y una dirección escrita `HTTPS://…` es tan cifrada como `https://…`. Si la
+dirección pública no se puede leer como URL, la cookie sale marcada como cifrada —el lado seguro—,
+y con esa configuración el sistema rechaza igual toda entrada y todo cierre (revisión del tramo 4,
+ronda 1).
 
 ### Requirement: Un correo, una cuenta, una organización
 
@@ -451,7 +541,9 @@ por `fetch` directo a la API de la base, ni un `from` sacado del cliente o llama
 (límite declarado en el módulo). Las operaciones que se llaman como función, como el registro del
 aviso, entran a este módulo con su ticket (HU-06.3). **Límite declarado:** se prueba con un cliente falso; con la base
 real y dos organizaciones lo prueba HU-03.3. La identidad de quien pregunta la entrega «Sesión
-vigente» (HU-01.2).
+vigente» (HU-01.2), que la obtiene con `leerMiUsuario`: la única lectura del módulo que no sale
+filtrada por organización, porque es la que la produce; la regla restrictiva de la base sigue
+cortando.
 
 #### Scenario: dato ajeno por su identificador
 - **CUANDO** un usuario pide por su identificador un dato de otra organización
@@ -475,6 +567,11 @@ El sistema DEBE limitar en la base, además de por organización, qué filas ve 
 | `parametro` | Los de su organización, si es dirección | Nadie |
 | `no_reportado` | Los de las asignaciones que supervisa · todos los de su organización si es dirección. **El consultor no los ve, tampoco los suyos** | Nadie; los crea el sistema |
 | `organizacion` | La propia | Nadie |
+
+*Construido en HU-01.2 (25/11/2026):* las filas «la propia» de `usuario` y de `organizacion`, que
+valen igual para todo rol y que «Sesión vigente» necesita: las personas pueden leer esas dos
+tablas, y nada más que eso, y solo su propio usuario y su propia organización (migración
+`20261125164000_sesion`, `tests/base/prueba-sesion.py`). El resto de esta tabla lo pone HU-02.1.
 
 «Nadie» quiere decir ninguna persona con su sesión. La ejecución recurrente y los datos de
 arranque usan una credencial del sistema, que no pasa por estas reglas y vive solo en el servidor.

@@ -12,7 +12,7 @@ como fueron escritas.
 
 | Paso | Carpeta | Última versión | Qué produce |
 |---|---|---|---|
-| 1 · Discovery | `01-Discovery/` | `01-Discovery/discovery-controlador-tiempo.md` | Las preguntas del método, el registro de decisiones (D-1 a D-103) y los puntos abiertos (PA-1 a PA-9) |
+| 1 · Discovery | `01-Discovery/` | `01-Discovery/discovery-controlador-tiempo.md` | Las preguntas del método, el registro de decisiones (D-1 a D-105) y los puntos abiertos (PA-1 a PA-9) |
 | 2 · Alcance | `02-Alcance/` | `02-Alcance/Propuesta MVP Controlador de Tiempo-20260910-v2.html` | La primera propuesta de MVP (septiembre de 2026) |
 | 3 · PRD | `03-PRD/` | `03-PRD/PRD-MVP-Controlador-de-Tiempo-20261119-v8.md` | El documento de producto: requisitos (RF, RNF), restricciones (R) y riesgos aceptados (RA) |
 | 4 · Backlog | `04-Backlog/` | `04-Backlog/Backlog-MVP-Controlador-de-Tiempo-20261118-v5.md` | Historias con criterios de aceptación |
@@ -87,7 +87,7 @@ seguimiento diario de trabajo. El avance del día se ve en los commits y en los 
 
 | Archivo en el repositorio | Origen en el espacio de trabajo | Huella | Estado |
 |---|---|---|---|
-| `01-Discovery/discovery-controlador-tiempo.md` | `01-Discovery/discovery-controlador-tiempo.md (fuente privada)` | `5b5e13251e10` | derivada sin nombres |
+| `01-Discovery/discovery-controlador-tiempo.md` | `01-Discovery/discovery-controlador-tiempo.md (fuente privada)` | `3a7ffabf7bf9` | derivada sin nombres |
 | `02-Alcance/Propuesta MVP Controlador de Tiempo-20260910-v1.html` | `02-Alcance/Propuesta MVP Controlador de Tiempo-20260910-v1.html` | `498bb231d176` | idéntica |
 | `02-Alcance/Propuesta MVP Controlador de Tiempo-20260910-v2.html` | `02-Alcance/Propuesta MVP Controlador de Tiempo-20260910-v2.html` | `a44ff4d5acbc` | idéntica |
 | `03-PRD/PRD-MVP-Controlador-de-Tiempo-20261116-v1.md` | `03-PRD/PRD-MVP-Controlador-de-Tiempo-20261116-v1.md` | `587c5e0e4ceb` | idéntica |

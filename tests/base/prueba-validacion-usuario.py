@@ -29,8 +29,11 @@ CASOS = [
     ("N2 una columna de más", "alter table public.usuario add column extra text;", "columnas de public.usuario"),
     ("N3 id con valor por defecto",
      "alter table public.usuario alter column id set default gen_random_uuid();", "columna id"),
+    # Desde HU-06.1, las llaves compuestas de asignacion dependen de la llave
+    # (id, organizacion_id): N4 y N12 se las llevan con cascade dentro de la
+    # transacción, que se deshace.
     ("N4 organizacion_id admite nulo",
-     "alter table public.usuario drop constraint usuario_id_organizacion_id_key;"
+     "alter table public.usuario drop constraint usuario_id_organizacion_id_key cascade;"
      "alter table public.usuario alter column organizacion_id drop not null;", "columna organizacion_id"),
     ("N5 nombre con otro tipo",
      "alter table public.usuario alter column nombre type varchar(50);", "columna nombre"),
@@ -48,16 +51,16 @@ CASOS = [
      "alter table public.usuario add constraint usuario_organizacion_id_fkey foreign key (organizacion_id) "
      "references public.organizacion (id) on delete cascade;", "constraint usuario_organizacion_id_fkey"),
     ("N12 la llave compuesta con una sola columna",
-     "alter table public.usuario drop constraint usuario_id_organizacion_id_key;"
+     "alter table public.usuario drop constraint usuario_id_organizacion_id_key cascade;"
      "alter table public.usuario add constraint usuario_id_organizacion_id_key unique (id);",
      "constraint usuario_id_organizacion_id_key"),
     ("N13 el índice del correo distingue mayúsculas",
      "drop index public.usuario_correo_key; create unique index usuario_correo_key on public.usuario (correo);",
      "índice usuario_correo_key"),
     ("N14 reglas sin forzar", "alter table public.usuario no force row level security;", "reglas de public.usuario"),
-    ("N15 una regla de más",
-     "create policy otra on public.usuario for select to authenticated using (true);",
-     "reglas sobre public.usuario"),
+    ("N15 una regla restrictiva de más (las permisivas las vigila la validación de 20261125164000_sesion)",
+     "create policy otra on public.usuario as restrictive for select to authenticated using (true);",
+     "reglas restrictivas sobre public.usuario"),
     ("N16 la regla pasa a permisiva",
      "drop policy usuario_separacion on public.usuario;"
      "create policy usuario_separacion on public.usuario as permissive for all to public "
@@ -93,7 +96,7 @@ CASOS = [
     ("N26 el dueño de es_mi_organizacion ya no omite las reglas (riesgo de recursión)",
      "alter function public.es_mi_organizacion(uuid) owner to authenticated;",
      "dueño de las funciones con privilegios de su dueño"),
-    ("P2 el permiso de leer, que dará HU-02.1, no cambia la fila de privilegios",
+    ("P2 el permiso de leer, que da HU-01.2, no cambia la fila de privilegios",
      "grant select on public.usuario to authenticated;", None),
 ]
 
@@ -101,7 +104,7 @@ FILAS = {
     "tabla public.usuario", "columnas de public.usuario", "columna id", "columna organizacion_id",
     "columna nombre", "columna correo", "columna telefono", "columna activo", "constraints de public.usuario",
     "constraint usuario_pkey", "constraint usuario_organizacion_id_fkey", "constraint usuario_id_organizacion_id_key",
-    "índice usuario_correo_key", "reglas de public.usuario", "reglas sobre public.usuario",
+    "índice usuario_correo_key", "reglas de public.usuario", "reglas restrictivas sobre public.usuario",
     "regla usuario_separacion", "función public.comprobar_correo_de_cuenta()", "disparadores de public.usuario",
     "disparador usuario_correo_de_cuenta", "función public.impedir_cambio_de_correo_propio()",
     "disparador impedir_cambio_de_correo_propio (D-103)", "función public.es_mi_organizacion(uuid)",

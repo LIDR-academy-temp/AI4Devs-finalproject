@@ -243,11 +243,20 @@ def main() -> int:
                                    {"method": "password", "timestamp": ahora}]}
         d = mia(varias, org_a)
         caso("N28 con dos entradas con contraseña, vale la más antigua: si venció, responde no", d == "f", d)
+        # Cambiado en el tramo 4 (D-105, hallazgo E de su ronda 1): antes esta
+        # entrada mal formada se descartaba y respondía sí. Si no se puede leer
+        # su momento, no se sabe cuál es la más antigua, así que la sesión
+        # vence. La misma regla vale en el código (lib/sesion/reglas.ts).
         varias = {**bueno, "amr": [{"method": "password", "timestamp": ahora},
                                    {"method": "password", "timestamp": "no-es-un-numero"},
                                    {"method": "password", "timestamp": ahora - 3600}]}
         d = mia(varias, org_a)
-        caso("P12 con varias entradas vigentes y una mal formada, responde sí", d == "t", d)
+        caso("N30 con varias entradas vigentes y una cuyo momento no se puede leer, responde no (D-105)",
+             d == "f", d)
+        varias = {**bueno, "amr": [{"method": "password", "timestamp": ahora},
+                                   {"method": "password", "timestamp": ahora - 3600}]}
+        d = mia(varias, org_a)
+        caso("P12 control de N30: con varias entradas vigentes y todas legibles, responde sí", d == "t", d)
         # El bloqueo de D-103 no estorba al servicio: la sesión se renueva y el
         # pase nuevo conserva el momento de entrada.
         c, renovado = api("POST", "/auth/v1/token?grant_type=refresh_token",

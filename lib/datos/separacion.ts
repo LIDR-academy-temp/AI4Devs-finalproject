@@ -10,8 +10,9 @@
 // consulta sale ya filtrada por la organización de quien pregunta, y una fila
 // de otra organización que llegara igual se trata como inexistente.
 //
-// Límite declarado: la identidad (usuario y organización de quien pregunta) la
-// entrega «Sesión vigente» (HU-01.2); este módulo la recibe, no la obtiene.
+// La identidad (usuario y organización de quien pregunta) la entrega «Sesión
+// vigente» (HU-01.2, lib/sesion/vigente.ts), que la obtiene con leerMiUsuario:
+// la única lectura de este módulo que no sale filtrada por organización.
 //
 // Pendiente (revisión interna del tramo 3): las operaciones de la base que se
 // llaman como función (rpc), como el registro del aviso, también pasan por
@@ -36,7 +37,7 @@ export interface Filtrable<Q> {
 export interface ClienteDeDatos<Q extends Filtrable<Q>> {
   from(tabla: string): { select(columnas?: string): Q };
 }
-interface UnaFila {
+export interface UnaFila {
   maybeSingle(): PromiseLike<{ data: unknown; error: { message: string } | null }>;
 }
 
@@ -103,6 +104,59 @@ export async function buscarPorId<T extends Record<string, unknown>, Q extends F
   const deFila = String(fila?.[columnaDeOrganizacion(tabla)] ?? "").toLowerCase();
   if (!fila || deFila !== organizacionDe(identidad)) return NO_EXISTE;
   return { estado: "encontrado", dato: fila };
+}
+
+/** El propio usuario de quien pregunta, con el plazo de su organización (HU-01.2). */
+export interface MiUsuario {
+  usuarioId: string;
+  organizacionId: string;
+  activo: boolean;
+  sesionDias: number;
+}
+
+/**
+ * Lee el propio usuario por el identificador que reconoce el servicio, con el
+ * plazo de sesión de su organización. La usa «Sesión vigente» (HU-01.2) para
+ * obtener la identidad de quien pregunta.
+ *
+ * Es la única lectura que no se filtra por organización, porque es la que
+ * produce la organización. La base sigue cortando: su regla restrictiva solo
+ * deja ver el propio usuario a quien está activo, con la sesión abierta y
+ * dentro del plazo. Una fila de otra persona, o sin la organización legible,
+ * se trata como si no existiera. Un error de la base se informa con mensaje
+ * nuestro.
+ */
+export async function leerMiUsuario<Q extends Filtrable<Q> & UnaFila>(
+  cliente: ClienteDeDatos<Q>,
+  usuarioId: string,
+): Promise<MiUsuario | null> {
+  if (!IDENTIFICADOR.test(usuarioId ?? "")) return null;
+  const { data, error } = await cliente
+    .from("usuario")
+    .select("id, organizacion_id, activo, organizacion(sesion_dias)")
+    .eq("id", usuarioId)
+    .maybeSingle();
+  if (error) {
+    throw new Error("No se pudo comprobar la sesión. Inténtalo de nuevo en unos minutos.", { cause: error });
+  }
+  const fila = data as {
+    id?: unknown;
+    organizacion_id?: unknown;
+    activo?: unknown;
+    organizacion?: { sesion_dias?: unknown } | null;
+  } | null;
+  const dias = fila?.organizacion?.sesion_dias;
+  if (
+    !fila ||
+    String(fila.id).toLowerCase() !== usuarioId.toLowerCase() ||
+    typeof fila.organizacion_id !== "string" ||
+    !IDENTIFICADOR.test(fila.organizacion_id) ||
+    typeof fila.activo !== "boolean" ||
+    typeof dias !== "number"
+  ) {
+    return null;
+  }
+  return { usuarioId: String(fila.id), organizacionId: fila.organizacion_id, activo: fila.activo, sesionDias: dias };
 }
 
 /** Lo que no es una consulta aunque se escriba `X.from(...)`. */

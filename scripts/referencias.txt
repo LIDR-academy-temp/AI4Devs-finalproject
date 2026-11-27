@@ -52,4 +52,5 @@ origin/feature/entrega-1-JC  # la misma, en el remoto
 docs/trazabilidad-d91  # rama del PR de trazabilidad
 tramo-2/hu-03.1-organizacion  # rama del tramo 2 (HU-03.1)
 tramo-3/hu-01.1-hu-03.2-usuario-filtro  # rama del tramo 3 (HU-01.1 y HU-03.2)
+tramo-4/hu-01.2-hu-06.1-sesion-aviso  # rama del tramo 4 (HU-01.2 y HU-06.1)
 refs/pull/1/head  # referencia de git del PR en GitHub
